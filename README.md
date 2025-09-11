@@ -115,22 +115,9 @@ Replace later with real Laravel auth (Breeze / Fortify / custom guards).
 | `resources/css/style.css` | Template styling |
 | `scripts/setup.ps1` | Windows helper script |
 
-## 9. Environment Tips
-If you change `APP_URL` in `.env`, restart `php artisan serve` (and refresh HMR). For MySQL switch, update `.env` then re-run migrations against a clean DB.
+## 9. Contributing
 
-## 10. Troubleshooting
-| Problem | Fix |
-|---------|-----|
-| Vite asset 404 | Ensure `npm run dev` running; clear cache. |
-| Wrong PHP picked | `php -v` then adjust PATH. |
-| MySQL connection refused | Check credentials + service started. |
-| Auth not persisting | Ensure localStorage not blocked by privacy / incognito. |
-
-## 11. Roadmap (Planned)
-* Real authentication & roles
-* Listings + bids domain models
-* Metrics services + tests
-* API endpoints + SPA/mobile client readiness
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for the branching model (feature -> develop -> release -> main), issue workflow, commit conventions, and PR checklist.
 
 ---
 Contributions & feedback welcome.
