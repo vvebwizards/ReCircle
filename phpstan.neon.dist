@@ -1,0 +1,21 @@
+includes:
+    - vendor/nunomaduro/larastan/extension.neon
+
+parameters:
+    paths:
+        - app
+        - database
+        - routes
+    excludePaths:
+        - tests
+        - vendor
+    tmpDir: build/phpstan
+    level: 6
+    checkModelProperties: true
+    checkOctaneCompatibility: false
+    universalObjectCratesClasses:
+        - Illuminate\Support\Fluent
+    ignoreErrors:
+        - '#Property [^ ]+ does not accept null#'
+        - '#Call to an undefined method Illuminate\\Support\\Collection::[a-zA-Z0-9_]+#'
+    reportUnmatchedIgnoredErrors: false
