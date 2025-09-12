@@ -15,4 +15,4 @@ Route::get('/admin/dashboard', function () {
 })->name('admin.dashboard');
 
 // Auth routes
-require __DIR__ . '/auth.php';
+require __DIR__.'/auth.php';
