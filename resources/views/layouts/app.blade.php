@@ -12,9 +12,9 @@
     <!-- Font Awesome icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-    @if (app()->environment('production'))
+    @unless (app()->environment('testing'))
         @vite(['resources/css/app.css','resources/css/style.css'])
-    @endif
+    @endunless
     <script>
         window.appRoutes = {
             home: @json(route('home')),
@@ -24,9 +24,9 @@
             dashboard: @json(route('dashboard', [], false)),
         };
     </script>
-    @if (app()->environment('production'))
+    @unless (app()->environment('testing'))
         @vite(['resources/js/app.js','resources/js/main.js'])
-    @endif
+    @endunless
     @stack('head')
 </head>
 <body>
