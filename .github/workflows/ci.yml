@@ -57,7 +57,8 @@ jobs:
         env:
           DB_CONNECTION: sqlite
           DB_DATABASE: database/database.sqlite
-        run: php artisan test --no-interaction --colors=always
+          CI: true
+        run: php artisan test --colors=always
 
   frontend-build:
     runs-on: ubuntu-latest
