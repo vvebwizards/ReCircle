@@ -24,6 +24,18 @@
                 </ul>
             </div>
             <div class="auth-card" aria-live="polite">
+                @if(session('verify_message'))
+                    <div class="notice verify-notice" role="alert">
+                        <div class="notice-content">
+                            <i class="fa-solid fa-envelope-circle-check" aria-hidden="true"></i>
+                            <span>{{ session('verify_message') }}</span>
+                        </div>
+                        <button type="button" class="notice-close" aria-label="Dismiss notice">&times;</button>
+                        <div class="notice-progress" aria-hidden="true">
+                            <div class="notice-progress-bar"></div>
+                        </div>
+                    </div>
+                @endif
                 <div class="auth-tabs" role="tablist">
                     <button class="auth-tab active" role="tab" aria-selected="true" aria-controls="signin-panel" id="signin-tab">Sign In</button>
                     <button class="auth-tab" role="tab" aria-selected="false" aria-controls="signup-panel" id="signup-tab">Create Account</button>
@@ -56,27 +68,28 @@
                 </form>
 
                 <!-- Sign Up Form -->
-                <form id="signup-form" class="auth-form hidden" aria-labelledby="signup-tab" novalidate>
+                <form id="signup-form" class="auth-form hidden" aria-labelledby="signup-tab" method="POST" action="{{ route('register.store') }}">
+                    @csrf
                     <div class="form-group">
                         <label for="signup-name">Full Name</label>
-                        <input type="text" id="signup-name" name="name" placeholder="Jane Doe" autocomplete="name" required>
-                        <small class="field-error" aria-live="assertive"></small>
+                        <input type="text" id="signup-name" name="name" value="{{ old('name') }}" placeholder="Jane Doe" autocomplete="name" required>
+                        <small class="field-error" aria-live="assertive">@error('name'){{ $message }}@enderror</small>
                     </div>
                     <div class="form-group">
                         <label for="signup-email">Email</label>
-                        <input type="email" id="signup-email" name="email" placeholder="you@example.com" autocomplete="email" required>
-                        <small class="field-error" aria-live="assertive"></small>
+                        <input type="email" id="signup-email" name="email" value="{{ old('email') }}" placeholder="you@example.com" autocomplete="email" required>
+                        <small class="field-error" aria-live="assertive">@error('email'){{ $message }}@enderror</small>
                     </div>
                     <div class="form-group">
                         <label for="signup-role">I am a</label>
                         <select id="signup-role" name="role" required>
-                            <option value="">Select your role</option>
-                            <option value="generator">Generator (List Waste)</option>
-                            <option value="maker">Maker / Repairer</option>
-                            <option value="buyer">Buyer</option>
-                            <option value="courier">Courier Partner</option>
+                            <option value="" @selected(old('role')==='')>Select your role</option>
+                            <option value="generator" @selected(old('role')==='generator')>Generator (List Waste)</option>
+                            <option value="maker" @selected(old('role')==='maker')>Maker / Repairer</option>
+                            <option value="buyer" @selected(old('role')==='buyer')>Buyer</option>
+                            <option value="courier" @selected(old('role')==='courier')>Courier Partner</option>
                         </select>
-                        <small class="field-error" aria-live="assertive"></small>
+                        <small class="field-error" aria-live="assertive">@error('role'){{ $message }}@enderror</small>
                     </div>
                     <div class="form-group password-group">
                         <label for="signup-password">Password</label>
@@ -88,16 +101,17 @@
                             <div class="strength-bar"></div>
                             <span class="strength-label">Weak</span>
                         </div>
-                        <small class="field-error" aria-live="assertive"></small>
+                        <small class="field-error" aria-live="assertive">@error('password'){{ $message }}@enderror</small>
                     </div>
                     <div class="form-group">
                         <label for="signup-confirm">Confirm Password</label>
-                        <input type="password" id="signup-confirm" name="confirm" placeholder="Re-enter password" autocomplete="new-password" required>
+                        <input type="password" id="signup-confirm" name="password_confirmation" placeholder="Re-enter password" autocomplete="new-password" required>
                         <small class="field-error" aria-live="assertive"></small>
                     </div>
                     <label class="checkbox">
-                        <input type="checkbox" id="terms" required> I agree to the <a href="#">Terms</a> and <a href="#">Privacy</a>
+                        <input type="checkbox" id="terms" name="terms" {{ old('terms') ? 'checked' : '' }} required> I agree to the <a href="#">Terms</a> and <a href="#">Privacy</a>
                     </label>
+                    <small class="field-error" aria-live="assertive">@error('terms'){{ $message }}@enderror</small>
                     <button type="submit" class="btn btn-primary w-full">Create Account</button>
                     <p class="switch-text">Already have an account? <a href="#" id="go-signin">Sign in</a></p>
                 </form>

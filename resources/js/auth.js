@@ -120,8 +120,50 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 900);
   });
 
-  // Sign Up submit
+  // Show tab based on URL hash or presence of server-side errors (Blade renders .field-error text)
+  try {
+    const hash = (window.location.hash || '').replace('#', '');
+    const hasServerErrors = !!document.querySelector('#signup-form .field-error:not(:empty)');
+    if (hash === 'signup' || hasServerErrors) {
+      showForm('signup');
+    }
+    if (hash === 'signin') {
+      showForm('signin');
+    }
+    // Dismissible notice
+    const notice = document.querySelector('.notice');
+    const closeBtn = notice?.querySelector('.notice-close');
+    const progress = notice?.querySelector('.notice-progress-bar');
+    const DURATION_MS = 15000;
+    const startCountdown = () => {
+      if (!progress) return;
+      // Force layout then animate scaleX from 1 to 0 over DURATION_MS
+      progress.style.transitionDuration = (DURATION_MS / 1000) + 's';
+      // next frame
+      requestAnimationFrame(() => {
+        progress.style.transform = 'scaleX(0)';
+      });
+      // auto dismiss when finished
+      const timer = setTimeout(() => {
+        if (!notice) return;
+        notice.classList.add('dismiss');
+        setTimeout(() => notice?.remove(), 250);
+      }, DURATION_MS);
+      // cancel on manual close
+      closeBtn?.addEventListener('click', () => { clearTimeout(timer); });
+    };
+
+    closeBtn?.addEventListener('click', () => {
+      if (!notice) return;
+      notice.classList.add('dismiss');
+      setTimeout(() => notice?.remove(), 200);
+    });
+    if (notice) startCountdown();
+  } catch {}
+
+  // Sign Up submit (demo mode only if no action attribute)
   signupForm?.addEventListener('submit', (e) => {
+    if (signupForm.getAttribute('action')) return; // let server handle
     e.preventDefault();
     clearErrors(signupForm);
     const name = document.getElementById('signup-name');
