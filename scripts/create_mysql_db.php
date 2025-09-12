@@ -1,6 +1,7 @@
 <?php
+
 // Create database script using PDO; reads env from .env
-$env = parse_ini_file(__DIR__ . '/../.env');
+$env = parse_ini_file(__DIR__.'/../.env');
 $host = $env['DB_HOST'] ?? '127.0.0.1';
 $port = $env['DB_PORT'] ?? '3306';
 $db = $env['DB_DATABASE'] ?? 'waste2product';
@@ -16,6 +17,6 @@ try {
     echo "Database '{$db}' created or already exists.\n";
     exit(0);
 } catch (PDOException $e) {
-    fwrite(STDERR, "Error: " . $e->getMessage() . "\n");
+    fwrite(STDERR, 'Error: '.$e->getMessage()."\n");
     exit(1);
 }
