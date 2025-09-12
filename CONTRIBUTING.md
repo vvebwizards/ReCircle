@@ -53,8 +53,10 @@ Commits (prefer conventional style):
 - Screenshots / GIF (UI changes)
 - Tests added/updated (if logic added)
 - No debug dumps / commented code
-- Passes test suite: `./vendor/bin/phpunit`
-- PHP formatted with Pint: `vendor/bin/pint`
+- Passes test suite: `php artisan test`
+- PHP formatted with Pint: `vendor/bin/pint` (pre-commit runs Pint `--test`)
+- Static analysis clean: `composer run phpstan`
+- JS lint clean: `npm run lint`
 - Build passes: `npm run build` (if asset changes)
 
 ## Code Guidelines
@@ -67,10 +69,32 @@ Commits (prefer conventional style):
 - Avoid over-coupling controllers – push logic into services/helpers where it grows.
 - Front-end JS lives in `resources/js/` and should avoid inline scripts where possible.
 
+### Pre-commit hooks
+We use Husky to run quality gates locally:
+- Laravel Pint (style) with `--test`
+- PHPStan (static analysis)
+- ESLint (JS)
+
+Skip in emergencies by setting `SKIP_HOOKS=1` before the commit command. Ensure you run the tools manually afterward.
+
+### CI overview
+GitHub Actions runs:
+- php-tests (SQLite, clears caches, `php artisan test`, Clover coverage for SonarCloud)
+- frontend-build (Node 20, `npm ci && npm run build`)
+- pint (Laravel Pint check)
+- phpstan (Larastan analysis)
+- js-lint (ESLint flat config)
+- sonarcloud (SonarCloud analysis) — requires `SONAR_TOKEN` repository secret
+
+### SonarCloud
+- Project config: `sonar-project.properties`.
+- Coverage: PHPUnit Clover at `coverage-reports/phpunit-coverage.xml` produced by CI.
+- JS coverage is currently excluded until a JS test harness is added.
+
 ## Testing
-Run:
+Run tests locally:
 ```bash
-./vendor/bin/phpunit
+php artisan test
 ```
 Add at least one happy path + an edge case when introducing new service-level logic.
 
