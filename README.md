@@ -119,5 +119,11 @@ Replace later with real Laravel auth (Breeze / Fortify / custom guards).
 
 Please read [CONTRIBUTING.md](CONTRIBUTING.md) for the branching model (feature -> develop -> release -> main), issue workflow, commit conventions, and PR checklist.
 
+Before pushing or opening a PR, format PHP with Pint:
+
+```powershell
+vendor/bin/pint
+```
+
 ---
 Contributions & feedback welcome.

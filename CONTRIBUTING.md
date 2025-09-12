@@ -54,10 +54,15 @@ Commits (prefer conventional style):
 - Tests added/updated (if logic added)
 - No debug dumps / commented code
 - Passes test suite: `./vendor/bin/phpunit`
+- PHP formatted with Pint: `vendor/bin/pint`
 - Build passes: `npm run build` (if asset changes)
 
 ## Code Guidelines
 - Follow PSR-12 for PHP.
+- Run Pint before pushing:
+	```bash
+	vendor/bin/pint
+	```
 - Keep migrations & seeders minimal; one concern per file.
 - Avoid over-coupling controllers – push logic into services/helpers where it grows.
 - Front-end JS lives in `resources/js/` and should avoid inline scripts where possible.
