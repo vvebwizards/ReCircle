@@ -20,8 +20,8 @@ body {
 .hidden { display: none !important; }
 
 /* Simple input error state */
-.input-error { border-color: #dc2626 !important; outline: none; }
-.field-error { color: #dc2626; font-size: 0.85rem; margin-top: 0.35rem; min-height: 1.1rem; display: block; }
+.input-error { border-color: #dc2626 !important; outline: none; box-shadow: 0 0 0 3px rgba(220,38,38,0.08); }
+.field-error { color: #b91c1c; font-size: 0.85rem; margin-top: 0.35rem; min-height: 1.1rem; display: block; }
 
 /* Brand Color Tokens */
 :root {
@@ -635,7 +635,9 @@ body {
 .password-strength { margin-top:.5rem; position:relative; padding-top:10px; }
 .password-strength::before { content:''; position:absolute; top:0; left:0; right:0; height:8px; background:#f3f4f6; border-radius:8px; }
 .password-strength .strength-bar { position:absolute; top:0; left:0; height:8px; width:0; background:#dc2626; border-radius:8px; transition: width .25s ease, background .25s ease; }
-.password-strength .strength-label { display:block; font-size:.8rem; margin-top:.5rem; color:#6b7280; }
+.password-strength .strength-label { font-size:.8rem; color:#6b7280; }
+.password-strength .strength-meta { display:flex; align-items:center; gap:.4rem; margin-top:.5rem; }
+.password-strength .strength-icon { font-size:.8rem; color:#dc2626; }
 .success-box { text-align:center; padding:1rem; }
 .steps { display:flex; gap:.5rem; list-style:none; padding:0; margin:0 0 1rem 0; }
 .steps.small { font-size:.85rem; }
@@ -705,6 +707,19 @@ body {
   font-size: 0.9rem;
   color: var(--color-slate);
   font-weight: 500;
+}
+
+/* Hide default password reveal/clear buttons to avoid duplicate eye on Edge/IE and some WebKit */
+.password-input input[type="password"]::-ms-reveal,
+.password-input input[type="password"]::-ms-clear {
+  display: none;
+  width: 0;
+  height: 0;
+}
+.password-input input[type="password"]::-webkit-credentials-auto-fill-button,
+.password-input input[type="password"]::-webkit-textfield-decoration-container,
+.password-input input[type="password"]::-webkit-contacts-auto-fill-button {
+  display: none !important;
 }
 
 /* Contact Section */
