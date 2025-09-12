@@ -20,8 +20,20 @@ body {
 .hidden { display: none !important; }
 
 /* Simple input error state */
-.input-error { border-color: #dc2626 !important; outline: none; }
-.field-error { color: #dc2626; font-size: 0.85rem; margin-top: 0.35rem; min-height: 1.1rem; display: block; }
+.input-error { border-color: #dc2626 !important; outline: none; box-shadow: 0 0 0 3px rgba(220,38,38,0.08); }
+.field-error { color: #b91c1c; font-size: 0.85rem; margin-top: 0.35rem; min-height: 1.1rem; display: block; }
+
+/* Modal (resend) */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1100; padding: 1rem; }
+.modal { width: 100%; max-width: 480px; background: #fff; border-radius: 14px; box-shadow: 0 20px 50px rgba(0,0,0,0.2); overflow: hidden; animation: modalIn .18s ease-out; }
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; border-bottom: 1px solid #eee; }
+.modal-header h3 { font-size: 1.1rem; font-weight: 700; color: var(--color-deep-green); display: flex; align-items: center; gap: .5rem; }
+.modal-close { background: transparent; border: none; font-size: 1.5rem; line-height: 1; cursor: pointer; color: #64748b; }
+.modal-body { padding: 1rem 1.25rem 1.25rem; }
+.modal-text { color: #475569; margin-bottom: .75rem; }
+.modal .form-group { margin-bottom: .75rem; }
+.modal-actions { display: flex; justify-content: flex-end; gap: .5rem; margin-top: .5rem; }
+@keyframes modalIn { from { transform: translateY(8px); opacity: .6; } to { transform: translateY(0); opacity: 1; } }
 
 /* Brand Color Tokens */
 :root {
@@ -615,6 +627,14 @@ body {
 .auth-benefits { list-style: none; display: grid; gap: .5rem; color: var(--color-slate); }
 .auth-benefits li i { color: var(--color-emerald); margin-right: .5rem; }
 .auth-card { background: #fff; border: 1px solid rgba(28,69,50,.08); border-radius: 16px; padding: 1.5rem; box-shadow: 0 10px 30px rgba(0,0,0,.06); align-self: center; }
+.notice { display:flex; align-items:center; justify-content:space-between; gap:1rem; border:1px solid #f59e0b33; background:#fffbeb; color:#92400e; border-radius:12px; padding:.75rem 1rem; margin-bottom:1rem; flex-wrap: wrap; }
+.notice .notice-content { display:flex; align-items:center; gap:.6rem; }
+.notice i { color:#b45309; }
+.notice .notice-close { background:transparent; border:none; color:#92400e; font-size:1.25rem; cursor:pointer; padding:.25rem .5rem; border-radius:8px; }
+.notice .notice-close:hover { background:#fef3c7; }
+.notice .notice-progress { position:relative; height:4px; background:#fde68a; border-radius:999px; overflow:hidden; margin-top:.5rem; width:100%; flex: 0 0 100%; }
+.notice .notice-progress-bar { position:absolute; left:0; top:0; bottom:0; width:100%; background:#f59e0b; transform-origin:left center; transform:scaleX(1); transition:transform linear; }
+.notice.dismiss { opacity:0; transform: translateY(-6px); transition: opacity .25s ease, transform .25s ease; }
 .auth-form .form-group { margin-bottom: 1rem; }
 .auth-form label { display:block; font-weight:600; color:var(--color-deep-green); margin-bottom:.35rem; }
 .auth-form input, .auth-form select { width:100%; padding:.8rem 1rem; border-radius:12px; border:1px solid #e5e7eb; background:#fff; color:#111827; }
@@ -624,9 +644,12 @@ body {
 .password-input { position:relative; display:flex; }
 .password-input input { flex:1; }
 .toggle-password { margin-left:.5rem; background:#f3f4f6; border:none; border-radius:10px; padding:0 .85rem; cursor:pointer; }
-.password-strength { margin-top:.5rem; background:#f3f4f6; height:8px; border-radius:8px; overflow:hidden; position:relative; }
-.password-strength .strength-bar { height:100%; width:0; background:#dc2626; transition: width .25s ease, background .25s ease; }
-.password-strength .strength-label { display:block; font-size:.8rem; margin-top:.35rem; color:#6b7280; }
+.password-strength { margin-top:.5rem; position:relative; padding-top:10px; }
+.password-strength::before { content:''; position:absolute; top:0; left:0; right:0; height:8px; background:#f3f4f6; border-radius:8px; }
+.password-strength .strength-bar { position:absolute; top:0; left:0; height:8px; width:0; background:#dc2626; border-radius:8px; transition: width .25s ease, background .25s ease; }
+.password-strength .strength-label { font-size:.8rem; color:#6b7280; }
+.password-strength .strength-meta { display:flex; align-items:center; gap:.4rem; margin-top:.5rem; }
+.password-strength .strength-icon { font-size:.8rem; color:#dc2626; }
 .success-box { text-align:center; padding:1rem; }
 .steps { display:flex; gap:.5rem; list-style:none; padding:0; margin:0 0 1rem 0; }
 .steps.small { font-size:.85rem; }
@@ -696,6 +719,19 @@ body {
   font-size: 0.9rem;
   color: var(--color-slate);
   font-weight: 500;
+}
+
+/* Hide default password reveal/clear buttons to avoid duplicate eye on Edge/IE and some WebKit */
+.password-input input[type="password"]::-ms-reveal,
+.password-input input[type="password"]::-ms-clear {
+  display: none;
+  width: 0;
+  height: 0;
+}
+.password-input input[type="password"]::-webkit-credentials-auto-fill-button,
+.password-input input[type="password"]::-webkit-textfield-decoration-container,
+.password-input input[type="password"]::-webkit-contacts-auto-fill-button {
+  display: none !important;
 }
 
 /* Contact Section */
