@@ -97,6 +97,7 @@
         </div>
     </footer>
 
+    @stack('modals')
     @stack('scripts')
 </body>
 </html>

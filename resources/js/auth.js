@@ -14,6 +14,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const signinForm = document.getElementById('signin-form');
   const signupForm = document.getElementById('signup-form');
   const goSignin = document.getElementById('go-signin');
+  const resendLink = document.getElementById('resend-link');
+  const resendModal = document.getElementById('resend-modal');
+  const resendForm = document.getElementById('resend-form');
+  const resendEmail = document.getElementById('resend-email');
 
   function showForm(which) {
     const isSignin = which === 'signin';
@@ -28,6 +32,29 @@ document.addEventListener('DOMContentLoaded', () => {
   signinTab?.addEventListener('click', () => showForm('signin'));
   signupTab?.addEventListener('click', () => showForm('signup'));
   goSignin?.addEventListener('click', (e) => { e.preventDefault(); showForm('signin'); });
+
+  // Resend modal open
+  resendLink?.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (!resendModal) return;
+    resendModal.classList.remove('hidden');
+    resendModal.removeAttribute('aria-hidden');
+    resendEmail?.focus();
+  });
+  // Close modal handlers
+  document.querySelectorAll('[data-close-modal]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (!resendModal) return;
+      resendModal.classList.add('hidden');
+      resendModal.setAttribute('aria-hidden', 'true');
+    });
+  });
+  resendModal?.addEventListener('click', (e) => {
+    if (e.target === resendModal) {
+      resendModal.classList.add('hidden');
+      resendModal.setAttribute('aria-hidden', 'true');
+    }
+  });
 
   // Password visibility toggles
   document.querySelectorAll('.toggle-password').forEach(btn => {
@@ -57,6 +84,12 @@ document.addEventListener('DOMContentLoaded', () => {
   function clearErrors(form) {
     form.querySelectorAll('.field-error').forEach(el => el.textContent = '');
     form.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
+  }
+  function setFormError(form, input, msg) {
+    if (!input) return;
+    const small = input.closest('.form-group')?.querySelector('.field-error');
+    if (small) small.textContent = msg || '';
+    input.classList.toggle('input-error', Boolean(msg));
   }
 
   // Password strength
@@ -270,6 +303,79 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       // Clear form values
       signupForm.reset();
+    } catch (err) {
+      alert(err?.message || 'Something went wrong.');
+    } finally {
+      btn.textContent = original;
+      btn.disabled = false;
+    }
+  });
+
+  // Resend form submit (AJAX)
+  resendForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!resendEmail) return;
+    setFormError(resendForm, resendEmail, '');
+    const emailVal = resendEmail.value.trim();
+    if (!emailRegex.test(emailVal)) {
+      setFormError(resendForm, resendEmail, 'Enter a valid email.');
+      return;
+    }
+    const btn = resendForm.querySelector('button[type="submit"]');
+    const original = btn.textContent;
+    btn.textContent = 'Sending...';
+    btn.disabled = true;
+    try {
+      const res = await fetch('/email/resend', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': document.querySelector('input[name="_token"]')?.value || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: emailVal }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (res.status === 422 && data.errors?.email) {
+          setFormError(resendForm, resendEmail, Array.isArray(data.errors.email) ? data.errors.email[0] : String(data.errors.email));
+          return;
+        }
+        throw new Error(data.message || 'Failed to resend.');
+      }
+      // Success: close modal and show notice
+      resendModal?.classList.add('hidden');
+      resendModal?.setAttribute('aria-hidden', 'true');
+      const card = document.querySelector('.auth-card');
+      if (card) {
+        const existing = card.querySelector('.notice');
+        existing?.remove();
+        const notice = document.createElement('div');
+        notice.className = 'notice verify-notice';
+        notice.setAttribute('role', 'alert');
+        notice.innerHTML = `
+          <div class="notice-content">
+            <i class="fa-solid fa-envelope-circle-check" aria-hidden="true"></i>
+            <span>${(data && data.message) || 'If your email exists and is unverified, a new verification link has been sent.'}</span>
+          </div>
+          <button type="button" class="notice-close" aria-label="Dismiss notice">&times;</button>
+          <div class="notice-progress" aria-hidden="true">
+            <div class="notice-progress-bar"></div>
+          </div>
+        `;
+        card.prepend(notice);
+        const closeBtn = notice.querySelector('.notice-close');
+        const progress = notice.querySelector('.notice-progress-bar');
+        const DURATION_MS = 15000;
+        if (progress) {
+          progress.style.transitionDuration = (DURATION_MS/1000) + 's';
+          requestAnimationFrame(() => { progress.style.transform = 'scaleX(0)'; });
+          const timer = setTimeout(() => { notice.classList.add('dismiss'); setTimeout(() => notice.remove(), 250); }, DURATION_MS);
+          closeBtn?.addEventListener('click', () => { clearTimeout(timer); notice.classList.add('dismiss'); setTimeout(() => notice.remove(), 200); });
+        }
+      }
+      resendForm.reset();
     } catch (err) {
       alert(err?.message || 'Something went wrong.');
     } finally {
