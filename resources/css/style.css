@@ -23,6 +23,18 @@ body {
 .input-error { border-color: #dc2626 !important; outline: none; box-shadow: 0 0 0 3px rgba(220,38,38,0.08); }
 .field-error { color: #b91c1c; font-size: 0.85rem; margin-top: 0.35rem; min-height: 1.1rem; display: block; }
 
+/* Modal (resend) */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1100; padding: 1rem; }
+.modal { width: 100%; max-width: 480px; background: #fff; border-radius: 14px; box-shadow: 0 20px 50px rgba(0,0,0,0.2); overflow: hidden; animation: modalIn .18s ease-out; }
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; border-bottom: 1px solid #eee; }
+.modal-header h3 { font-size: 1.1rem; font-weight: 700; color: var(--color-deep-green); display: flex; align-items: center; gap: .5rem; }
+.modal-close { background: transparent; border: none; font-size: 1.5rem; line-height: 1; cursor: pointer; color: #64748b; }
+.modal-body { padding: 1rem 1.25rem 1.25rem; }
+.modal-text { color: #475569; margin-bottom: .75rem; }
+.modal .form-group { margin-bottom: .75rem; }
+.modal-actions { display: flex; justify-content: flex-end; gap: .5rem; margin-top: .5rem; }
+@keyframes modalIn { from { transform: translateY(8px); opacity: .6; } to { transform: translateY(0); opacity: 1; } }
+
 /* Brand Color Tokens */
 :root {
   --color-deep-green: #1C4532;   /* headers/footers/nav */

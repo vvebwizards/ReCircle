@@ -63,6 +63,9 @@
                         <a href="{{ route('forgot-password') }}" class="forgot-link">Forgot password?</a>
                     </div>
                     <button type="submit" class="btn btn-primary w-full">Sign In</button>
+                    <p class="switch-text" style="font-size:.9rem; margin-top:.5rem;">
+                        Didn't receive the verification email? <a href="{{ route('verification.notice') }}" id="resend-link">Resend</a>
+                    </p>
                     <div class="divider"><span>or</span></div>
                     <button type="button" class="btn btn-secondary w-full social-btn"><i class="fa-brands fa-google"></i> Continue with Google</button>
                 </form>
@@ -123,6 +126,32 @@
     </div>
 </section>
 @endsection
+
+@push('modals')
+    <!-- Resend Verification Modal -->
+    <div class="modal-overlay hidden" id="resend-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="resend-title">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="resend-title"><i class="fa-solid fa-envelope-circle-check" aria-hidden="true"></i> Resend verification email</h3>
+                <button type="button" class="modal-close" aria-label="Close" data-close-modal>&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-text">Enter your email and we'll send a new verification link.</p>
+                <form id="resend-form" novalidate>
+                    <div class="form-group">
+                        <label for="resend-email"></label>
+                        <input type="email" id="resend-email" name="email" placeholder="you@example.com" autocomplete="email" required>
+                        <small class="field-error" aria-live="assertive"></small>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn" data-close-modal>Cancel</button>
+                        <button type="submit" class="btn btn-primary">Send</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+@endpush
 
 @push('scripts')
     @vite(['resources/js/auth.js'])
