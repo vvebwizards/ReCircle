@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Mail\Mailables\Content;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\URL;
@@ -29,21 +30,28 @@ class VerifyEmailCustom extends Notification
      */
     public function toMail(object $notifiable): MailMessage
     {
+        $expires = 60;
         $verifyUrl = URL::temporarySignedRoute(
             'verification.verify',
-            now()->addMinutes(60),
+            now()->addMinutes($expires),
             [
                 'id' => $notifiable->getKey(),
                 'hash' => sha1($notifiable->getEmailForVerification()),
             ]
         );
 
+        // Use a custom Blade view to match app UI
         return (new MailMessage)
             ->subject('Verify Your Email Address')
-            ->greeting('Hello '.$notifiable->name.',')
-            ->line('Please click the button below to verify your email address.')
-            ->action('Verify Email', $verifyUrl)
-            ->line('This verification link will expire in 60 minutes.')
-            ->line('If you did not create an account, no further action is required.');
+            ->view('emails.verify', [
+                'user' => $notifiable,
+                'verifyUrl' => $verifyUrl,
+                'expiresIn' => $expires,
+            ])
+            ->text('emails.verify_plain', [
+                'user' => $notifiable,
+                'verifyUrl' => $verifyUrl,
+                'expiresIn' => $expires,
+            ]);
     }
 }
