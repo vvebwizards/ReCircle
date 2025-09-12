@@ -63,6 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const strengthWrap = document.querySelector('.password-strength');
   const strengthBar = document.querySelector('.strength-bar');
   const strengthLabel = document.querySelector('.strength-label');
+  const strengthIcon = document.querySelector('.strength-icon');
   const signupPassword = document.getElementById('signup-password');
 
   function scorePassword(pw) {
@@ -83,11 +84,16 @@ document.addEventListener('DOMContentLoaded', () => {
     strengthBar.style.width = percent + '%';
     let label = 'Weak';
     let color = '#dc2626'; // red-600
-    if (s >= 4) { label = 'Strong'; color = '#16a34a'; } // green-600
-    else if (s === 3) { label = 'Good'; color = '#f59e0b'; } // amber-500
-    else if (s === 2) { label = 'Fair'; color = '#f97316'; } // orange-500
+    let icon = 'fa-circle-exclamation';
+    if (s >= 4) { label = 'Strong'; color = '#16a34a'; icon = 'fa-shield-heart'; }
+    else if (s === 3) { label = 'Good'; color = '#f59e0b'; icon = 'fa-circle-check'; }
+    else if (s === 2) { label = 'Fair'; color = '#f97316'; icon = 'fa-triangle-exclamation'; }
     strengthBar.style.backgroundColor = color;
     strengthLabel.textContent = label;
+    if (strengthIcon) {
+      strengthIcon.style.color = color;
+      strengthIcon.className = 'strength-icon fa-solid ' + icon;
+    }
   }
 
   signupPassword?.addEventListener('input', (e) => updateStrength(e.target.value));
@@ -161,9 +167,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (notice) startCountdown();
   } catch {}
 
-  // Sign Up submit (demo mode only if no action attribute)
-  signupForm?.addEventListener('submit', (e) => {
-    if (signupForm.getAttribute('action')) return; // let server handle
+  // Sign Up submit (AJAX)
+  signupForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     clearErrors(signupForm);
     const name = document.getElementById('signup-name');
@@ -179,18 +184,97 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!role.value) { setError(role, 'Select a role.'); ok = false; }
     if (pass.value.length < minPassLen) { setError(pass, `Use at least ${minPassLen} characters.`); ok = false; }
     if (confirm.value !== pass.value) { setError(confirm, 'Passwords do not match.'); ok = false; }
-    if (!terms.checked) { alert('Please accept Terms and Privacy.'); ok = false; }
+    if (!terms.checked) {
+      setError(terms, 'Please accept Terms and Privacy.');
+      const tErr = document.getElementById('error-terms');
+      if (tErr) tErr.textContent = 'Please accept Terms and Privacy.';
+      ok = false;
+    } else {
+      const tErr = document.getElementById('error-terms');
+      if (tErr) tErr.textContent = '';
+    }
     if (!ok) return;
 
     const btn = signupForm.querySelector('button[type="submit"]');
     const original = btn.textContent;
     btn.textContent = 'Creating account...';
     btn.disabled = true;
-    setTimeout(() => {
+
+    try {
+      const res = await fetch(signupForm.action, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: name.value.trim(),
+          email: email.value.trim(),
+          role: role.value,
+          password: pass.value,
+          password_confirmation: confirm.value,
+          terms: terms.checked,
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (res.status === 422 && data.errors) {
+          // Map server errors to fields
+          const map = { name, email, role, password: pass, password_confirmation: confirm, terms };
+          Object.entries(data.errors).forEach(([key, msgs]) => {
+            const input = map[key];
+            if (input) setError(input, Array.isArray(msgs) ? msgs[0] : String(msgs));
+            if (key === 'terms') {
+              const tErr = document.getElementById('error-terms');
+              if (tErr) tErr.textContent = Array.isArray(msgs) ? msgs[0] : String(msgs);
+            }
+          });
+          showForm('signup');
+          return;
+        }
+        throw new Error(data.message || 'Signup failed');
+      }
+
+      // Success: show notice without reload and switch to Sign In tab
+      showForm('signin');
+      const card = document.querySelector('.auth-card');
+      if (card) {
+        const existing = card.querySelector('.notice');
+        existing?.remove();
+        const notice = document.createElement('div');
+        notice.className = 'notice verify-notice';
+        notice.setAttribute('role', 'alert');
+        notice.innerHTML = `
+          <div class="notice-content">
+            <i class="fa-solid fa-envelope-circle-check" aria-hidden="true"></i>
+            <span>${(data && data.message) || 'Account created. Please verify your email to continue.'}</span>
+          </div>
+          <button type="button" class="notice-close" aria-label="Dismiss notice">&times;</button>
+          <div class="notice-progress" aria-hidden="true">
+            <div class="notice-progress-bar"></div>
+          </div>
+        `;
+        card.prepend(notice);
+        const closeBtn = notice.querySelector('.notice-close');
+        const progress = notice.querySelector('.notice-progress-bar');
+        const DURATION_MS = 15000;
+        if (progress) {
+          progress.style.transitionDuration = (DURATION_MS/1000) + 's';
+          requestAnimationFrame(() => { progress.style.transform = 'scaleX(0)'; });
+          const timer = setTimeout(() => { notice.classList.add('dismiss'); setTimeout(() => notice.remove(), 250); }, DURATION_MS);
+          closeBtn?.addEventListener('click', () => { clearTimeout(timer); notice.classList.add('dismiss'); setTimeout(() => notice.remove(), 200); });
+        }
+      }
+      // Clear form values
+      signupForm.reset();
+    } catch (err) {
+      alert(err?.message || 'Something went wrong.');
+    } finally {
       btn.textContent = original;
       btn.disabled = false;
-      alert('Account created (demo). Please verify your email to continue.');
-      showForm('signin');
-    }, 1100);
+    }
   });
 });

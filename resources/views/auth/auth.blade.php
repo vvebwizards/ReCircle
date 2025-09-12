@@ -68,50 +68,53 @@
                 </form>
 
                 <!-- Sign Up Form -->
-                <form id="signup-form" class="auth-form hidden" aria-labelledby="signup-tab" method="POST" action="{{ route('register.store') }}">
+                <form id="signup-form" class="auth-form hidden" aria-labelledby="signup-tab" method="POST" action="{{ route('register.store') }}" novalidate>
                     @csrf
                     <div class="form-group">
                         <label for="signup-name">Full Name</label>
-                        <input type="text" id="signup-name" name="name" value="{{ old('name') }}" placeholder="Jane Doe" autocomplete="name" required>
-                        <small class="field-error" aria-live="assertive">@error('name'){{ $message }}@enderror</small>
+                        <input type="text" id="signup-name" name="name" value="{{ old('name') }}" placeholder="Jane Doe" autocomplete="name" required class="@error('name') input-error @enderror" @error('name') aria-invalid="true" aria-describedby="error-signup-name" @enderror>
+                        <small id="error-signup-name" class="field-error" aria-live="assertive">@error('name'){{ $message }}@enderror</small>
                     </div>
                     <div class="form-group">
                         <label for="signup-email">Email</label>
-                        <input type="email" id="signup-email" name="email" value="{{ old('email') }}" placeholder="you@example.com" autocomplete="email" required>
-                        <small class="field-error" aria-live="assertive">@error('email'){{ $message }}@enderror</small>
+                        <input type="email" id="signup-email" name="email" value="{{ old('email') }}" placeholder="you@example.com" autocomplete="email" required class="@error('email') input-error @enderror" @error('email') aria-invalid="true" aria-describedby="error-signup-email" @enderror>
+                        <small id="error-signup-email" class="field-error" aria-live="assertive">@error('email'){{ $message }}@enderror</small>
                     </div>
                     <div class="form-group">
                         <label for="signup-role">I am a</label>
-                        <select id="signup-role" name="role" required>
+                        <select id="signup-role" name="role" required class="@error('role') input-error @enderror" @error('role') aria-invalid="true" aria-describedby="error-signup-role" @enderror>
                             <option value="" @selected(old('role')==='')>Select your role</option>
                             <option value="generator" @selected(old('role')==='generator')>Generator (List Waste)</option>
                             <option value="maker" @selected(old('role')==='maker')>Maker / Repairer</option>
                             <option value="buyer" @selected(old('role')==='buyer')>Buyer</option>
                             <option value="courier" @selected(old('role')==='courier')>Courier Partner</option>
                         </select>
-                        <small class="field-error" aria-live="assertive">@error('role'){{ $message }}@enderror</small>
+                        <small id="error-signup-role" class="field-error" aria-live="assertive">@error('role'){{ $message }}@enderror</small>
                     </div>
                     <div class="form-group password-group">
                         <label for="signup-password">Password</label>
                         <div class="password-input">
-                            <input type="password" id="signup-password" name="password" placeholder="At least 8 characters" autocomplete="new-password" required>
+                            <input type="password" id="signup-password" name="password" placeholder="At least 8 characters" autocomplete="new-password" required class="@error('password') input-error @enderror" @error('password') aria-invalid="true" aria-describedby="error-signup-password" @enderror>
                             <button type="button" class="toggle-password" aria-label="Show password"><i class="fa-regular fa-eye"></i></button>
                         </div>
                         <div class="password-strength" aria-hidden="true">
                             <div class="strength-bar"></div>
-                            <span class="strength-label">Weak</span>
+                            <div class="strength-meta">
+                                <i class="strength-icon fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+                                <span class="strength-label">Weak</span>
+                            </div>
                         </div>
-                        <small class="field-error" aria-live="assertive">@error('password'){{ $message }}@enderror</small>
+                        <small id="error-signup-password" class="field-error" aria-live="assertive">@error('password'){{ $message }}@enderror</small>
                     </div>
                     <div class="form-group">
                         <label for="signup-confirm">Confirm Password</label>
                         <input type="password" id="signup-confirm" name="password_confirmation" placeholder="Re-enter password" autocomplete="new-password" required>
-                        <small class="field-error" aria-live="assertive"></small>
+                        <small id="error-signup-confirm" class="field-error" aria-live="assertive"></small>
                     </div>
                     <label class="checkbox">
                         <input type="checkbox" id="terms" name="terms" {{ old('terms') ? 'checked' : '' }} required> I agree to the <a href="#">Terms</a> and <a href="#">Privacy</a>
                     </label>
-                    <small class="field-error" aria-live="assertive">@error('terms'){{ $message }}@enderror</small>
+                    <small id="error-terms" class="field-error" aria-live="assertive">@error('terms'){{ $message }}@enderror</small>
                     <button type="submit" class="btn btn-primary w-full">Create Account</button>
                     <p class="switch-text">Already have an account? <a href="#" id="go-signin">Sign in</a></p>
                 </form>
