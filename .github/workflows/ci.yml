@@ -1,0 +1,81 @@
+name: CI (Laravel)
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  php-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: { php: ["8.2", "8.3"] }
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          tools: composer:v2
+          coverage: none
+          extensions: mbstring, intl, pdo_mysql, pdo_sqlite, bcmath, ctype, fileinfo, tokenizer, xml, curl, openssl, dom
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache/files
+          key: composer-${{ runner.os }}-${{ hashFiles('**/composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Install PHP deps
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Prepare .env + key
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Prepare SQLite for tests
+        run: |
+          mkdir -p database
+          touch database/database.sqlite
+
+      - name: Migrate (test DB)
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
+        run: php artisan migrate --force
+
+      - name: Cache app
+        run: |
+          php artisan config:cache
+          php artisan route:cache
+
+      - name: Run tests
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
+        run: php artisan test --no-interaction --colors=always
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    needs: php-tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Cache NPM
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: npm-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: npm-${{ runner.os }}-
+      - name: Install & Build
+        run: |
+          npm ci
+          npm run build
