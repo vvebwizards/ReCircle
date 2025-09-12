@@ -22,3 +22,14 @@ composer run phpstan -v || {
 	echo "\n[pre-commit] PHPStan reported issues. Fix them or adjust phpstan.neon.dist.";
 	exit 1;
 }
+
+# Run ESLint on JS sources if available
+if command -v npm >/dev/null 2>&1; then
+	if [ -f "package.json" ]; then
+		echo "[pre-commit] Running ESLint..."
+		npm run lint --silent || {
+			echo "\n[pre-commit] ESLint reported issues. Run: npm run lint:fix";
+			exit 1;
+		}
+	fi
+fi
