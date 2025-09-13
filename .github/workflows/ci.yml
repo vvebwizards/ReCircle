@@ -13,13 +13,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-    - name: Setup PHP
+      - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
           tools: composer:v2
-      coverage: xdebug
+          coverage: xdebug
           extensions: mbstring, intl, pdo_mysql, pdo_sqlite, bcmath, ctype, fileinfo, tokenizer, xml, curl, openssl, dom
 
       - name: Cache Composer
@@ -53,7 +52,7 @@ jobs:
           php artisan config:clear
           php artisan route:clear
 
-  - name: Run tests with coverage
+      - name: Run tests with coverage
         env:
           DB_CONNECTION: sqlite
           DB_DATABASE: database/database.sqlite
