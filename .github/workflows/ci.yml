@@ -176,16 +176,13 @@ jobs:
           name: coverage-reports
           path: coverage-reports
       - name: SonarCloud Scan
+        if: ${{ github.event.repository.private == false }}
         uses: SonarSource/sonarcloud-github-action@v2
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
         with:
-          args: >
-            -Dsonar.organization=vvebwizards
-            -Dsonar.projectKey=vvebwizards_Waste2Product
-            -Dsonar.sources=app,resources/js
-            -Dsonar.tests=tests
-            -Dsonar.php.coverage.reportPaths=coverage-reports/phpunit-coverage.xml
-            -Dsonar.coverage.exclusions=resources/js/**,public/**,vendor/**,node_modules/**
+          projectBaseDir: .
+          # No args needed now; configuration lives in sonar-project.properties
         
