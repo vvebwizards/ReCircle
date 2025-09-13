@@ -14,12 +14,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup PHP
+    - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
           tools: composer:v2
-          coverage: none
+      coverage: xdebug
           extensions: mbstring, intl, pdo_mysql, pdo_sqlite, bcmath, ctype, fileinfo, tokenizer, xml, curl, openssl, dom
 
       - name: Cache Composer
@@ -53,7 +53,7 @@ jobs:
           php artisan config:clear
           php artisan route:clear
 
-      - name: Run tests
+  - name: Run tests with coverage
         env:
           DB_CONNECTION: sqlite
           DB_DATABASE: database/database.sqlite
@@ -64,7 +64,15 @@ jobs:
           QUEUE_CONNECTION: sync
           MAIL_MAILER: array
           CI: true
-        run: php artisan test
+        run: |
+          mkdir -p coverage-reports
+          php artisan test --coverage-clover=coverage-reports/phpunit-coverage.xml
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: coverage-reports/phpunit-coverage.xml
 
   frontend-build:
     runs-on: ubuntu-latest
@@ -156,4 +164,29 @@ jobs:
 
       - name: Run Pint (fail on diff)
         run: vendor/bin/pint --test -v
+  sonarcloud:
+    runs-on: ubuntu-latest
+    needs: php-tests
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download coverage artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-reports
+          path: coverage-reports
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: >
+            -Dsonar.organization=vvebwizards
+            -Dsonar.projectKey=vvebwizards_Waste2Product
+            -Dsonar.sources=app,resources/js
+            -Dsonar.tests=tests
+            -Dsonar.php.coverage.reportPaths=coverage-reports/phpunit-coverage.xml
+            -Dsonar.coverage.exclusions=resources/js/**,public/**,vendor/**,node_modules/**
         
