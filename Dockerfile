@@ -29,11 +29,10 @@ RUN npm ci --omit=dev || true
 FROM php:8.2-fpm-alpine AS runtime
 WORKDIR /var/www/html
 
-# System packages required by common Laravel extensions
-RUN apk add --no-cache bash icu-dev oniguruma-dev libzip-dev zip unzip curl git sqlite
-
-# PHP extensions (separate build deps layer for speed)
-RUN docker-php-ext-install pdo pdo_mysql pdo_sqlite intl zip || (apk add --no-cache --virtual .build-deps $PHPIZE_DEPS && docker-php-ext-install pdo pdo_mysql pdo_sqlite intl zip && apk del .build-deps)
+# System packages required by common Laravel extensions (+ build deps for a single layer compile)
+RUN apk add --no-cache bash icu-dev oniguruma-dev libzip-dev zip unzip curl git sqlite sqlite-dev $PHPIZE_DEPS \
+    && docker-php-ext-install pdo_mysql pdo_sqlite intl zip \
+    && apk del --no-cache $PHPIZE_DEPS
 
 # Copy application source
 COPY . .
