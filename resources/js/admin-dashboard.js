@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Stats animation
   const animate = (el, target, duration = 1000) => {
     if (!el) return;
-    let start = 0, step = Math.max(1, Math.floor(target / (duration / 16)));
+    let start = 0; const step = Math.max(1, Math.floor(target / (duration / 16)));
     const t = setInterval(() => {
       start += step; if (start >= target) { el.textContent = target.toLocaleString(); clearInterval(t); }
       else { el.textContent = start.toLocaleString(); }

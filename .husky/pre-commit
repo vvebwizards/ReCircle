@@ -1,0 +1,35 @@
+# Run Pint and PHPStan before commit
+# Skip hooks if explicitly requested
+if [ "$SKIP_HOOKS" = "1" ]; then
+	echo "Skipping pre-commit hooks"
+	exit 0
+fi
+
+# Ensure composer deps exist
+if [ ! -f "vendor/bin/pint" ]; then
+	echo "[pre-commit] Installing Composer deps..."
+	composer install --no-interaction --no-progress --prefer-dist
+fi
+
+# Run Pint in test mode to fail on diffs
+vendor/bin/pint --test || {
+	echo "\n[pre-commit] Pint found style issues. Run: vendor/bin/pint";
+	exit 1;
+}
+
+# Run PHPStan (fast default config)
+composer run phpstan -v || {
+	echo "\n[pre-commit] PHPStan reported issues. Fix them or adjust phpstan.neon.dist.";
+	exit 1;
+}
+
+# Run ESLint on JS sources if available
+if command -v npm >/dev/null 2>&1; then
+	if [ -f "package.json" ]; then
+		echo "[pre-commit] Running ESLint..."
+		npm run lint --silent || {
+			echo "\n[pre-commit] ESLint reported issues. Run: npm run lint:fix";
+			exit 1;
+		}
+	fi
+fi

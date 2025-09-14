@@ -1,0 +1,19 @@
+# Reduce build context size
+.git
+.gitignore
+.github
+node_modules
+vendor
+storage
+bootstrap/cache
+.env
+.env.*
+coverage-reports
+sonar-project.properties
+.idea
+.vscode
+temp
+public/hot
+public/storage
+npm-debug.log
+yarn-error.log
