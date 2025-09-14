@@ -10,10 +10,11 @@ COPY app app
 COPY database database
 COPY routes routes
 COPY config config
+COPY bootstrap bootstrap
 COPY artisan .
-# Install prod dependencies only; --no-scripts to avoid running Laravel post-autoload scripts in this minimal stage
-RUN composer install --no-dev --no-interaction --prefer-dist --no-progress --no-scripts \
-    && composer dump-autoload --optimize
+# Install prod dependencies only; prevent any post-autoload scripts (artisan) by using --no-scripts and optimizing autoload directly
+ENV COMPOSER_SKIP_AUTOMATIC_SCRIPTS=1
+RUN composer install --no-dev --no-interaction --prefer-dist --no-progress --no-scripts -o
 
 # Stage 2: Node build (if we later want assets) – kept very small and optional
 FROM node:20-alpine AS frontend
