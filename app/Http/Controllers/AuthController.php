@@ -4,10 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Notifications\VerifyEmailCustom;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
 
 class AuthController extends Controller
@@ -51,7 +51,10 @@ class AuthController extends Controller
                 'password' => $data['password'],
             ]);
             // Send verification email
-            try { $user->notify(new VerifyEmailCustom()); } catch (\Throwable $e) { /* swallow mail errors in dev */ }
+            try {
+                $user->notify(new VerifyEmailCustom);
+            } catch (\Throwable $e) { /* swallow mail errors in dev */
+            }
 
             return response()->json([
                 'status' => 'ok',
@@ -61,16 +64,19 @@ class AuthController extends Controller
 
         // Default full-page request
         $validated = $request->validate($rules);
-    $user = User::create([
+        $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'role' => $validated['role'],
             'password' => $validated['password'],
         ]);
-    try { $user->notify(new VerifyEmailCustom()); } catch (\Throwable $e) { /* swallow mail errors in dev */ }
+        try {
+            $user->notify(new VerifyEmailCustom);
+        } catch (\Throwable $e) { /* swallow mail errors in dev */
+        }
 
         return redirect()
-            ->to(route('auth') . '#signin')
+            ->to(route('auth').'#signin')
             ->with('verify_message', 'Account created. Please verify your email to continue.');
     }
 
@@ -96,8 +102,12 @@ class AuthController extends Controller
             $user = User::where('email', $email)->first();
             // Respond generically to avoid account enumeration
             if ($user && ! $user->hasVerifiedEmail()) {
-                try { $user->notify(new VerifyEmailCustom()); } catch (\Throwable $e) { /* swallow mail errors in dev */ }
+                try {
+                    $user->notify(new VerifyEmailCustom);
+                } catch (\Throwable $e) { /* swallow mail errors in dev */
+                }
             }
+
             return response()->json([
                 'status' => 'ok',
                 'message' => 'If your email exists and is unverified, a new verification link has been sent.',
@@ -108,8 +118,12 @@ class AuthController extends Controller
         $validated = $request->validate($rules);
         $user = User::where('email', $validated['email'])->first();
         if ($user && ! $user->hasVerifiedEmail()) {
-            try { $user->notify(new VerifyEmailCustom()); } catch (\Throwable $e) { /* swallow mail errors in dev */ }
+            try {
+                $user->notify(new VerifyEmailCustom);
+            } catch (\Throwable $e) { /* swallow mail errors in dev */
+            }
         }
-        return redirect()->to(route('auth') . '#signin')->with('verify_message', 'If your email exists and is unverified, we sent a new verification link.');
+
+        return redirect()->to(route('auth').'#signin')->with('verify_message', 'If your email exists and is unverified, we sent a new verification link.');
     }
 }

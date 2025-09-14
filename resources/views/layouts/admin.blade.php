@@ -7,7 +7,9 @@
     <meta name="description" content="@yield('meta_description', 'Administration panel for ReCircle platform.')" />
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    @vite(['resources/css/app.css','resources/css/style.css','resources/js/app.js','resources/js/main.js'])
+    @unless (app()->environment('testing'))
+        @vite(['resources/css/app.css','resources/css/style.css','resources/js/app.js','resources/js/main.js'])
+    @endunless
     <script>
         window.appRoutes = {
             home: @json(route('home')),
@@ -28,6 +30,8 @@
     </main>
 </div>
 @stack('admin-scripts')
-@vite(['resources/js/admin-dashboard.js'])
+@unless (app()->environment('testing'))
+    @vite(['resources/js/admin-dashboard.js'])
+@endunless
 </body>
 </html>

@@ -1,5 +1,11 @@
 # Waste2Product
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=vvebwizards_Waste2Product&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=vvebwizards_Waste2Product)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=vvebwizards_Waste2Product&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=vvebwizards_Waste2Product)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=vvebwizards_Waste2Product&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=vvebwizards_Waste2Product)
+[![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=vvebwizards_Waste2Product&metric=sqale_index)](https://sonarcloud.io/summary/new_code?id=vvebwizards_Waste2Product)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=vvebwizards_Waste2Product&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=vvebwizards_Waste2Product)
+
 Sustainable waste-to-product marketplace prototype built with Laravel + Vite.
 
 ## 1. Prerequisites
@@ -84,7 +90,30 @@ php artisan config:cache route:cache view:cache
 ```
 Serve via a real web server (Nginx/Apache) pointing document root at `public/`.
 
-## 6. Demo Auth Flow (Front-end Only)
+## 6. Continuous Integration (CI)
+Our GitHub Actions pipeline runs on pushes and PRs:
+
+- php-tests: boots a SQLite test DB, clears caches, and runs `php artisan test` (color on, friendly env). Now generates Clover coverage for SonarCloud.
+- frontend-build: Node 20, caches npm, `npm ci && npm run build` to ensure assets build.
+- pint: checks PHP code style (Laravel Pint) with `--test` to fail on diffs.
+- phpstan: static analysis via Larastan using `phpstan.neon.dist`.
+- js-lint: ESLint flat config checking only `resources/js/**/*.js`.
+- sonarcloud: uploads Clover coverage and analyzes code in SonarCloud (requires SONAR_TOKEN secret).
+
+Local expectations before pushing:
+- Format PHP: `vendor/bin/pint` (or let pre-commit run it).
+- Static analysis: `composer run phpstan`.
+- JS lint: `npm run lint`.
+- Tests: `php artisan test`.
+
+Pre-commit hook
+- We use Husky to run Pint, PHPStan, and ESLint on commit. Bypass with `SKIP_HOOKS=1` in emergencies.
+
+Troubleshooting CI
+- If Blade Vite assets break tests: we guard `@vite` in layouts to skip only in `testing` env.
+- If coverage is empty, ensure Xdebug is enabled in CI (already configured) and the Clover path `coverage-reports/phpunit-coverage.xml` exists.
+
+## 7. Demo Auth Flow (Front-end Only)
 Front-end uses localStorage (`rc_user`, `rc_auth`) for a temporary fake auth:
 1. `/auth` → sign in (stores `rc_user`).
 2. `/twofa` → submit code (sets `rc_auth=true`).
@@ -93,7 +122,7 @@ Front-end uses localStorage (`rc_user`, `rc_auth`) for a temporary fake auth:
 
 Replace later with real Laravel auth (Breeze / Fortify / custom guards).
 
-## 7. Key Routes
+## 8. Key Routes
 | Route | Purpose |
 |-------|---------|
 | `/` | Landing page |
@@ -103,7 +132,7 @@ Replace later with real Laravel auth (Breeze / Fortify / custom guards).
 | `/dashboard` | User dashboard demo |
 | `/admin/dashboard` | Admin dashboard (pinned sidebar) |
 
-## 8. Structure Highlights
+## 9. Structure Highlights
 | Path | Description |
 |------|-------------|
 | `resources/views/layouts/app.blade.php` | Public layout |
@@ -115,9 +144,15 @@ Replace later with real Laravel auth (Breeze / Fortify / custom guards).
 | `resources/css/style.css` | Template styling |
 | `scripts/setup.ps1` | Windows helper script |
 
-## 9. Contributing
+## 10. Contributing
 
 Please read [CONTRIBUTING.md](CONTRIBUTING.md) for the branching model (feature -> develop -> release -> main), issue workflow, commit conventions, and PR checklist.
+
+Before pushing or opening a PR, format PHP with Pint:
+
+```powershell
+vendor/bin/pint
+```
 
 ---
 Contributions & feedback welcome.
