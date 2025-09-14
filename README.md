@@ -91,14 +91,28 @@ php artisan config:cache route:cache view:cache
 Serve via a real web server (Nginx/Apache) pointing document root at `public/`.
 
 ## 6. Continuous Integration (CI)
-Our GitHub Actions pipeline runs on pushes and PRs:
+The GitHub Actions workflow runs only for pushes and pull requests targeting the `develop` branch (feature branches open PRs into `develop`).
 
-- php-tests: boots a SQLite test DB, clears caches, and runs `php artisan test` (color on, friendly env). Now generates Clover coverage for SonarCloud.
-- frontend-build: Node 20, caches npm, `npm ci && npm run build` to ensure assets build.
-- pint: checks PHP code style (Laravel Pint) with `--test` to fail on diffs.
-- phpstan: static analysis via Larastan using `phpstan.neon.dist`.
-- js-lint: ESLint flat config checking only `resources/js/**/*.js`.
-- sonarcloud: uploads Clover coverage and analyzes code in SonarCloud (requires SONAR_TOKEN secret).
+Pipeline stages / jobs:
+1. Stage 1 (build & test, run in parallel):
+   - php-tests: provisions SQLite DB, clears caches, runs `php artisan test` with Clover coverage output for SonarCloud.
+   - frontend-build: Node 20, caches npm, `npm ci && npm run build` to validate asset build.
+2. Stage 2 (quality gates, all depend on both Stage 1 jobs and run in parallel):
+   - pint: Laravel Pint style check (`--test`).
+   - phpstan: Static analysis (Larastan) using `phpstan.neon.dist`.
+   - js-lint: ESLint (flat config) over `resources/js` sources.
+   - sonarcloud: Code + coverage analysis (public repo only, gated by secret `SONAR_TOKEN`).
+3. Stage 3 (final):
+   - docker-verify: Builds the multi-stage `Dockerfile` (no push) tagged `recircle:test` to ensure container reproducibility.
+
+Key implementation notes:
+- Matrix removed: single baseline runtime on PHP 8.2 keeps the pipeline fast.
+- Test coverage path: `coverage-reports/phpunit-coverage.xml` (Clover) ingested by SonarCloud.
+- Sonar configuration centralized in `sonar-project.properties` (no inline args) and only runs if the repository is public.
+- Docker build uses Buildx with provenance disabled for speed; no image is pushed (verification only).
+- Future enhancements (not yet implemented): production asset copy stage, opcache tuning, path-based workflow filters to skip Docker on docs-only changes.
+
+Repository rename: Upstream moved to `ReCircle` organization naming; historical badges & keys (Sonar project `vvebwizards_Waste2Product`) retained for continuity.
 
 Local expectations before pushing:
 - Format PHP: `vendor/bin/pint` (or let pre-commit run it).
@@ -107,7 +121,7 @@ Local expectations before pushing:
 - Tests: `php artisan test`.
 
 Pre-commit hook
-- We use Husky to run Pint, PHPStan, and ESLint on commit. Bypass with `SKIP_HOOKS=1` in emergencies.
+- Husky runs Pint, PHPStan, and ESLint. Bypass with `SKIP_HOOKS=1` if absolutely required.
 
 Troubleshooting CI
 - If Blade Vite assets break tests: we guard `@vite` in layouts to skip only in `testing` env.
