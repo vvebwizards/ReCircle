@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'ReCircle - Circular Economy Marketplace')</title>
     <meta name="description" content="@yield('meta_description', 'A marketplace where waste is transformed into products with measurable impact.')" />
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <!-- Tailwind for utility classes (via CDN to match template). You can remove if you compile Tailwind locally. -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -103,5 +104,9 @@
 
     @stack('modals')
     @stack('scripts')
+    <script>
+        // Provide a helper for JS modules to get CSRF
+        window.csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    </script>
 </body>
 </html>
