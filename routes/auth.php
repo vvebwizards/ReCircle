@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\ApiAuthController;
 use App\Http\Controllers\AuthController;
+use App\Http\Middleware\JwtAuthenticate;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -40,3 +42,11 @@ Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) 
 
 // Resend verification email
 Route::post('/email/resend', [AuthController::class, 'resendVerification'])->name('verification.resend');
+
+// API authentication endpoints (JWT) now colocated here
+Route::prefix('api/auth')->group(function () {
+    Route::post('login', [ApiAuthController::class, 'login']);
+    Route::post('refresh', [ApiAuthController::class, 'refresh']);
+    Route::post('logout', [ApiAuthController::class, 'logout']);
+    Route::middleware(JwtAuthenticate::class)->get('me', [ApiAuthController::class, 'me']);
+});
