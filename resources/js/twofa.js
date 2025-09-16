@@ -22,10 +22,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const original = btn.textContent;
     btn.textContent = 'Verifying...';
     btn.disabled = true;
+    // Placeholder: In a real flow we'd verify the code server-side then redirect.
     setTimeout(() => {
       btn.textContent = original;
       btn.disabled = false;
-      try { localStorage.setItem('rc_auth', 'true'); } catch {}
       form.classList.add('hidden');
       success.classList.remove('hidden');
       const dash = (window.appRoutes && window.appRoutes.dashboard) || '/dashboard';

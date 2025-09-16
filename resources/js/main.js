@@ -204,26 +204,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const authUrl = routes.auth || '/auth';
     const dashUrl = routes.dashboard || '/dashboard';
 
-    let authed = false;
-    try { authed = localStorage.getItem('rc_auth') === 'true'; } catch {}
-    let user = null;
-    try { user = JSON.parse(localStorage.getItem('rc_user') || 'null'); } catch {}
-
     const findByHref = (href) => Array.from(menu.querySelectorAll('a')).find(a => a.getAttribute('href') === href);
-    const signInItem = findByHref(authUrl);
-    const dashItem = findByHref(dashUrl);
-    const signOutItem = menu.querySelector('[data-signout]');
-    const profileItem = menu.querySelector('.nav-item.profile');
 
-    if (authed) {
+    const buildAuthed = (user) => {
+        const signInItem = findByHref(authUrl);
         if (signInItem) signInItem.parentElement?.remove();
-        if (!dashItem) {
+        if (!findByHref(dashUrl)) {
             const li = document.createElement('li');
             li.className = 'nav-item';
             li.innerHTML = `<a href="${dashUrl}" class="nav-cta">Dashboard</a>`;
             menu.appendChild(li);
         }
-        if (!profileItem) {
+        if (!menu.querySelector('.nav-item.profile')) {
             const liP = document.createElement('li');
             liP.className = 'nav-item profile';
             liP.id = 'nav-profile';
@@ -252,7 +244,6 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         const avatarEl = document.getElementById('nav-avatar');
         if (avatarEl) avatarEl.textContent = initialsFrom(user);
-        if (signOutItem && profileItem) signOutItem.parentElement?.remove();
 
         const getProfile = () => document.getElementById('nav-profile');
         const closeAnyProfile = () => {
@@ -280,33 +271,48 @@ document.addEventListener('DOMContentLoaded', () => {
             if (profile && !profile.contains(e.target)) closeAnyProfile();
         });
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAnyProfile(); });
-        document.addEventListener('click', (e) => {
-            const so = e.target.closest('[data-signout]');
-            if (!so) return;
-            e.preventDefault();
-            try { localStorage.removeItem('rc_auth'); localStorage.removeItem('rc_user'); } catch {}
-            window.location.replace(authUrl);
-        });
-    } else {
-        if (!signInItem) {
+    };
+
+    const buildAnon = () => {
+        if (!findByHref(authUrl)) {
             const li = document.createElement('li');
             li.className = 'nav-item';
             li.innerHTML = `<a href="${authUrl}" class="nav-cta" aria-label="Sign in">Sign In</a>`;
             menu.appendChild(li);
         }
+        const dashItem = findByHref(dashUrl);
         if (dashItem) dashItem.parentElement?.remove();
-        if (signOutItem) signOutItem.parentElement?.remove();
-        if (profileItem) profileItem.parentElement?.removeChild(profileItem);
-    }
+        const profile = menu.querySelector('.nav-item.profile');
+        if (profile) profile.remove();
+    };
 
-    if (!window.__rcSignoutWired) {
-        document.addEventListener('click', (e) => {
+    const init = async () => {
+        try {
+            const res = await fetch('/api/auth/me', { headers: { 'Accept': 'application/json' }, credentials: 'include' });
+            if (res.ok) {
+                const data = await res.json().catch(() => ({}));
+                window.__currentUser = data?.data || null;
+                buildAuthed(window.__currentUser);
+            } else {
+                buildAnon();
+            }
+        } catch { buildAnon(); }
+    };
+    init();
+
+    // Global delegated logout
+    if (!window.__jwtLogoutWired) {
+        document.addEventListener('click', async (e) => {
             const so = e.target.closest('[data-signout]');
             if (!so) return;
             e.preventDefault();
-            try { localStorage.removeItem('rc_auth'); localStorage.removeItem('rc_user'); } catch {}
+            const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            try {
+                const resp = await fetch('/api/auth/logout', { method: 'POST', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf }, credentials: 'include' });
+                console.debug('Logout response status', resp.status);
+            } catch (err) { console.warn('Logout error', err); }
             window.location.replace(authUrl);
         });
-        window.__rcSignoutWired = true;
+        window.__jwtLogoutWired = true;
     }
 });

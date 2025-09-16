@@ -131,8 +131,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   signupPassword?.addEventListener('input', (e) => updateStrength(e.target.value));
 
-  // Sign In submit
-  signinForm?.addEventListener('submit', (e) => {
+  // Sign In submit (real API)
+  signinForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     clearErrors(signinForm);
     const email = document.getElementById('signin-email');
@@ -146,17 +146,42 @@ document.addEventListener('DOMContentLoaded', () => {
     const original = btn.textContent;
     btn.textContent = 'Signing in...';
     btn.disabled = true;
-    setTimeout(() => {
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || document.querySelector('input[name="_token"]')?.value || ''
+        },
+        credentials: 'include',
+        body: JSON.stringify({ email: email.value.trim(), password: password.value })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (res.status === 422 && data.errors?.email) {
+          setError(email, Array.isArray(data.errors.email) ? data.errors.email[0] : String(data.errors.email));
+          return;
+        }
+        throw new Error(data.message || 'Login failed');
+      }
+      // On success, back-end sets HttpOnly cookie. Fetch current user then redirect.
+      try {
+        const meRes = await fetch('/api/auth/me', { headers: { 'Accept': 'application/json' }, credentials: 'include' });
+        if (meRes.ok) {
+          const me = await meRes.json().catch(() => ({}));
+          window.__currentUser = me?.data || null; // optional global for later scripts
+        }
+      } catch {}
+      const to = (window.appRoutes && window.appRoutes.dashboard) || '/dashboard';
+      window.location.replace(to);
+    } catch (err) {
+      alert(err?.message || 'Login failed.');
+    } finally {
       btn.textContent = original;
       btn.disabled = false;
-      try {
-        const nameGuess = (email.value.split('@')[0] || 'user').replace(/\W+/g, ' ');
-        const user = { name: nameGuess.trim(), email: email.value.trim() };
-        localStorage.setItem('rc_user', JSON.stringify(user));
-      } catch {}
-      const to = (window.appRoutes && window.appRoutes.twofa) || '/twofa';
-      window.location.href = to;
-    }, 900);
+    }
   });
 
   // Show tab based on URL hash or presence of server-side errors (Blade renders .field-error text)
