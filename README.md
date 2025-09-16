@@ -28,10 +28,8 @@ Install / have on PATH:
 ```powershell
 git clone <your-fork-or-repo-url> Waste2Product
 cd Waste2Product
-copy .env.example .env  # (or: cp .env.example .env in Git Bash)
 composer install
 npm install
-php artisan key:generate
 ```
 
 ## 3. Database Options
@@ -52,16 +50,7 @@ php artisan migrate
    ```powershell
    php scripts/create_mysql_db.php
    ```
-3. Edit `.env`:
-   ```dotenv
-   DB_CONNECTION=mysql
-   DB_HOST=127.0.0.1
-   DB_PORT=3306
-   DB_DATABASE=waste2product
-   DB_USERNAME=root
-   DB_PASSWORD=
-   ```
-4. Migrate:
+3. Migrate:
    ```powershell
    php artisan migrate
    ```
@@ -156,7 +145,6 @@ Replace later with real Laravel auth (Breeze / Fortify / custom guards).
 | `resources/js/dashboard.js` | User dashboard logic |
 | `resources/js/admin-dashboard.js` | Admin dashboard logic |
 | `resources/css/style.css` | Template styling |
-| `scripts/setup.ps1` | Windows helper script |
 
 ## 10. Contributing
 
