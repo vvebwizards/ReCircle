@@ -116,24 +116,112 @@ Troubleshooting CI
 - If Blade Vite assets break tests: we guard `@vite` in layouts to skip only in `testing` env.
 - If coverage is empty, ensure Xdebug is enabled in CI (already configured) and the Clover path `coverage-reports/phpunit-coverage.xml` exists.
 
-## 7. Demo Auth Flow (Front-end Only)
-Front-end uses localStorage (`rc_user`, `rc_auth`) for a temporary fake auth:
-1. `/auth` → sign in (stores `rc_user`).
-2. `/twofa` → submit code (sets `rc_auth=true`).
-3. `/dashboard` (user) or `/admin/dashboard` (admin demo).
-4. Sign out clears keys.
+## 7. API Authentication (JWT)
+Implemented custom stateless auth using JSON Web Tokens (firebase/php-jwt) with HttpOnly cookie storage.
 
-Replace later with real Laravel auth (Breeze / Fortify / custom guards).
+### Endpoints
+| Method | Path | Description | Auth Required |
+|--------|------|-------------|---------------|
+| POST | `/api/auth/login` | Authenticate user and set JWT cookie | No |
+| POST | `/api/auth/refresh` | Refresh (rotate) token before expiry | Yes (valid cookie) |
+| GET  | `/api/auth/me` | Return current user (id, name, email) | Yes |
+| POST | `/api/auth/logout` | Clear JWT cookie | Yes (cookie optional for idempotency) |
+
+### Login Request
+```json
+POST /api/auth/login
+{
+   "email": "test@example.com",
+   "password": "password"
+}
+```
+
+### Login Response
+```json
+{
+   "token_type": "Bearer",
+   "expires_at": "2025-09-16T13:10:25+00:00"
+}
+```
+Token itself is stored only in an `HttpOnly` cookie named `access_token` (configurable via `config/jwt.php`). Not accessible from JS (`document.cookie`).
+
+### Fetch Current User
+```bash
+curl -H "Accept: application/json" -b "access_token=<copied-if-non-HttpOnly>" http://localhost:8000/api/auth/me
+```
+Response:
+```json
+{
+   "data": { "id": 1, "name": "Test User", "email": "test@example.com" }
+}
+```
+
+### Refresh Token
+Call periodically (e.g. 5 minutes before `expires_at`):
+```bash
+curl -X POST -H "Accept: application/json" -b cookies.txt -c cookies.txt http://localhost:8000/api/auth/refresh
+```
+Returns same shape as login with a new expiry and rotated cookie.
+
+### Logout
+```bash
+curl -X POST -H "Accept: application/json" -H "X-CSRF-TOKEN: <csrf>" -b cookies.txt -c cookies.txt http://localhost:8000/api/auth/logout
+```
+Response:
+```json
+{ "message": "Logged out" }
+```
+
+### Front-end Integration Notes
+1. After page load, JS attempts `/api/auth/me`; if 200 it builds authenticated nav, else guest nav.
+2. Login form posts to `/api/auth/login`; upon success it calls `/api/auth/me` to hydrate user state then redirects.
+3. Logout sends POST `/api/auth/logout` including `X-CSRF-TOKEN` (meta tag added to layouts) and then redirects to `/auth`.
+4. All fetch calls include `credentials: 'include'` to send the cookie.
+
+### Security Choices
+| Aspect | Decision | Rationale |
+|--------|----------|-----------|
+| Storage | HttpOnly cookie | Prevent XSS token theft |
+| SameSite | Lax | Allows normal navigation, reduces CSRF risk |
+| Secure flag | Only in production | Local dev over HTTP still works |
+| TTL | 60 minutes (configurable) | Reasonable session window |
+| Refresh | Rotation endpoint | Prepares for silent refresh logic |
+| Claims | iss, sub, iat, exp | Minimal set for validation |
+
+### Future Enhancements
+- Silent refresh module in JS (schedule refresh before expiry)
+- Separate refresh token & denylist for logout invalidation
+- Role/permission claims or separate endpoint for authorization
+- Rate limiting on `/api/auth/login` (add `throttle` middleware)
+- 2FA server-side integration (replace current placeholder page)
+
+### Quick Dev cURL Examples
+```bash
+# Login (capture cookie)
+curl -i -H "Accept: application/json" -H "X-CSRF-TOKEN: $(curl -s http://localhost:8000/auth | grep -oP 'meta name=\"csrf-token\" content=\"\K[^\"]+')" \
+       -c cookies.txt -X POST -d '{"email":"test@example.com","password":"password"}' \
+       -H "Content-Type: application/json" http://localhost:8000/api/auth/login
+
+# Me
+curl -H "Accept: application/json" -b cookies.txt http://localhost:8000/api/auth/me
+
+# Refresh
+curl -X POST -H "Accept: application/json" -b cookies.txt -c cookies.txt http://localhost:8000/api/auth/refresh
+
+# Logout
+CSRF=$(grep csrf-token: cookies.txt || echo "")
+curl -X POST -H "Accept: application/json" -H "X-CSRF-TOKEN: $(curl -s http://localhost:8000/auth | grep -oP 'meta name=\"csrf-token\" content=\"\K[^\"]+')" -b cookies.txt -c cookies.txt http://localhost:8000/api/auth/logout
+```
 
 ## 8. Key Routes
 | Route | Purpose |
 |-------|---------|
 | `/` | Landing page |
-| `/auth` | Sign in / Sign up demo |
-| `/twofa` | Fake 2FA step |
+| `/auth` | Auth page (sign in / sign up tabs) |
+| `/twofa` | Placeholder 2FA step (demo) |
 | `/forgot-password` | Demo recovery flow |
-| `/dashboard` | User dashboard demo |
-| `/admin/dashboard` | Admin dashboard (pinned sidebar) |
+| `/dashboard` | User dashboard |
+| `/admin/dashboard` | Admin dashboard |
 
 ## 9. Structure Highlights
 | Path | Description |
