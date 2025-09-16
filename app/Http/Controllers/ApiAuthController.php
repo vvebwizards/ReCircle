@@ -68,6 +68,8 @@ class ApiAuthController extends Controller
     {
         $minutes = (int) config('jwt.ttl');
 
+        $secure = app()->environment('production');
+
         return response()->json([
             'token_type' => 'Bearer',
             'expires_at' => $expiresAt,
@@ -77,7 +79,7 @@ class ApiAuthController extends Controller
             minutes: $minutes,
             path: '/',
             domain: null,
-            secure: true,
+            secure: $secure,
             httpOnly: true,
             sameSite: 'lax'
         ));
@@ -85,13 +87,15 @@ class ApiAuthController extends Controller
 
     private function forgetToken(): JsonResponse
     {
+        $secure = app()->environment('production');
+
         return response()->json(['message' => 'Logged out'])->withCookie(cookie(
             name: config('jwt.cookie'),
             value: '',
             minutes: -1,
             path: '/',
             domain: null,
-            secure: true,
+            secure: $secure,
             httpOnly: true,
             sameSite: 'lax'
         ));
