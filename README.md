@@ -188,12 +188,31 @@ Response:
 | Refresh | Rotation endpoint | Prepares for silent refresh logic |
 | Claims | iss, sub, iat, exp | Minimal set for validation |
 
+### Two-Factor Authentication (2FA)
+We support TOTP-based 2FA with QR provisioning and one-time recovery codes.
+
+Endpoints (require a valid JWT unless noted):
+
+| Method | Path                  | Description |
+|--------|-----------------------|-------------|
+| GET    | `/api/auth/2fa/setup`   | Returns otpauth URI, QR SVG, and recovery codes; creates a secret/codes if missing |
+| POST   | `/api/auth/2fa/enable`  | Enable 2FA by verifying a 6-digit code from your authenticator app |
+| POST   | `/api/auth/2fa/disable` | Disable 2FA and clear secret and recovery codes |
+
+Login flow: If a user has 2FA enabled, `/api/auth/login` will return `403` with `{ "requires_twofa": true }` until a correct `twofa_code` or `recovery_code` is provided.
+
+UI: Visit `/settings/security` while signed in to set up or disable 2FA, scan the QR, and copy/download recovery codes.
+
+Security notes:
+- Recovery codes are one-time use; using a code immediately removes it from the list.
+- QR is rendered as SVG (no external image fetches).
+- CSRF is required for POST enable/disable.
+
 ### Future Enhancements
 - Silent refresh module in JS (schedule refresh before expiry)
 - Separate refresh token & denylist for logout invalidation
 - Role/permission claims or separate endpoint for authorization
 - Rate limiting on `/api/auth/login` (add `throttle` middleware)
-- 2FA server-side integration (replace current placeholder page)
 
 ### Quick Dev cURL Examples
 ```bash
@@ -219,6 +238,7 @@ curl -X POST -H "Accept: application/json" -H "X-CSRF-TOKEN: $(curl -s http://lo
 | `/` | Landing page |
 | `/auth` | Auth page (sign in / sign up tabs) |
 | `/twofa` | Placeholder 2FA step (demo) |
+| `/settings/security` | Security settings (2FA setup/disable UI) |
 | `/forgot-password` | Demo recovery flow |
 | `/dashboard` | User dashboard |
 | `/admin/dashboard` | Admin dashboard |
