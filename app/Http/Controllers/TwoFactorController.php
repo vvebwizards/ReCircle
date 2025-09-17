@@ -8,6 +8,18 @@ use Illuminate\Support\Facades\Auth;
 
 class TwoFactorController extends Controller
 {
+    public function status(): \Illuminate\Http\JsonResponse
+    {
+        $user = \Illuminate\Support\Facades\Auth::user();
+        if (! $user) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        return response()->json([
+            'enabled' => (bool) $user->two_factor_enabled,
+        ]);
+    }
+
     public function setup(Request $request, TwoFactorService $twoFactor): \Illuminate\Http\JsonResponse
     {
         $user = Auth::user();
@@ -55,19 +67,25 @@ class TwoFactorController extends Controller
         return response()->json(['message' => 'Invalid code'], 422);
     }
 
-    public function disable(Request $request): \Illuminate\Http\JsonResponse
+    public function disable(Request $request, TwoFactorService $twoFactor): \Illuminate\Http\JsonResponse
     {
         $user = Auth::user();
         if (! $user) {
             return response()->json(['message' => 'Unauthenticated'], 401);
         }
 
-        $user->two_factor_enabled = false;
-        $user->two_factor_secret = null;
-        $user->two_factor_recovery_codes = null;
-        $user->two_factor_confirmed_at = null;
-        $user->save();
+        // Require current valid 6-digit code to disable
+        $data = $request->validate(['code' => ['required', 'string']]);
+        if ($user->two_factor_secret && $twoFactor->verify($user->two_factor_secret, $data['code'])) {
+            $user->two_factor_enabled = false;
+            $user->two_factor_secret = null;
+            $user->two_factor_recovery_codes = null;
+            $user->two_factor_confirmed_at = null;
+            $user->save();
 
-        return response()->json(['message' => 'Two-factor disabled']);
+            return response()->json(['message' => 'Two-factor disabled']);
+        }
+
+        return response()->json(['message' => 'Invalid code'], 422);
     }
 }
