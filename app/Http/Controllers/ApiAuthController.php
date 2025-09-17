@@ -7,17 +7,20 @@ use App\Services\JwtService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use App\Services\TwoFactorService;
 use Illuminate\Validation\ValidationException;
 
 class ApiAuthController extends Controller
 {
     public function __construct(private JwtService $jwt) {}
 
-    public function login(Request $request): JsonResponse
+    public function login(Request $request, TwoFactorService $twoFactor): JsonResponse
     {
         $data = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
+            'twofa_code' => ['nullable', 'string'],
+            'recovery_code' => ['nullable', 'string'],
         ]);
 
         $user = User::where('email', $data['email'])->first();
@@ -25,6 +28,33 @@ class ApiAuthController extends Controller
             throw ValidationException::withMessages([
                 'email' => ['Invalid credentials'],
             ]);
+        }
+
+        // Enforce 2FA when enabled
+        if ($user->two_factor_enabled) {
+            $code = trim((string)($data['twofa_code'] ?? ''));
+            $recovery = trim((string)($data['recovery_code'] ?? ''));
+            $verified = false;
+            if ($code !== '' && $user->two_factor_secret) {
+                $verified = $twoFactor->verify($user->two_factor_secret, $code);
+            }
+            if (! $verified && $recovery !== '' && $user->two_factor_recovery_codes) {
+                $codes = json_decode($user->two_factor_recovery_codes, true) ?: [];
+                $idx = array_search(strtoupper($recovery), array_map('strtoupper', $codes), true);
+                if ($idx !== false) {
+                    $verified = true;
+                    array_splice($codes, (int) $idx, 1); // one-time use
+                    $user->two_factor_recovery_codes = json_encode(array_values($codes));
+                    $user->save();
+                }
+            }
+
+            if (! $verified) {
+                return response()->json([
+                    'requires_twofa' => true,
+                    'message' => 'Two-factor authentication required',
+                ], 403);
+            }
         }
 
         $issued = $this->jwt->issue($user);
