@@ -48,6 +48,7 @@ class TwoFactorService
         if (class_exists(\SimpleSoftwareIO\QrCode\Facades\QrCode::class)) {
             return QrCode::format('svg')->size($size)->generate($otpauthUri);
         }
+
         return '';
     }
 
