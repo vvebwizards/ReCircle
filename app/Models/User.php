@@ -32,7 +32,9 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $hidden = [
         'password',
         'remember_token',
-    ];
+              'two_factor_secret',
+              'two_factor_recovery_codes',
+         ];
 
     /**
      * Get the attributes that should be cast.
@@ -44,6 +46,8 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+                'two_factor_enabled' => 'bool',
+                'two_factor_confirmed_at' => 'datetime',
         ];
     }
 }
