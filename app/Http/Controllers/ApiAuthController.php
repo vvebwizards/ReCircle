@@ -4,10 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Services\JwtService;
+use App\Services\TwoFactorService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use App\Services\TwoFactorService;
 use Illuminate\Validation\ValidationException;
 
 class ApiAuthController extends Controller
@@ -32,8 +32,8 @@ class ApiAuthController extends Controller
 
         // Enforce 2FA when enabled
         if ($user->two_factor_enabled) {
-            $code = trim((string)($data['twofa_code'] ?? ''));
-            $recovery = trim((string)($data['recovery_code'] ?? ''));
+            $code = trim((string) ($data['twofa_code'] ?? ''));
+            $recovery = trim((string) ($data['recovery_code'] ?? ''));
             $verified = false;
             if ($code !== '' && $user->two_factor_secret) {
                 $verified = $twoFactor->verify($user->two_factor_secret, $code);
@@ -50,6 +50,15 @@ class ApiAuthController extends Controller
             }
 
             if (! $verified) {
+                // If the client supplied a code (or recovery) but it failed, return 422 to allow showing an inline error.
+                if ($code !== '' || $recovery !== '') {
+                    return response()->json([
+                        'invalid_twofa' => true,
+                        'message' => 'Invalid two-factor code',
+                    ], 422);
+                }
+
+                // Otherwise signal that 2FA is required and the client should prompt for a code.
                 return response()->json([
                     'requires_twofa' => true,
                     'message' => 'Two-factor authentication required',
