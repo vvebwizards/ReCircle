@@ -160,6 +160,15 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
+        if (res.status === 403 && data?.requires_twofa) {
+          try {
+            sessionStorage.setItem('pending_login_email', email.value.trim());
+            sessionStorage.setItem('pending_login_password', password.value);
+          } catch {}
+          const to2fa = (window.appRoutes && window.appRoutes.twofa) || '/twofa';
+          window.location.replace(to2fa);
+          return;
+        }
         if (res.status === 422 && data.errors?.email) {
           setError(email, Array.isArray(data.errors.email) ? data.errors.email[0] : String(data.errors.email));
           return;

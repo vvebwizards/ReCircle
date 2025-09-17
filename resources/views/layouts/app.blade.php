@@ -23,6 +23,7 @@
             twofa: @json(route('twofa')),
             forgot: @json(route('forgot-password')),
             dashboard: @json(route('dashboard', [], false)),
+            settingsSecurity: @json(route('settings.security', [], false)),
         };
     </script>
     @unless (app()->environment('testing'))
