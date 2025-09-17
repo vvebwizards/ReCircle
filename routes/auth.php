@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ApiAuthController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\TwoFactorController;
 use App\Http\Middleware\JwtAuthenticate;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -49,4 +50,12 @@ Route::prefix('api/auth')->group(function () {
     Route::post('refresh', [ApiAuthController::class, 'refresh']);
     Route::post('logout', [ApiAuthController::class, 'logout']);
     Route::middleware(JwtAuthenticate::class)->get('me', [ApiAuthController::class, 'me']);
+
+    // 2FA management (requires authenticated user)
+    Route::middleware(JwtAuthenticate::class)->group(function () {
+        Route::get('2fa/status', [TwoFactorController::class, 'status']);
+        Route::get('2fa/setup', [TwoFactorController::class, 'setup']);
+        Route::post('2fa/enable', [TwoFactorController::class, 'enable']);
+        Route::post('2fa/disable', [TwoFactorController::class, 'disable']);
+    });
 });

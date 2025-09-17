@@ -21,14 +21,15 @@
             </div>
 
             <div class="auth-card" aria-live="polite">
+                <div id="twofa-alert" class="alert hidden" role="alert"></div>
                 <form id="twofa-form" class="auth-form" novalidate>
                     <div class="form-group">
-                        <label for="twofa-code">Authentication code</label>
-                        <input type="text" id="twofa-code" name="code" inputmode="numeric" placeholder="6-digit code" required>
+                        <label for="twofa-code" id="twofa-label">Enter 6‑digit code</label>
+                        <input type="text" id="twofa-code" name="code" inputmode="numeric" placeholder="123456" required>
                         <small class="field-error" aria-live="assertive"></small>
                     </div>
                     <div class="form-row" style="justify-content: space-between; gap: .75rem;">
-                        <button type="button" id="twofa-resend" class="btn btn-secondary" style="flex:1;">Resend code</button>
+                        <button type="button" id="twofa-resend" class="btn btn-secondary" style="flex:1;">Resend</button>
                         <button type="submit" class="btn btn-primary" style="flex:1;">Verify</button>
                     </div>
                     <p class="switch-text"><a href="{{ route('auth') }}">Use a different account</a></p>
@@ -49,5 +50,7 @@
 @endsection
 
 @push('scripts')
+@unless (app()->environment('testing'))
     @vite(['resources/js/twofa.js'])
+@endunless
 @endpush
