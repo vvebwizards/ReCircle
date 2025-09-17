@@ -227,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </button>
                 <ul class="profile-menu" role="menu" aria-label="Profile menu">
                     <li role="menuitem"><a href="#" class="profile-item"><i class="fa-regular fa-user"></i> Profile</a></li>
-                    <li role="menuitem"><a href="#" class="profile-item"><i class="fa-solid fa-gear"></i> Settings</a></li>
+                    <li role="menuitem"><a href="${(routes.settingsSecurity||'/settings/security')}" class="profile-item"><i class="fa-solid fa-gear"></i> Settings</a></li>
                     <li role="menuitem"><a href="#" class="profile-item" data-signout><i class="fa-solid fa-right-from-bracket"></i> Sign Out</a></li>
                 </ul>`;
             const dashLi = findByHref(dashUrl)?.parentElement;
