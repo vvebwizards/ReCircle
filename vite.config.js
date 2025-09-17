@@ -12,6 +12,7 @@ export default defineConfig({
                 'resources/js/main.js',
                 'resources/js/auth.js',
                 'resources/js/twofa.js',
+                'resources/js/twofactor-settings.js',
                 'resources/js/forgot-password.js',
             ],
             refresh: true,
