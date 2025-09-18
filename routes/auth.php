@@ -58,4 +58,7 @@ Route::prefix('api/auth')->group(function () {
         Route::post('2fa/enable', [TwoFactorController::class, 'enable']);
         Route::post('2fa/disable', [TwoFactorController::class, 'disable']);
     });
+
+    // Email code send (does not require JWT yet; validates credentials)
+    Route::post('2fa/email/send', [ApiAuthController::class, 'sendEmailCode']);
 });
