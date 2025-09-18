@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\ApiAuthController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\GoogleAuthController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\TwoFactorController;
 use App\Http\Middleware\JwtAuthenticate;
 use App\Models\User;
@@ -20,6 +22,16 @@ Route::get('/forgot-password', function () {
 
 // Registration (uses the tabbed /auth page for UI)
 Route::post('/register', [AuthController::class, 'register'])->name('register.store');
+
+// Google OAuth
+Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirect'])->name('google.redirect');
+Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('google.callback');
+
+// Choose role after social signup (requires JWT cookie)
+Route::middleware(JwtAuthenticate::class)->group(function () {
+    Route::get('/auth/choose-role', [RoleController::class, 'show'])->name('choose-role.show');
+    Route::post('/auth/choose-role', [RoleController::class, 'store'])->name('choose-role.store');
+});
 
 // Email verification
 Route::get('/email/verify', function () {
