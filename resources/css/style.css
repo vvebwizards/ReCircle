@@ -1282,6 +1282,11 @@ body {
 .divider::after { right: 0; }
 .divider span { display: inline-block; padding: 0 .5rem; color: #78716c; background: #fff; position: relative; z-index: 1; }
 
+/* Social auth (Google) */
+.social-center { display: flex; justify-content: center; margin: 1rem 0 0.5rem; }
+.social-btn { display: inline-flex; align-items: center; gap: .5rem; padding: .85rem 1.25rem; border-radius: 999px; }
+.social-btn i { font-size: 1.1rem; }
+
 .w-full { width: 100%; }
 .social-btn i { margin-right: .5rem; }
 
@@ -1552,6 +1557,11 @@ body {
 @media (max-width: 480px){ .container{ padding:0 15px; } .hero-title{ font-size:2rem; } .hero-subtitle{ font-size:1rem; } .section-header h2{ font-size:2rem; } .contact-form{ padding:1.5rem; } .circular-graphic{ width:250px; height:250px; } .circle-1{ width:200px; height:200px; top:25px; left:25px; } .circle-2{ width:120px; height:120px; top:65px; left:65px; } .circle-3{ width:60px; height:60px; top:95px; left:95px; } .recycle-icon{ font-size:2.5rem; } .step-item{ padding:1.5rem; } .step-number{ width:50px; height:50px; font-size:1.2rem; } }
 /* ===================== Auth Pages ===================== */
 .auth-section { min-height: 100vh; padding: 8rem 0 4rem; background: linear-gradient(135deg, var(--color-off-white) 0%, var(--color-warm-sand) 100%); }
+.auth-section.auth-compact { min-height: 100vh; padding: 5rem 0 2rem; }
+.auth-section.auth-compact .auth-wrapper { align-items: center; }
+.auth-section.auth-compact .auth-info { padding: 1.5rem; }
+.auth-section.auth-compact .auth-card { padding: 1rem 1.25rem; }
+.auth-section.auth-compact .role-grid { gap: .5rem; }
 .auth-wrapper { display:grid; grid-template-columns: 1.2fr 1fr; gap:3rem; align-items:center; }
 .auth-info h1 { font-size:2.4rem; color: var(--color-deep-green); margin-bottom:.75rem; }
 .auth-info p { margin-bottom:1.25rem; }

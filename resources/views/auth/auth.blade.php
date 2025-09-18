@@ -67,7 +67,12 @@
                         Didn't receive the verification email? <a href="{{ route('verification.notice') }}" id="resend-link">Resend</a>
                     </p>
                     <div class="divider"><span>or</span></div>
-                    <button type="button" class="btn btn-secondary w-full social-btn"><i class="fa-brands fa-google"></i> Continue with Google</button>
+                    <div class="social-center">
+                        <a href="{{ route('google.redirect') }}" class="btn btn-secondary social-btn" aria-label="Continue with Google">
+                            <i class="fa-brands fa-google" aria-hidden="true"></i>
+                            <span>Continue with Google</span>
+                        </a>
+                    </div>
                 </form>
 
                 <!-- Sign Up Form -->
