@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use OTPHP\TOTP;
@@ -61,5 +62,40 @@ class TwoFactorService
         }
 
         return $codes;
+    }
+
+    /**
+     * Generate and store a one-time email code for 2FA and return it.
+     * Code is valid for $ttl seconds and consumed on successful verification.
+     */
+    public function generateEmailCode(\App\Models\User $user, int $ttl = 600): string
+    {
+        $code = (string) random_int(100000, 999999);
+        $key = $this->emailCodeCacheKey($user->id);
+        Cache::put($key, $code, $ttl);
+
+        return $code;
+    }
+
+    /** Verify a provided email OTP and consume it on success. */
+    public function verifyEmailCode(\App\Models\User $user, string $code): bool
+    {
+        $key = $this->emailCodeCacheKey($user->id);
+        $expected = Cache::get($key);
+        if (! $expected) {
+            return false;
+        }
+        if (hash_equals((string) $expected, (string) $code)) {
+            Cache::forget($key);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private function emailCodeCacheKey(int $userId): string
+    {
+        return '2fa:email:code:'.$userId;
     }
 }
