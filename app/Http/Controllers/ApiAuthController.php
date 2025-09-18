@@ -8,6 +8,8 @@ use App\Services\TwoFactorService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 
 class ApiAuthController extends Controller
@@ -20,6 +22,7 @@ class ApiAuthController extends Controller
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
             'twofa_code' => ['nullable', 'string'],
+            'email_code' => ['nullable', 'string'],
             'recovery_code' => ['nullable', 'string'],
         ]);
 
@@ -33,10 +36,14 @@ class ApiAuthController extends Controller
         // Enforce 2FA when enabled
         if ($user->two_factor_enabled) {
             $code = trim((string) ($data['twofa_code'] ?? ''));
+            $emailCode = trim((string) ($data['email_code'] ?? ''));
             $recovery = trim((string) ($data['recovery_code'] ?? ''));
             $verified = false;
             if ($code !== '' && $user->two_factor_secret) {
                 $verified = $twoFactor->verify($user->two_factor_secret, $code);
+            }
+            if (! $verified && $emailCode !== '') {
+                $verified = $twoFactor->verifyEmailCode($user, $emailCode);
             }
             if (! $verified && $recovery !== '' && $user->two_factor_recovery_codes) {
                 $codes = json_decode($user->two_factor_recovery_codes, true) ?: [];
@@ -51,7 +58,7 @@ class ApiAuthController extends Controller
 
             if (! $verified) {
                 // If the client supplied a code (or recovery) but it failed, return 422 to allow showing an inline error.
-                if ($code !== '' || $recovery !== '') {
+                if ($code !== '' || $emailCode !== '' || $recovery !== '') {
                     return response()->json([
                         'invalid_twofa' => true,
                         'message' => 'Invalid two-factor code',
@@ -69,6 +76,36 @@ class ApiAuthController extends Controller
         $issued = $this->jwt->issue($user);
 
         return $this->tokenResponse($issued['token'], $issued['expires_at']);
+    }
+
+    // Send a one-time code to the user's verified email after verifying credentials (without issuing a JWT)
+    public function sendEmailCode(Request $request, TwoFactorService $twoFactor): JsonResponse
+    {
+        $data = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required', 'string'],
+        ]);
+
+        $user = User::where('email', $data['email'])->first();
+        if (! $user || ! \Illuminate\Support\Facades\Hash::check($data['password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'email' => ['Invalid credentials'],
+            ]);
+        }
+
+        if (! $user->hasVerifiedEmail()) {
+            return response()->json(['message' => 'Email not verified'], 403);
+        }
+
+        $code = $twoFactor->generateEmailCode($user);
+        // Send synchronously to avoid requiring a queue worker
+        Notification::sendNow($user, new \App\Notifications\TwoFactorEmailCode($code));
+        // In local env, also log the code for easier testing when MAIL_MAILER=log
+        if (app()->isLocal()) {
+            Log::info('2FA email code generated', ['user_id' => $user->id, 'email' => $user->email, 'code' => $code]);
+        }
+
+        return response()->json(['message' => 'Email code sent']);
     }
 
     public function me(Request $request): JsonResponse
