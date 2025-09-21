@@ -19,15 +19,18 @@ class GoogleAuthController extends Controller
     public function redirect(Request $request): RedirectResponse
     {
         $provider = $this->provider();
-
-        $state = Str::random(40);
-        $request->session()->put('google_oauth_state', $state);
-
+        // Let the provider generate cryptographically secure state; then store it.
         $authUrl = $provider->getAuthorizationUrl([
             'scope' => ['openid', 'email', 'profile'],
-            'state' => $state,
             // 'access_type' => 'offline', // Uncomment if you need refresh tokens
             // 'prompt' => 'consent',
+        ]);
+        $state = $provider->getState();
+        $request->session()->put('google_oauth_state', $state);
+        Log::debug('Google OAuth: stored state for redirect', [
+            'state' => $state,
+            'session_id' => $request->session()->getId(),
+            'url' => $authUrl,
         ]);
 
         return redirect()->away($authUrl);
@@ -35,10 +38,24 @@ class GoogleAuthController extends Controller
 
     public function callback(Request $request, JwtService $jwt): Response|RedirectResponse
     {
-        $state = (string) $request->session()->pull('google_oauth_state', '');
-        if ($state === '' || $state !== (string) $request->query('state')) {
-            abort(403, 'Invalid state');
+        $storedState = (string) $request->session()->get('google_oauth_state', '');
+        $queryState = (string) $request->query('state');
+        if ($storedState === '' || $queryState === '' || ! hash_equals($storedState, $queryState)) {
+            Log::warning('Google OAuth state mismatch', [
+                'stored' => $storedState === '' ? null : $storedState,
+                'query' => $queryState === '' ? null : $queryState,
+                'session_id' => $request->session()->getId(),
+                'host' => $request->getHost(),
+                'full_url' => $request->fullUrl(),
+                'referer' => $request->headers->get('referer'),
+                'user_agent' => $request->userAgent(),
+            ]);
+
+            // Graceful fallback so user can retry; keep original state so a stray reload does not hide the issue.
+            return redirect()->route('auth')->with('verify_message', 'Session expired or invalid. Please try Google sign-in again.');
         }
+        // Only forget state after successful validation to allow a reload before continuing if needed.
+        $request->session()->forget('google_oauth_state');
 
         $code = (string) $request->query('code', '');
         if ($code === '') {
