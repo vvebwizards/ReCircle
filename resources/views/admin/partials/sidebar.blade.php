@@ -7,7 +7,7 @@
     </div>
     <nav class="side-nav" role="navigation">
     <a href="{{ route('admin.dashboard') }}" class="side-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}"><i class="fa-solid fa-gauge"></i><span>Overview</span></a>
-    <a href="#" class="side-link"><i class="fa-solid fa-users"></i><span>Users</span></a>
+    <a href="{{ route('admin.users') }}" class="side-link"><i class="fa-solid fa-users {{ request()->routeIs('admin.users') ? 'active' : '' }}"></i><span>Users</span></a>
     <a href="#" class="side-link"><i class="fa-solid fa-list"></i><span>Listings</span></a>
     <a href="#" class="side-link"><i class="fa-solid fa-gavel"></i><span>Bids</span></a>
     <a href="#" class="side-link"><i class="fa-solid fa-chart-line"></i><span>Reports</span></a>

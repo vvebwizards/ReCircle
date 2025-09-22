@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\UserManagementController;
 
 Route::get('/', function () {
     return view('home');
@@ -10,10 +11,13 @@ Route::get('/dashboard', function () {
     return view('dashboard');
 })->name('dashboard');
 
-Route::get('/admin/dashboard', function () {
-    return view('admin.dashboard');
-})->name('admin.dashboard');
+Route::prefix('admin')->group(function () {
+    Route::get('/dashboard', function () {
+        return view('admin.dashboard');
+    })->name('admin.dashboard');
 
+    Route::get('/users', [UserManagementController::class, 'index'])->name('admin.users');
+});
 // Security settings (2FA) page — gated client-side via /api/auth/me
 Route::get('/settings/security', function () {
     return view('settings.security');
