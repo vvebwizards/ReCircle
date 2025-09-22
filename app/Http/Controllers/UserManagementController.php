@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\View\View;
+use Illuminate\Http\RedirectResponse;
 use App\Models\User;
 use Carbon\Carbon;
 
 class UserManagementController extends Controller
 {
-   public function index(Request $request)
+   public function index(Request $request) : View
 {
     $query = User::query();
     if ($request->filled('search')) {
@@ -23,7 +25,7 @@ class UserManagementController extends Controller
 }
 
 
- public function updateRole(Request $request, User $user)
+ public function updateRole(Request $request, User $user) : RedirectResponse
     {
         $data = $request->validate([
             'role' => ['required', 'in:generator,maker,buyer,courier'],
@@ -34,7 +36,7 @@ class UserManagementController extends Controller
         return redirect()->route('admin.users')->with('success', 'User role updated');
     }
 
- public function toggleStatus(Request $request, User $user)
+ public function toggleStatus(Request $request, User $user) : RedirectResponse
     {
         $request->validate([
             'confirm' => ['required', 'accepted'],
