@@ -9,7 +9,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     @unless (app()->environment('testing'))
-        @vite(['resources/css/app.css','resources/css/style.css','resources/js/app.js','resources/js/main.js'])
+        @vite(['resources/css/app.css','resources/css/style.css','resources/js/app.js','resources/js/main.js', 'resources/css/admin.css','resources/js/admin-dashboard.js'])
     @endunless
     <script>
         window.appRoutes = {
@@ -32,7 +32,7 @@
 </div>
 @stack('admin-scripts')
 @unless (app()->environment('testing'))
-    @vite(['resources/js/admin-dashboard.js'])
+    @vite(['resources/js/admin-dashboard.js','resources/js/admin-users-dashboard.js'])
 @endunless
 </body>
 </html>
