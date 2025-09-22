@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
-use Illuminate\Http\RedirectResponse;
+
 use App\Models\User;
-use Carbon\Carbon;
 
 class UserManagementController extends Controller
 {
-   public function index(Request $request) : View
+   public function index(Request $request): View
 {
     $query = User::query();
     if ($request->filled('search')) {
