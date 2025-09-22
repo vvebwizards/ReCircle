@@ -11,22 +11,23 @@ use App\Models\User;
 
 class UserManagementController extends Controller
 {
-   public function index(Request $request): View
-{
-    $query = User::query();
-    if ($request->filled('search')) {
-        $search = $request->input('search');
-        $query->where(function($q) use ($search) {
-            $q->where('name', 'like', "%{$search}%")
-              ->orWhere('email', 'like', "%{$search}%");
-        });
+    public function index(Request $request): View
+    {
+        $query = User::query();
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        $users = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
+
+        return view('admin.usersDashboard', compact('users'));
     }
-    $users = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
-    return view('admin.usersDashboard', compact('users'));
-}
 
-
- public function updateRole(Request $request, User $user) : RedirectResponse
+    public function updateRole(Request $request, User $user): RedirectResponse
     {
         $data = $request->validate([
             'role' => ['required', 'in:generator,maker,buyer,courier'],
@@ -34,10 +35,11 @@ class UserManagementController extends Controller
         ]);
 
         $user->update(['role' => $data['role']]);
+
         return redirect()->route('admin.users')->with('success', 'User role updated');
     }
 
- public function toggleStatus(Request $request, User $user) : RedirectResponse
+    public function toggleStatus(Request $request, User $user): RedirectResponse
     {
         $request->validate([
             'confirm' => ['required', 'accepted'],
@@ -48,5 +50,4 @@ class UserManagementController extends Controller
 
         return redirect()->route('admin.users')->with('success', 'User verification status changed');
     }
-
 }
