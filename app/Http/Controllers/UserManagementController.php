@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
+use Carbon\Carbon;
 
 class UserManagementController extends Controller
 {
@@ -21,5 +22,28 @@ class UserManagementController extends Controller
     return view('admin.usersDashboard', compact('users'));
 }
 
+
+ public function updateRole(Request $request, User $user)
+    {
+        $data = $request->validate([
+            'role' => ['required', 'in:generator,maker,buyer,courier'],
+            'confirm' => ['required', 'accepted'],
+        ]);
+
+        $user->update(['role' => $data['role']]);
+        return redirect()->route('admin.users')->with('success', 'User role updated');
+    }
+
+ public function toggleStatus(Request $request, User $user)
+    {
+        $request->validate([
+            'confirm' => ['required', 'accepted'],
+        ]);
+
+        $user->email_verified_at = $user->hasVerifiedEmail() ? null : now();
+        $user->save();
+
+        return redirect()->route('admin.users')->with('success', 'User verification status changed');
+    }
 
 }
