@@ -4,55 +4,51 @@ document.addEventListener('DOMContentLoaded', () => {
     const confirmBtn = popup.querySelector('.btn-confirm');
     const cancelBtn = popup.querySelector('.btn-cancel');
 
+    let currentForm = null;
     let currentAction = null;
     let currentUser = null;
-    let currentRoleSelect = null;
-    let newRole = null;
 
-    function openPopup(action, user, roleSelect = null, role = null) {
+    function openPopup(action, user, form) {
+        currentForm = form;
         currentAction = action;
         currentUser = user;
-        currentRoleSelect = roleSelect;
-        newRole = role;
 
-        if(action === 'role-change') {
-            messageEl.textContent = `Change ${user}'s role to "${role}"?`;
-        } else {
-            messageEl.textContent = `Are you sure you want to ${action} ${user}?`;
-        }
+        messageEl.textContent = action === 'role-change'
+            ? `Change ${user}'s role?`
+            : `Are you sure you want to ${action} ${user}?`;
 
         popup.classList.remove('hidden');
     }
 
     confirmBtn.addEventListener('click', () => {
-        if(currentAction === 'role-change') {
-            currentRoleSelect.setAttribute('data-current', newRole);
-            alert(`Role changed to ${newRole} for ${currentUser} (demo)`);
-        } else {
-            alert(`${currentAction.toUpperCase()} confirmed for ${currentUser} (demo)`);
-        }
+        if (currentForm) currentForm.submit();
         popup.classList.add('hidden');
     });
 
-    cancelBtn.addEventListener('click', () => popup.classList.add('hidden'));
-
-    document.querySelectorAll('.icon-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const action = btn.getAttribute('data-action');
-            const user = btn.closest('tr').querySelector('.user-info').textContent.trim();
-            openPopup(action, user);
-        });
+    cancelBtn.addEventListener('click', () => {
+        popup.classList.add('hidden');
+        currentForm = null;
     });
 
     document.querySelectorAll('.role-select').forEach(select => {
         select.addEventListener('change', () => {
-            const user = select.closest('tr').querySelector('.user-info').textContent.trim();
-            const currentRole = select.getAttribute('data-current');
-            const newRoleValue = select.value;
+            const form = select.closest('form');
+            const user = select.dataset.user;
+            const currentRole = select.dataset.current;
+            const newRole = select.value;
 
-            if(newRoleValue !== currentRole) {
-                openPopup('role-change', user, select, newRoleValue);
+            if (newRole !== currentRole) {
+                openPopup('role-change', user, form);
             }
+        });
+    });
+
+    document.querySelectorAll('.toggle-status-form .toggle').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const form = btn.closest('form');
+            const user = btn.dataset.user;
+            const action = btn.dataset.action;
+            openPopup(action, user, form);
         });
     });
 });
