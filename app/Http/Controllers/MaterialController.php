@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Material;
 use App\Models\MaterialImage;
-use Illuminate\Http\Request;
 use App\Services\JwtService;
+use Illuminate\Http\Request;
 
 class MaterialController extends Controller
 {
@@ -104,7 +104,7 @@ class MaterialController extends Controller
             'recyclability_score' => $validated['recyclability_score'],
             'description' => $validated['description'],
             'waste_item_id' => $validated['waste_item_id'],
-            'maker_id' => auth()->id(), 
+            'maker_id' => auth()->id(),
         ]);
 
         if ($request->hasFile('image_path')) {
