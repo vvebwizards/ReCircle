@@ -27,3 +27,6 @@ Route::get('/settings/security', function () {
 
 // Auth routes
 require __DIR__.'/auth.php';
+
+// Material routes
+require __DIR__.'/materials.php';

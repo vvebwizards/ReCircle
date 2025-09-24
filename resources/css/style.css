@@ -1388,6 +1388,7 @@ body {
 .qa-new::after { background:linear-gradient(45deg, #22c55e, transparent); }
 .qa-bids .qa-icon { background:#fff7ed; color:#9a3412; }
 .qa-bids::after { background:linear-gradient(45deg, #f97316, transparent); }
+.qa-list-material::after { background:linear-gradient(45deg, #d71616, transparent); }
 .qa-market .qa-icon { background:#eff6ff; color:#1d4ed8; }
 .qa-market::after { background:linear-gradient(45deg, #3b82f6, transparent); }
 .qa-report .qa-icon { background:#fef9c3; color:#854d0e; }
