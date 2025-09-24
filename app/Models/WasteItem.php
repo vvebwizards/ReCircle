@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class WasteItem extends Model
@@ -37,11 +38,14 @@ class WasteItem extends Model
     }
 
     /**
-     * @return BelongsTo<Material, static>
+     * Many-to-many: this waste item has many materials.
+     *
+     * @return BelongsToMany<Material, static>
      */
-    public function material(): BelongsTo
+    public function materials(): BelongsToMany
     {
         /** @phpstan-ignore-next-line return.type */
-        return $this->belongsTo(Material::class);
+        return $this->belongsToMany(Material::class)
+            ->withTimestamps();
     }
 }
