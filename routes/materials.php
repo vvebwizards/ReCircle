@@ -16,4 +16,7 @@ Route::middleware('jwt.auth')->group(function () {
 
     Route::get('/materials/{material}/images', [MaterialController::class, 'getMaterialImages'])
         ->name('materials.images');
+
+     Route::delete('/materials/{material}', [MaterialController::class, 'destroy'])
+        ->name('maker.materials.destroy');
 });

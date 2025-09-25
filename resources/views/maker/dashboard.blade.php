@@ -48,6 +48,7 @@
         <div>
           <div class="stat-value" id="stat-materials">0</div>
           <div class="stat-label">My Materials</div>
+        
         </div>
       </div>
 
@@ -60,7 +61,7 @@
             <span class="qa-title">Add Material</span>
             <span class="qa-sub">Link to received waste items</span>
           </a>
-            <a href="#" class="qa-card qa-list-material" aria-label="Add new material">
+            <a href="{{ route('maker.materials.index') }}" class="qa-card qa-list-material" aria-label="Add new material">
             <div class="stat-icon" style="--accent: #d71616;"><i class="fa-solid fa-list"></i></div>
             <span class="qa-title">My Materials</span>
             <span class="qa-sub">View and manage your materials</span>
