@@ -9,13 +9,15 @@ export default defineConfig({
                 'resources/css/app.css',
                 'resources/css/style.css',
                 'resources/css/material-create.css',
+                'resources/css/update-material.css',
                 'resources/js/app.js',
                 'resources/js/main.js',
                 'resources/js/auth.js',
                 'resources/js/twofa.js',
                 'resources/js/twofactor-settings.js',
                 'resources/js/forgot-password.js',
-                'resources/js/material-create.js'
+                'resources/js/material-create.js',
+                'resources/js/update-material.js'
             ],
             refresh: true,
         }),

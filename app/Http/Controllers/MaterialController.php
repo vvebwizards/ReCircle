@@ -101,7 +101,7 @@ class MaterialController extends Controller
             'maker_id' => Auth::id(),
         ]);
 
-        $order = 0; // Initialiser $order
+        $order = 0; 
         if ($request->hasFile('image_path')) {
             foreach ($request->file('image_path') as $image) {
                 $imageName = time().'_'.uniqid().'_'.$order.'.'.$image->getClientOriginalExtension();
@@ -182,6 +182,112 @@ class MaterialController extends Controller
 
         return redirect()->route('maker.materials.index')
             ->with('success', 'Material deleted successfully!');
+    }
+
+      public function edit(int $id): View
+    {
+        $material = Material::with('images')
+            ->where('maker_id', Auth::id())
+            ->findOrFail($id);
+            
+        $wasteItems = WasteItem::all();
+        
+        return view('maker.update_materials', compact('material', 'wasteItems'));
+    }
+
+    public function update(Request $request, int $id): RedirectResponse
+    {
+        $material = Material::where('maker_id', Auth::id())->findOrFail($id);
+
+        $messages = [
+            'name.required' => 'The material name is required.',
+            'category.required' => 'Please select a category.',
+            'unit.required' => 'Please select a unit.',
+            'quantity.required' => 'The quantity is required.',
+            'quantity.min' => 'The quantity must be at least 0.',
+            'recyclability_score.required' => 'The recyclability score is required.',
+            'recyclability_score.min' => 'The recyclability score must be at least 0%.',
+            'recyclability_score.max' => 'The recyclability score may not be greater than 100%.',
+            'description.required' => 'The description is required.',
+            'waste_item_id.required' => 'Please select a waste item to link.',
+            'image_path.*.image' => 'Each file must be an image (jpeg, png, jpg, gif).',
+            'image_path.*.max' => 'Each image may not be greater than 2MB.',
+        ];
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'category' => 'required|in:'.implode(',', Material::CATEGORIES),
+            'unit' => 'required|in:'.implode(',', Material::UNITS),
+            'quantity' => 'required|numeric|min:0',
+            'recyclability_score' => 'required|numeric|min:0|max:100',
+            'description' => 'required|string|max:1000',
+            'waste_item_id' => 'required|numeric|min:1',
+            'image_path' => 'sometimes|array',
+            'image_path.*' => 'sometimes|image|max:2048',
+            'remove_images' => 'sometimes|array',
+            'remove_images.*' => 'sometimes|numeric',
+        ], $messages);
+
+        $material->update([
+            'name' => $validated['name'],
+            'category' => $validated['category'],
+            'unit' => $validated['unit'],
+            'quantity' => $validated['quantity'],
+            'recyclability_score' => $validated['recyclability_score'],
+            'description' => $validated['description'],
+            'waste_item_id' => $validated['waste_item_id'],
+        ]);
+
+        if ($request->has('remove_images')) {
+            foreach ($request->remove_images as $imageId) {
+                $image = MaterialImage::where('material_id', $material->id)
+                    ->where('id', $imageId)
+                    ->first();
+                    
+                if ($image) {
+                    $imagePath = public_path($image->image_path);
+                    if (file_exists($imagePath)) {
+                        unlink($imagePath);
+                    }
+                    $image->delete();
+                }
+            }
+        }
+
+        if ($request->hasFile('image_path')) {
+            $existingImagesCount = $material->images()->count();
+            $order = $existingImagesCount;
+            
+            foreach ($request->file('image_path') as $image) {
+                $imageName = time().'_'.uniqid().'_'.$order.'.'.$image->getClientOriginalExtension();
+                $image->move(public_path('images/materials'), $imageName);
+                $imagePath = 'images/materials/'.$imageName;
+
+                MaterialImage::create([
+                    'material_id' => $material->id,
+                    'image_path' => $imagePath,
+                    'order' => $order,
+                ]);
+
+                $order++;
+            }
+        }
+
+        $this->reorderImages($material->id);
+
+        return redirect()->route('maker.materials.index')
+            ->with('success', 'Material updated successfully!');
+    }
+
+    private function reorderImages(int $materialId): void
+    {
+        $images = MaterialImage::where('material_id', $materialId)
+            ->orderBy('order')
+            ->get();
+            
+        foreach ($images as $index => $image) {
+            $image->update(['order' => $index]);
+        }
     }
 
     public function getMaterialImages(int $materialId): JsonResponse
