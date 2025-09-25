@@ -6,15 +6,11 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('waste_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('generator_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('material_id')->constrained('materials');
             $table->string('title');
             $table->json('images')->nullable();
             $table->decimal('estimated_weight', 10, 2)->nullable();
@@ -24,14 +20,11 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->index(['generator_id', 'material_id']);
+            $table->index('generator_id');
             $table->index('condition');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('waste_items');
