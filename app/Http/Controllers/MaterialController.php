@@ -120,10 +120,9 @@ class MaterialController extends Controller
 
     public function index(Request $request)
     {
-        // Charger les matériaux avec leurs images triées par ordre
         $query = Material::with(['images' => function ($query) {
             $query->orderBy('order', 'asc');
-        }])->where('maker_id', auth()->id()); // Seulement les matériaux de l'utilisateur connecté
+        }])->where('maker_id', auth()->id());
 
         if ($request->has('search') && ! empty($request->search)) {
             $search = $request->search;
@@ -159,14 +158,12 @@ class MaterialController extends Controller
 
         $materials = $query->paginate(12);
 
-        // Statistiques uniquement pour les matériaux de l'utilisateur
         $averageScore = Material::where('maker_id', auth()->id())->avg('recyclability_score') ?? 0;
         $categoriesCount = Material::where('maker_id', auth()->id())->distinct('category')->count('category');
 
         return view('maker.materials', compact('materials', 'averageScore', 'categoriesCount'));
     }
 
-    // Nouvelle méthode pour récupérer les images d'un matériau (API)
     public function getMaterialImages($materialId)
     {
         $material = Material::with(['images' => function ($query) {

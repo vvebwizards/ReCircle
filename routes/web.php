@@ -11,8 +11,12 @@ Route::get('/dashboard', function () {
     return view('dashboard');
 })->name('dashboard');
 
+Route::get('/maker/dashboard', function () {
+    return view('maker.dashboard');
+})->name('maker.dashboard');
+
 Route::prefix('admin')->group(function () {
-    Route::get('/dashboard', function () {
+    Route::get('/admin/dashboard', function () {
         return view('admin.dashboard');
     })->name('admin.dashboard');
 

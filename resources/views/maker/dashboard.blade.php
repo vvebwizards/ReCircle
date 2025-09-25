@@ -27,7 +27,6 @@
     </header>
 
     <section class="dash-grid">
-      {{-- Personalized Stats --}}
       <div class="dash-card stat">
         <div class="stat-icon" style="--accent: var(--color-sunflower);"><i class="fa-solid fa-cloud"></i></div>
         <div>
@@ -52,14 +51,19 @@
         </div>
       </div>
 
-      {{-- Quick Actions --}}
       <div class="dash-card wide">
         <h3 class="dash-card-title"><i class="fa-solid fa-bolt"></i> Quick Actions</h3>
         <div class="qa-grid">
-          <a href="#" class="qa-card qa-new" aria-label="Add new material">
+   
+     <a href="{{ route('materials.create') }}" class="qa-card qa-new" aria-label="Add new material">
             <span class="qa-icon"><i class="fa-solid fa-plus"></i></span>
             <span class="qa-title">Add Material</span>
             <span class="qa-sub">Link to received waste items</span>
+          </a>
+            <a href="#" class="qa-card qa-list-material" aria-label="Add new material">
+            <div class="stat-icon" style="--accent: #d71616;"><i class="fa-solid fa-list"></i></div>
+            <span class="qa-title">My Materials</span>
+            <span class="qa-sub">View and manage your materials</span>
           </a>
           <a href="#" class="qa-card qa-market" aria-label="View my products">
             <span class="qa-icon"><i class="fa-solid fa-store"></i></span>
@@ -79,7 +83,6 @@
         </div>
       </div>
 
-      {{-- Recent Activity --}}
       <div class="dash-card wide">
         <h3 class="dash-card-title"><i class="fa-solid fa-clock-rotate-left"></i> Recent Activity</h3>
         <ul class="activity-list" id="activity-list">

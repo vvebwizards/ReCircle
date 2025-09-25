@@ -15,13 +15,28 @@ class RoleController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'role' => ['required', 'in:generator,maker,buyer,courier'],
+            'role' => ['required', 'in:generator,maker,buyer,courier,admin'],
         ]);
 
         $user = $request->user();
         $user->role = $data['role'];
         $user->save();
 
-        return redirect()->route('dashboard');
+        switch ($user->role) {
+            case 'generator':
+                $redirectTo = route('dashboard');
+                break;
+            case 'maker':
+                $redirectTo = route('maker.dashboard');
+                break;
+            case 'admin':
+                $redirectTo = route('admin.dashboard');
+                break;
+            default:
+                $redirectTo = route('home');
+                break;
+        }
+
+        return redirect($redirectTo);
     }
 }

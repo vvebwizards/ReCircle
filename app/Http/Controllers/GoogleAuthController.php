@@ -19,11 +19,9 @@ class GoogleAuthController extends Controller
     public function redirect(Request $request): RedirectResponse
     {
         $provider = $this->provider();
-        // Let the provider generate cryptographically secure state; then store it.
         $authUrl = $provider->getAuthorizationUrl([
             'scope' => ['openid', 'email', 'profile'],
-            // 'access_type' => 'offline', // Uncomment if you need refresh tokens
-            // 'prompt' => 'consent',
+
         ]);
         $state = $provider->getState();
         $request->session()->put('google_oauth_state', $state);
@@ -51,10 +49,8 @@ class GoogleAuthController extends Controller
                 'user_agent' => $request->userAgent(),
             ]);
 
-            // Graceful fallback so user can retry; keep original state so a stray reload does not hide the issue.
             return redirect()->route('auth')->with('verify_message', 'Session expired or invalid. Please try Google sign-in again.');
         }
-        // Only forget state after successful validation to allow a reload before continuing if needed.
         $request->session()->forget('google_oauth_state');
 
         $code = (string) $request->query('code', '');
@@ -65,7 +61,6 @@ class GoogleAuthController extends Controller
         $provider = $this->provider();
         try {
             $tokenIface = $provider->getAccessToken('authorization_code', ['code' => $code]);
-            // Ensure concrete AccessToken type for provider signature
             $token = $tokenIface instanceof AccessToken ? $tokenIface : new AccessToken($tokenIface->jsonSerialize());
             $owner = $provider->getResourceOwner($token);
             $googleId = (string) $owner->getId();
@@ -85,7 +80,6 @@ class GoogleAuthController extends Controller
             return redirect()->route('auth')->with('verify_message', 'Google sign-in failed. Please try again.');
         }
 
-        // Find existing user by Google ID or email
         $user = User::where('google_id', $googleId)->first();
         if (! $user && $email !== '') {
             $user = User::where('email', $email)->first();
@@ -95,8 +89,7 @@ class GoogleAuthController extends Controller
             $user = new User;
             $user->name = $name !== '' ? $name : 'Google User';
             $user->email = $email !== '' ? $email : (strtolower(Str::random(8)).'@example.invalid');
-            // Do not assign a default role; we'll ask the user to choose one.
-            $user->password = Str::random(32); // random password placeholder
+            $user->password = Str::random(32);
         }
 
         if (! $user->google_id) {
@@ -106,16 +99,25 @@ class GoogleAuthController extends Controller
             $user->email_verified_at = now();
         }
         $user->save();
-
-        // Issue JWT and set cookie, then render a small bridge page that client-redirects to dashboard.
-        // Some browsers drop Set-Cookie on cross-site 302 responses; a 200 HTML response is more reliable.
         $issued = $jwt->issue($user);
 
         $minutes = (int) config('jwt.ttl');
         $secure = app()->environment('production');
 
-        // Decide where to send the user: choose role if none, otherwise dashboard
-        $redirectTo = $user->role ? route('dashboard') : route('choose-role.show');
+        switch ($user->role) {
+            case 'admin':
+                $redirectTo = route('admin.dashboard');
+                break;
+            case 'maker':
+                $redirectTo = route('maker.dashboard');
+                break;
+            case 'generator':
+                $redirectTo = route('dashboard');
+                break;
+            default:
+                $redirectTo = route('choose-role.show');
+                break;
+        }
 
         return response()->view('auth.oauth-bridge', [
             'redirectTo' => $redirectTo,
@@ -138,11 +140,7 @@ class GoogleAuthController extends Controller
             'clientId' => $cfg['client_id'] ?? '',
             'clientSecret' => $cfg['client_secret'] ?? '',
             'redirectUri' => $cfg['redirect'] ?? url('/auth/google/callback'),
-            // 'hostedDomain' => $cfg['hosted_domain'] ?? null, // restrict to GSuite domain if needed
         ];
-
-        // In local/dev on Windows, cURL may lack a CA bundle which breaks TLS verification.
-        // Provide a Guzzle client with verify=false ONLY in local to allow development.
         $collaborators = [];
         if (app()->isLocal()) {
             $collaborators['httpClient'] = new GuzzleClient([
