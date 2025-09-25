@@ -4,16 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Models\Material;
 use App\Models\MaterialImage;
-use App\Services\JwtService;
+use App\Models\WasteItem;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class MaterialController extends Controller
 {
-    public function __construct(private JwtService $jwt) {}
-
-    private function ensureTemporaryWasteItemsExist()
+    private function ensureTemporaryWasteItemsExist(): void
     {
-        if (! \App\Models\WasteItem::exists()) {
+        if (! WasteItem::exists()) {
             $temporaryItems = [
                 [
                     'title' => 'Plastic Bottles',
@@ -43,20 +45,20 @@ class MaterialController extends Controller
             ];
 
             foreach ($temporaryItems as $item) {
-                \App\Models\WasteItem::create($item);
+                WasteItem::create($item);
             }
         }
     }
 
-    public function create()
+    public function create(): View
     {
         $this->ensureTemporaryWasteItemsExist();
-        $wasteItems = \App\Models\WasteItem::all();
+        $wasteItems = WasteItem::all();
 
         return view('maker.create_material', compact('wasteItems'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $messages = [
             'name.required' => 'The material name is required.',
@@ -95,11 +97,11 @@ class MaterialController extends Controller
             'recyclability_score' => $validated['recyclability_score'],
             'description' => $validated['description'],
             'waste_item_id' => $validated['waste_item_id'],
-            'maker_id' => auth()->id(),
+            'maker_id' => Auth::id(),
         ]);
 
+        $order = 0; // Initialiser $order
         if ($request->hasFile('image_path')) {
-            $order = 0;
             foreach ($request->file('image_path') as $image) {
                 $imageName = time().'_'.uniqid().'_'.$order.'.'.$image->getClientOriginalExtension();
                 $image->move(public_path('images/materials'), $imageName);
@@ -118,11 +120,11 @@ class MaterialController extends Controller
         return redirect()->route('materials.create')->with('success', 'Material created with '.$order.' images!');
     }
 
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $query = Material::with(['images' => function ($query) {
             $query->orderBy('order', 'asc');
-        }])->where('maker_id', auth()->id());
+        }])->where('maker_id', Auth::id());
 
         if ($request->has('search') && ! empty($request->search)) {
             $search = $request->search;
@@ -158,26 +160,28 @@ class MaterialController extends Controller
 
         $materials = $query->paginate(12);
 
-        $averageScore = Material::where('maker_id', auth()->id())->avg('recyclability_score') ?? 0;
-        $categoriesCount = Material::where('maker_id', auth()->id())->distinct('category')->count('category');
+        $averageScore = Material::where('maker_id', Auth::id())->avg('recyclability_score') ?? 0;
+        $categoriesCount = Material::where('maker_id', Auth::id())->distinct()->count('category');
 
         return view('maker.materials', compact('materials', 'averageScore', 'categoriesCount'));
     }
 
-    public function getMaterialImages($materialId)
+    public function getMaterialImages(int $materialId): JsonResponse
     {
         $material = Material::with(['images' => function ($query) {
             $query->orderBy('order', 'asc');
-        }])->where('maker_id', auth()->id())->findOrFail($materialId);
+        }])->where('maker_id', Auth::id())->findOrFail($materialId);
+
+        $images = $material->images->map(function (MaterialImage $image) {
+            return [
+                'id' => $image->id,
+                'path' => asset($image->image_path),
+                'order' => $image->order,
+            ];
+        })->toArray();
 
         return response()->json([
-            'images' => $material->images->map(function ($image) {
-                return [
-                    'id' => $image->id,
-                    'path' => asset($image->image_path),
-                    'order' => $image->order,
-                ];
-            }),
+            'images' => $images,
         ]);
     }
 }
