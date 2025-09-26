@@ -36,9 +36,9 @@ class GeneratorWasteItemController extends Controller
 
         $wasteItems = $query->paginate(12);
         $conditionsCount = WasteItem::where('generator_id', Auth::id())
-            ->selectRaw('condition, COUNT(*) as aggregate')
-            ->groupBy('condition')
-            ->pluck('aggregate', 'condition');
+            ->selectRaw('`condition` as cond, COUNT(*) as aggregate')
+            ->groupBy('cond')
+            ->pluck('aggregate', 'cond');
 
         $total = $wasteItems->total();
         $avgWeight = WasteItem::where('generator_id', Auth::id())->avg('estimated_weight') ?? 0;
