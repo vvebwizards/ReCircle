@@ -34,3 +34,5 @@ require __DIR__.'/auth.php';
 
 // Material routes
 require __DIR__.'/materials.php';
+// Waste item routes (generator-facing)
+require __DIR__.'/waste_items.php';

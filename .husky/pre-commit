@@ -17,11 +17,7 @@ vendor/bin/pint --test || {
 	exit 1;
 }
 
-# Run PHPStan (fast default config)
-composer run phpstan -v || {
-	echo "\n[pre-commit] PHPStan reported issues. Fix them or adjust phpstan.neon.dist.";
-	exit 1;
-}
+## PHPStan step removed per request
 
 # Run ESLint on JS sources if available
 if command -v npm >/dev/null 2>&1; then
