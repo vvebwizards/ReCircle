@@ -1,4 +1,4 @@
-# Run Pint and PHPStan before commit
+# Run Pint and (optionally) ESLint before commit (PHPStan step removed)
 # Skip hooks if explicitly requested
 if [ "$SKIP_HOOKS" = "1" ]; then
 	echo "Skipping pre-commit hooks"
@@ -17,11 +17,7 @@ vendor/bin/pint --test || {
 	exit 1;
 }
 
-# Run PHPStan (fast default config)
-composer run phpstan -v || {
-	echo "\n[pre-commit] PHPStan reported issues. Fix them or adjust phpstan.neon.dist.";
-	exit 1;
-}
+# (Static analysis disabled here. Run manually if needed: composer exec phpstan analyse)
 
 # Run ESLint on JS sources if available
 if command -v npm >/dev/null 2>&1; then

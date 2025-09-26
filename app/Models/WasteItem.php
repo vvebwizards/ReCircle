@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class WasteItem extends Model
@@ -35,5 +37,10 @@ class WasteItem extends Model
     public function materials(): HasMany
     {
         return $this->hasMany(Material::class, 'waste_item_id');
+    }
+
+    public function listing(): HasOne
+    {
+        return $this->hasOne(Listing::class, 'waste_item_id');
     }
 }
