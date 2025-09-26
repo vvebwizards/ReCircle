@@ -124,7 +124,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     fileInput?.addEventListener('change', () => {
         addFiles(fileInput.files);
-        // Clear the real input so re-selecting same file triggers change
-        fileInput.value = '';
+        // Do NOT clear the input; we rely on underlying FileList for submission.
     });
 });

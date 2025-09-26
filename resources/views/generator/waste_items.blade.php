@@ -71,6 +71,12 @@
         <div class="materials-grid">
             @forelse($wasteItems as $item)
                 <div class="material-card">
+                    @php $primary = is_array($item->images) && count($item->images) ? $item->images[0] : null; @endphp
+                    @if($primary)
+                        <div class="material-image-wrapper" style="height:140px;overflow:hidden;position:relative;border-radius:4px 4px 0 0;background:#f5f5f5;display:flex;align-items:center;justify-content:center;">
+                            <img src="{{ asset($primary) }}" alt="{{ $item->title }}" style="width:100%;height:100%;object-fit:cover;">
+                        </div>
+                    @endif
                     <div class="material-content" style="padding-top:0.8rem;">
                         <div class="material-header">
                             <h3 class="material-name">{{ $item->title }}</h3>
