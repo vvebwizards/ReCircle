@@ -13,7 +13,7 @@ class WasteItemController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = WasteItem::query();
+        $query = WasteItem::with('photos');
 
         if ($request->filled('condition')) {
             $query->where('condition', $request->string('condition'));
@@ -45,19 +45,25 @@ class WasteItemController extends Controller
         $data = $request->validated();
         $data['generator_id'] = $request->user()->id;
 
-        $storedImagePaths = [];
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $uploaded) {
+        $images = $request->file('images');
+        unset($data['images']);
+
+        $wasteItem = WasteItem::create($data);
+
+        if ($images) {
+            $order = 0;
+            foreach ($images as $uploaded) {
                 if (! $uploaded->isValid()) {
                     continue;
                 }
-                $path = $uploaded->store('public/images/waste-items');
-                $storedImagePaths[] = str_replace('public/', 'storage/', $path);
+                $storedPath = $uploaded->store('images/waste-items', 'public');
+                $relative = str_replace('\\', '/', $storedPath);
+                $wasteItem->photos()->create([
+                    'image_path' => 'storage/'.ltrim($relative, '/'),
+                    'order' => $order++,
+                ]);
             }
-            $data['images'] = $storedImagePaths;
         }
-
-        $wasteItem = WasteItem::create($data);
 
         return response()->json([
             'data' => $this->transform($wasteItem->fresh()),
@@ -76,19 +82,25 @@ class WasteItemController extends Controller
         $this->authorizeOwnership($request, $wasteItem);
         $data = $request->validated();
 
-        if ($request->hasFile('images')) {
-            $storedImagePaths = [];
-            foreach ($request->file('images') as $uploaded) {
+        $incomingImages = $request->file('images');
+        unset($data['images']);
+        $wasteItem->update($data);
+        if ($incomingImages) {
+            // remove existing image records and recreate (simpler approach)
+            $wasteItem->photos()->delete();
+            $order = 0;
+            foreach ($incomingImages as $uploaded) {
                 if (! $uploaded->isValid()) {
                     continue;
                 }
-                $path = $uploaded->store('public/images/waste-items');
-                $storedImagePaths[] = str_replace('public/', 'storage/', $path);
+                $storedPath = $uploaded->store('images/waste-items', 'public');
+                $relative = str_replace('\\', '/', $storedPath);
+                $wasteItem->photos()->create([
+                    'image_path' => 'storage/'.ltrim($relative, '/'),
+                    'order' => $order++,
+                ]);
             }
-            $data['images'] = $storedImagePaths; // replace existing set
         }
-
-        $wasteItem->update($data);
 
         return response()->json([
             'data' => $this->transform($wasteItem->fresh()),
@@ -108,7 +120,8 @@ class WasteItemController extends Controller
         return [
             'id' => $wasteItem->id,
             'title' => $wasteItem->title,
-            'images' => $wasteItem->images ?? [],
+            'images' => $wasteItem->photos->map(fn ($p) => $p->image_path)->all(),
+            'primary_image' => $wasteItem->primary_image,
             'estimated_weight' => $wasteItem->estimated_weight,
             'condition' => $wasteItem->condition,
             'location' => $wasteItem->location,

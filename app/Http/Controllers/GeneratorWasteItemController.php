@@ -27,23 +27,10 @@ class GeneratorWasteItemController extends Controller
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $storedImagePaths = [];
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $uploaded) {
-                if (! $uploaded->isValid()) {
-                    continue; // skip invalid
-                }
-                $path = $uploaded->store('public/images/waste-items');
-                // store relative path for public access via storage symlink
-                $storedImagePaths[] = str_replace('public/', 'storage/', $path);
-            }
-        }
-
         $payload = [
             'title' => $validated['title'],
             'condition' => $validated['condition'],
             'estimated_weight' => $validated['estimated_weight'] ?? null,
-            'images' => $storedImagePaths,
             'location' => ($validated['location.lat'] ?? null) !== null || ($validated['location.lng'] ?? null) !== null ? [
                 'lat' => $validated['location.lat'] ?? null,
                 'lng' => $validated['location.lng'] ?? null,
@@ -51,8 +38,22 @@ class GeneratorWasteItemController extends Controller
             'notes' => $validated['notes'] ?? null,
             'generator_id' => Auth::id(),
         ];
-
         $wasteItem = WasteItem::create($payload);
+
+        if ($request->hasFile('images')) {
+            $order = 0;
+            foreach ($request->file('images') as $uploaded) {
+                if (! $uploaded->isValid()) {
+                    continue;
+                }
+                $storedPath = $uploaded->store('images/waste-items', 'public'); // returns path relative to storage/app/public
+                $relative = str_replace('\\', '/', $storedPath); // e.g. images/waste-items/xxx.png
+                $wasteItem->photos()->create([
+                    'image_path' => 'storage/'.ltrim($relative, '/'), // publicly accessible
+                    'order' => $order++,
+                ]);
+            }
+        }
 
         return redirect()->route('generator.waste-items.index')
             ->with('success', 'Waste item "'.$wasteItem->title.'" created.');
@@ -60,7 +61,7 @@ class GeneratorWasteItemController extends Controller
 
     public function index(Request $request): View
     {
-        $query = WasteItem::where('generator_id', Auth::id());
+        $query = WasteItem::with('photos')->where('generator_id', Auth::id());
 
         if ($search = $request->get('search')) {
             $query->where('title', 'like', "%{$search}%");
@@ -98,5 +99,57 @@ class GeneratorWasteItemController extends Controller
             'total' => $total,
             'avgWeight' => $avgWeight,
         ]);
+    }
+
+    public function show(WasteItem $wasteItem)
+    {
+        $this->ensureOwnership($wasteItem);
+        $wasteItem->load('photos');
+
+        return response()->json([
+            'data' => [
+                'id' => $wasteItem->id,
+                'title' => $wasteItem->title,
+                'condition' => $wasteItem->condition,
+                'estimated_weight' => $wasteItem->estimated_weight,
+                'notes' => $wasteItem->notes,
+                'location' => $wasteItem->location,
+                'images' => $wasteItem->photos->map(fn ($p) => [
+                    'id' => $p->id,
+                    'path' => $p->image_path,
+                    'url' => asset($p->image_path),
+                    'order' => $p->order,
+                ]),
+            ],
+        ]);
+    }
+
+    public function update(Request $request, WasteItem $wasteItem)
+    {
+        $this->ensureOwnership($wasteItem);
+        $validated = $request->validate([
+            'title' => ['sometimes', 'required', 'string', 'max:255'],
+            'condition' => ['sometimes', 'required', 'in:good,fixable,scrap'],
+            'estimated_weight' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'notes' => ['sometimes', 'nullable', 'string', 'max:2000'],
+        ]);
+        $wasteItem->update($validated);
+
+        return response()->json(['message' => 'Updated', 'data' => $wasteItem->only(['id', 'title', 'condition', 'estimated_weight', 'notes'])]);
+    }
+
+    public function destroy(WasteItem $wasteItem)
+    {
+        $this->ensureOwnership($wasteItem);
+        $wasteItem->delete();
+
+        return response()->json(['message' => 'Deleted']);
+    }
+
+    private function ensureOwnership(WasteItem $wasteItem): void
+    {
+        if ((int) $wasteItem->generator_id !== (int) Auth::id()) {
+            abort(403, 'Not allowed');
+        }
     }
 }

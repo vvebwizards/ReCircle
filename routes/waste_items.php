@@ -10,4 +10,10 @@ Route::middleware('jwt.auth')->group(function () {
         ->name('generator.waste-items.create');
     Route::post('/waste-items', [GeneratorWasteItemController::class, 'store'])
         ->name('generator.waste-items.store');
+    Route::get('/waste-items/{wasteItem}', [GeneratorWasteItemController::class, 'show'])
+        ->name('generator.waste-items.show');
+    Route::put('/waste-items/{wasteItem}', [GeneratorWasteItemController::class, 'update'])
+        ->name('generator.waste-items.update');
+    Route::delete('/waste-items/{wasteItem}', [GeneratorWasteItemController::class, 'destroy'])
+        ->name('generator.waste-items.destroy');
 });

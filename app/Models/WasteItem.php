@@ -37,4 +37,20 @@ class WasteItem extends Model
     {
         return $this->hasMany(Material::class, 'waste_item_id');
     }
+
+    public function photos(): HasMany
+    {
+        return $this->hasMany(WasteItemImage::class)->orderBy('order');
+    }
+
+    public function getPrimaryImageAttribute(): ?string
+    {
+        // relation now 'photos' to avoid collision with images attribute cast
+        return $this->photos->first()->image_path ?? null;
+    }
+
+    public function getPrimaryImageUrlAttribute(): string
+    {
+        return $this->photos->first()->image_url ?? asset('images/default-material.png');
+    }
 }

@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @push('head')
-@vite(['resources/css/materials.css'])
+@vite(['resources/css/materials.css','resources/css/waste-items.css','resources/js/waste-items.js'])
 @endpush
 
 @section('content')
@@ -70,13 +70,14 @@
 
         <div class="materials-grid">
             @forelse($wasteItems as $item)
-                <div class="material-card">
+                <div class="material-card" data-id="{{ $item->id }}">
                     @php 
-                        $primary = is_array($item->images) && count($item->images) ? $item->images[0] : null; 
-                        $isFullUrl = $primary && str_starts_with($primary, 'http');
-                        $src = $primary ? ($isFullUrl ? $primary : asset($primary)) : null;
+                        $primary = $item->primary_image_url ?? null;
+                        $src = $primary; 
                     @endphp
                     <div class="material-image-wrapper" style="height:140px;overflow:hidden;position:relative;border-radius:4px 4px 0 0;background:#f5f5f5;display:flex;align-items:center;justify-content:center;">
+                        @php $photosCount = $item->photos->count(); @endphp
+                        <div style="position:absolute;top:4px;left:4px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;padding:2px 4px;border-radius:3px;z-index:2;">imgs: {{ $photosCount }}</div>
                         @if($src)
                             <img src="{{ $src }}" alt="{{ $item->title }}" style="width:100%;height:100%;object-fit:cover;" onerror="this.onerror=null;this.src='https://via.placeholder.com/400x240?text=Image';">
                         @else
@@ -102,13 +103,13 @@
                             </div>
                         </div>
                         <p class="material-description">{{ Str::limit($item->notes, 100) }}</p>
-                        <div class="material-actions">
-                            <a href="#" class="btn-action btn-view"><i class="fa-solid fa-eye"></i> View</a>
-                            <a href="#" class="btn-action btn-edit"><i class="fa-solid fa-edit"></i> Edit</a>
-                            <form action="#" method="POST" style="display:inline;">
+                        <div class="material-actions" data-id="{{ $item->id }}">
+                            <a href="#" class="btn-action btn-view" data-id="{{ $item->id }}"><i class="fa-solid fa-eye"></i> View</a>
+                            <a href="#" class="btn-action btn-edit" data-id="{{ $item->id }}"><i class="fa-solid fa-edit"></i> Edit</a>
+                            <form action="#" method="POST" style="display:inline;" class="delete-form" data-id="{{ $item->id }}">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn-action btn-delete" onclick="return confirm('Delete this waste item?')"><i class="fa-solid fa-trash"></i> Delete</button>
+                                <button type="button" class="btn-action btn-delete" data-id="{{ $item->id }}"><i class="fa-solid fa-trash"></i> Delete</button>
                             </form>
                         </div>
                     </div>
@@ -147,3 +148,111 @@
     </div>
 </div>
 @endsection
+
+    @push('modals')
+    <div class="modal-overlay" id="modalOverlay" aria-hidden="true">
+        <!-- VIEW MODAL -->
+        <div class="modal hidden" id="viewModal" role="dialog" aria-modal="true" aria-labelledby="viewModalTitle">
+            <div class="modal-header">
+                <h3 class="modal-title" id="viewModalTitle"><i class="fa-solid fa-eye"></i> <span class="title-text">View Waste Item</span></h3>
+                <button class="modal-close" data-close="viewModal" aria-label="Close view"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="viewLoading" class="loading-spinner hidden"></div>
+                <div id="viewContent" class="hidden">
+                    <div class="wi-header-block" style="display:flex;flex-direction:column;gap:.4rem;margin-bottom:.75rem;">
+                        <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">
+                            <span class="badge" id="viewCondition">—</span>
+                            <span class="wi-pill" id="viewWeight"></span>
+                            <span class="wi-pill subtle" id="viewId"></span>
+                            <span class="wi-pill geo" id="viewLocation"></span>
+                        </div>
+                        <h2 id="viewTitle" style="font-size:1.05rem;font-weight:600;color:#111827;letter-spacing:.015em;">—</h2>
+                    </div>
+
+                    <div class="wi-meta-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.65rem;margin-bottom:1rem;">
+                        <div class="wi-meta-box"><span class="label">Created</span><span class="value" id="viewCreated">—</span></div>
+                        <div class="wi-meta-box"><span class="label">Updated</span><span class="value" id="viewUpdated">—</span></div>
+                        <div class="wi-meta-box"><span class="label">Materials</span><span class="value" id="viewMaterials">0</span></div>
+                    </div>
+
+                    <div class="wi-section">
+                        <h4 class="wi-section-title">Notes</h4>
+                        <p class="wi-notes" id="viewNotes" style="white-space:pre-line">—</p>
+                    </div>
+
+                    <div class="wi-section">
+                        <h4 class="wi-section-title">Images</h4>
+                        <div id="viewImages" class="gallery-grid"></div>
+                    </div>
+                    <div class="modal-actions">
+                        <button class="btn btn-secondary" data-close="viewModal">Close</button>
+                        <button class="btn btn-primary" id="openEditFromView"><i class="fa-solid fa-edit"></i> Edit</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- EDIT MODAL -->
+        <div class="modal hidden" id="editModal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+            <div class="modal-header">
+                <h3 class="modal-title" id="editModalTitle"><i class="fa-solid fa-pen-to-square"></i> <span>Edit Waste Item</span></h3>
+                <button class="modal-close" data-close="editModal" aria-label="Close edit"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <input type="hidden" name="id" id="editId">
+                    <div class="form-grid">
+                        <div class="full">
+                            <label class="block text-xs font-semibold tracking-wide uppercase text-gray-600">Title</label>
+                            <input type="text" name="title" id="editTitle" class="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold tracking-wide uppercase text-gray-600">Condition</label>
+                            <select name="condition" id="editCondition" class="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" required>
+                                <option value="good">Good</option>
+                                <option value="fixable">Fixable</option>
+                                <option value="scrap">Scrap</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold tracking-wide uppercase text-gray-600">Weight (kg)</label>
+                            <input type="number" step="0.01" min="0" name="estimated_weight" id="editWeight" class="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                        <div class="full">
+                            <label class="block text-xs font-semibold tracking-wide uppercase text-gray-600">Notes</label>
+                            <textarea name="notes" id="editNotes" rows="4" class="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Notes..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" data-close="editModal">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="editSubmitBtn"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- DELETE CONFIRM -->
+        <div class="modal hidden confirm-box" id="deleteModal" role="alertdialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+            <div class="modal-header">
+                <h3 class="modal-title" id="deleteModalTitle"><i class="fa-solid fa-triangle-exclamation text-red-600"></i> Confirm Delete</h3>
+                <button class="modal-close" data-close="deleteModal" aria-label="Close delete"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-sm text-gray-700" id="deleteMessage">Are you sure you want to delete this waste item?</p>
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" data-close="deleteModal">Cancel</button>
+                    <button class="btn btn-danger" id="confirmDeleteBtn"><i class="fa-solid fa-trash"></i> Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endpush
+
+    @push('scripts')
+    <script>
+        window.wasteItemRoutes = {
+            base: @json(url('/waste-items'))
+        };
+    </script>
+    @endpush
