@@ -224,30 +224,39 @@
             <div class="modal-body">
                 <div id="viewLoading" class="loading-spinner hidden"></div>
                 <div id="viewContent" class="hidden">
-                    <div class="wi-header-block" style="display:flex;flex-direction:column;gap:.4rem;margin-bottom:.75rem;">
-                        <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">
+                    <div class="wi-header-block" style="display:flex;flex-direction:column;gap:.35rem;margin-bottom:.9rem;">
+                        <h2 id="viewTitle" style="font-size:1.15rem;font-weight:600;color:#111827;letter-spacing:.01em;margin:0;">—</h2>
+                        <div style="display:flex;align-items:center;gap:.45rem;flex-wrap:wrap;">
                             <span class="badge" id="viewCondition">—</span>
                             <span class="wi-pill" id="viewWeight"></span>
                             <span class="wi-pill subtle" id="viewId"></span>
                             <span class="wi-pill geo" id="viewLocation"></span>
                         </div>
-                        <h2 id="viewTitle" style="font-size:1.05rem;font-weight:600;color:#111827;letter-spacing:.015em;">—</h2>
                     </div>
 
-                    <div class="wi-meta-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.65rem;margin-bottom:1rem;">
-                        <div class="wi-meta-box"><span class="label">Created</span><span class="value" id="viewCreated">—</span></div>
-                        <div class="wi-meta-box"><span class="label">Updated</span><span class="value" id="viewUpdated">—</span></div>
-                        <div class="wi-meta-box"><span class="label">Materials</span><span class="value" id="viewMaterials">0</span></div>
-                    </div>
-
-                    <div class="wi-section">
-                        <h4 class="wi-section-title">Notes</h4>
-                        <p class="wi-notes" id="viewNotes" style="white-space:pre-line">—</p>
-                    </div>
-
-                    <div class="wi-section">
-                        <h4 class="wi-section-title">Images</h4>
-                        <div id="viewImages" class="gallery-grid"></div>
+                    <div class="wi-detail-layout" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.1rem;align-items:start;margin-bottom:1.1rem;">
+                        <div class="wi-panel" style="background:var(--wi-gray-50);border:1px solid var(--wi-gray-200);padding:.85rem .9rem;border-radius:14px;display:flex;flex-direction:column;gap:.75rem;">
+                            <div>
+                                <h4 style="margin:0 0 .55rem;font-size:.62rem;letter-spacing:.12em;font-weight:700;text-transform:uppercase;color:var(--wi-gray-600);">Summary</h4>
+                                <dl class="wi-attrs" style="margin:0;display:grid;grid-template-columns:auto 1fr;row-gap:.4rem;column-gap:.65rem;font-size:.72rem;color:var(--wi-gray-700);">
+                                    <dt style="font-weight:600;">Created</dt><dd id="viewCreated" style="margin:0;">—</dd>
+                                    <dt style="font-weight:600;">Updated</dt><dd id="viewUpdated" style="margin:0;">—</dd>
+                                    <dt style="font-weight:600;">Materials</dt><dd id="viewMaterials" style="margin:0;">0</dd>
+                                    <dt style="font-weight:600;">Location</dt><dd id="viewLocationDetail" style="margin:0;">—</dd>
+                                </dl>
+                            </div>
+                            <div>
+                                <h4 style="margin:0 0 .55rem;font-size:.62rem;letter-spacing:.12em;font-weight:700;text-transform:uppercase;color:var(--wi-gray-600);">Notes</h4>
+                                <div id="viewNotes" style="white-space:pre-line;font-size:.72rem;line-height:1.35;min-height:40px;color:var(--wi-gray-800);">—</div>
+                            </div>
+                        </div>
+                        <div class="wi-panel" style="background:var(--wi-gray-50);border:1px solid var(--wi-gray-200);padding:.85rem .9rem;border-radius:14px;display:flex;flex-direction:column;gap:.55rem;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;">
+                                <h4 style="margin:0;font-size:.62rem;letter-spacing:.12em;font-weight:700;text-transform:uppercase;color:var(--wi-gray-600);">Images</h4>
+                                <span id="viewImagesCount" style="background:var(--wi-gray-200);color:var(--wi-gray-700);font-size:.6rem;padding:.25rem .55rem;border-radius:999px;font-weight:600;letter-spacing:.05em;">0</span>
+                            </div>
+                            <div id="viewImages" class="gallery-grid" style="--cols:3;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));"></div>
+                        </div>
                     </div>
                     <div class="modal-actions">
                         <button class="btn btn-secondary" data-close="viewModal">Close</button>

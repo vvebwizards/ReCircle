@@ -292,32 +292,34 @@
   function populateView(data){
     viewCondition.textContent = data.condition ? data.condition.toUpperCase() : '—';
     viewWeight.textContent = data.estimated_weight ? `${data.estimated_weight} kg` : '';
-    const idEl = document.getElementById('viewId');
-    if(idEl) idEl.textContent = data.id ? `#${data.id}` : '—';
-    const titleEl = document.getElementById('viewTitle');
-    if(titleEl) titleEl.textContent = data.title || '—';
-    const createdEl = document.getElementById('viewCreated');
-    if(createdEl) createdEl.textContent = data.created_at ? formatDate(data.created_at) : '—';
-    const updatedEl = document.getElementById('viewUpdated');
-    if(updatedEl) updatedEl.textContent = data.updated_at ? formatDate(data.updated_at) : '—';
-    const materialsEl = document.getElementById('viewMaterials');
-    if(materialsEl) materialsEl.textContent = (data.materials_count != null) ? data.materials_count : (data.materials ? data.materials.length : 0) ?? 0;
-    const locEl = document.getElementById('viewLocation');
-    if(locEl){
-      if(data.location && (data.location.lat || data.location.lng)) {
-        locEl.textContent = `${data.location.lat ?? '—'}, ${data.location.lng ?? '—'}`;
-      } else {
-        locEl.textContent = 'No location';
-      }
+    const idEl = document.getElementById('viewId'); if(idEl) idEl.textContent = data.id ? `#${data.id}` : '—';
+    const titleEl = document.getElementById('viewTitle'); if(titleEl) titleEl.textContent = data.title || '—';
+    const createdEl = document.getElementById('viewCreated'); if(createdEl) createdEl.textContent = data.created_at ? formatDate(data.created_at) : '—';
+    const updatedEl = document.getElementById('viewUpdated'); if(updatedEl) updatedEl.textContent = data.updated_at ? formatDate(data.updated_at) : '—';
+    const materialsEl = document.getElementById('viewMaterials'); if(materialsEl) materialsEl.textContent = (data.materials_count != null) ? data.materials_count : (data.materials ? data.materials.length : 0) ?? 0;
+    // location badges
+    const locPill = document.getElementById('viewLocation');
+    const locDetail = document.getElementById('viewLocationDetail');
+    let locDisplay = 'No location';
+    if(data.location && (data.location.lat != null || data.location.lng != null)){
+      const lat = data.location.lat ?? '—';
+      const lng = data.location.lng ?? '—';
+      locDisplay = `${lat}, ${lng}`;
     }
-    viewNotes.textContent = data.notes || '—';
+    if(locPill) locPill.textContent = locDisplay;
+    if(locDetail) locDetail.textContent = locDisplay;
+    // notes
+    const notesEl = document.getElementById('viewNotes'); if(notesEl) notesEl.textContent = (data.notes && data.notes.trim().length) ? data.notes : '—';
+    // images
     viewImages.innerHTML = '';
-    (data.images || []).sort((a,b)=> (a.order??0)-(b.order??0)).forEach(img => {
+    const imgs = (data.images || []).sort((a,b)=> (a.order??0)-(b.order??0));
+    imgs.forEach(img => {
       const el = document.createElement('img');
       el.src = img.url || img.path;
-      el.alt = data.title;
+      el.alt = data.title || '';
       viewImages.appendChild(el);
     });
+    const imgCount = document.getElementById('viewImagesCount'); if(imgCount) imgCount.textContent = imgs.length;
   }
 
   function formatDate(str){
