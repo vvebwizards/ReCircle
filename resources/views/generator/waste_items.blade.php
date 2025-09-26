@@ -1,7 +1,13 @@
 @extends('layouts.app')
 
 @push('head')
-@vite(['resources/css/materials.css','resources/css/waste-items.css','resources/js/waste-items.js'])
+@vite([
+    'resources/css/materials.css',
+    'resources/css/material-create.css',
+    'resources/css/waste-items.css',
+    'resources/js/waste-item-create.js',
+    'resources/js/waste-items.js'
+])
 @endpush
 
 @section('content')
@@ -14,7 +20,7 @@
                 </h1>
                 <p>Manage waste items you've generated</p>
             </div>
-            <a href="{{ route('generator.waste-items.create') }}" class="btn-create">
+            <a href="{{ route('generator.waste-items.create') }}" class="btn-create open-create-modal">
                 <i class="fa-solid fa-plus"></i> New Waste Item
             </a>
         </div>
@@ -77,11 +83,11 @@
                     @endphp
                     <div class="material-image-wrapper" style="height:140px;overflow:hidden;position:relative;border-radius:4px 4px 0 0;background:#f5f5f5;display:flex;align-items:center;justify-content:center;">
                         @php $photosCount = $item->photos->count(); @endphp
-                        <div style="position:absolute;top:4px;left:4px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;padding:2px 4px;border-radius:3px;z-index:2;">imgs: {{ $photosCount }}</div>
+                        <div class="card-img-count" style="position:absolute;top:4px;left:4px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;padding:2px 4px;border-radius:3px;z-index:2;">imgs: <span class="count-val">{{ $photosCount }}</span></div>
                         @if($src)
-                            <img src="{{ $src }}" alt="{{ $item->title }}" style="width:100%;height:100%;object-fit:cover;" onerror="this.onerror=null;this.src='https://via.placeholder.com/400x240?text=Image';">
+                            <img src="{{ $src }}" alt="{{ $item->title }}" class="card-primary-img" style="width:100%;height:100%;object-fit:cover;" onerror="this.onerror=null;this.src='https://via.placeholder.com/400x240?text=Image';">
                         @else
-                            <div style="font-size:0.85rem;color:#888;display:flex;flex-direction:column;align-items:center;gap:0.25rem;">
+                            <div class="card-primary-fallback" style="font-size:0.85rem;color:#888;display:flex;flex-direction:column;align-items:center;gap:0.25rem;">
                                 <i class="fa-solid fa-image" style="font-size:1.4rem;"></i>
                                 <span>No Image</span>
                             </div>
@@ -117,9 +123,9 @@
             @empty
                 <div class="empty-state">
                     <div class="empty-icon"><i class="fa-solid fa-trash"></i></div>
-                    <h3 class="empty-text">No waste items found</h3>
+                    <h3 herf class="empty-text">No waste items found</h3>
                     <p>Create your first waste item.</p>
-                    <a href="#" class="btn-create" style="display:inline-flex;margin-top:1rem;"><i class="fa-solid fa-plus"></i> Create Waste Item</a>
+                    <a href="#" class="btn-create open-create-modal" style="display:inline-flex;margin-top:1rem;"><i class="fa-solid fa-plus"></i> Create Waste Item</a>
                 </div>
             @endforelse
         </div>
@@ -151,6 +157,60 @@
 
     @push('modals')
     <div class="modal-overlay" id="modalOverlay" aria-hidden="true">
+        <!-- CREATE MODAL -->
+        <div class="modal hidden" id="createModal" role="dialog" aria-modal="true" aria-labelledby="createModalTitle">
+            <div class="modal-header">
+                <h3 class="modal-title" id="createModalTitle"><i class="fa-solid fa-circle-plus"></i> <span>Create Waste Item</span></h3>
+                <button class="modal-close" data-close="createModal" aria-label="Close create"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="createWasteItemForm" enctype="multipart/form-data">
+                    @csrf
+                    <div class="form-grid">
+                        <div class="full">
+                            <label class="block text-xs font-semibold tracking-wide uppercase text-gray-600">Title *</label>
+                            <input type="text" name="title" class="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" required placeholder="e.g., Mixed Plastic Batch">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold tracking-wide uppercase text-gray-600">Condition *</label>
+                            <select name="condition" class="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" required>
+                                <option value="good">Good</option>
+                                <option value="fixable">Fixable</option>
+                                <option value="scrap">Scrap</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold tracking-wide uppercase text-gray-600">Weight (kg)</label>
+                            <input type="number" step="0.01" min="0" name="estimated_weight" class="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="0.00">
+                        </div>
+                        <div class="full">
+                            <label class="block text-xs font-semibold tracking-wide uppercase text-gray-600">Location (Lat / Lng)</label>
+                            <div style="display:flex;gap:.5rem;">
+                                <input type="number" step="0.000001" name="location[lat]" placeholder="Latitude" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                                <input type="number" step="0.000001" name="location[lng]" placeholder="Longitude" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                            </div>
+                        </div>
+                        <div class="full">
+                            <label class="block text-xs font-semibold tracking-wide uppercase text-gray-600">Notes</label>
+                            <textarea name="notes" rows="3" class="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Additional details..."></textarea>
+                        </div>
+                        <div class="full">
+                            <label class="block text-xs font-semibold tracking-wide uppercase text-gray-600">Images</label>
+                            <div id="imageDropzone" class="image-dropzone" tabindex="0" role="button" aria-label="Upload images">
+                                <p class="dz-instructions"><i class="fa-solid fa-cloud-arrow-up"></i> Drag & drop images here or <span class="link">browse</span><br><small>Up to 10 images, max 2MB each</small></p>
+                                <input type="file" id="images" name="images[]" multiple accept="image/*" hidden>
+                            </div>
+                            <div id="imagePreviewList" class="image-preview-list"></div>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" data-close="createModal">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="createSubmitBtn"><i class="fa-solid fa-save"></i> Create</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <!-- VIEW MODAL -->
         <div class="modal hidden" id="viewModal" role="dialog" aria-modal="true" aria-labelledby="viewModalTitle">
             <div class="modal-header">
@@ -201,7 +261,6 @@
             </div>
             <div class="modal-body">
                 <form id="editForm">
-                    <input type="hidden" name="id" id="editId">
                     <div class="form-grid">
                         <div class="full">
                             <label class="block text-xs font-semibold tracking-wide uppercase text-gray-600">Title</label>
@@ -220,8 +279,28 @@
                             <input type="number" step="0.01" min="0" name="estimated_weight" id="editWeight" class="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
                         </div>
                         <div class="full">
+                            <label class="block text-xs font-semibold tracking-wide uppercase text-gray-600">Location (Lat / Lng)</label>
+                            <div style="display:flex;gap:.5rem;">
+                                <input type="number" step="0.000001" name="location[lat]" id="editLocationLat" placeholder="Latitude" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                                <input type="number" step="0.000001" name="location[lng]" id="editLocationLng" placeholder="Longitude" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                            </div>
+                        </div>
+                        <div class="full">
                             <label class="block text-xs font-semibold tracking-wide uppercase text-gray-600">Notes</label>
                             <textarea name="notes" id="editNotes" rows="4" class="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Notes..."></textarea>
+                        </div>
+                        <div class="full">
+                            <label class="block text-xs font-semibold tracking-wide uppercase text-gray-600">Images</label>
+                            <div id="editImagesExisting" class="image-preview-list" style="margin-bottom:.5rem;">
+                                <!-- existing images injected by JS -->
+                            </div>
+                            <div class="edit-image-add">
+                                <input type="file" id="editNewImages" name="new_images[]" multiple accept="image/*" hidden>
+                                <button type="button" class="btn btn-secondary btn-sm" id="editAddImagesBtn"><i class="fa-solid fa-image"></i> Add Images</button>
+                                <small class="block text-gray-500 mt-1">You can add up to 10 images total. Drag to reorder. First image is primary.</small>
+                            </div>
+                            <input type="hidden" name="keep_images" id="editKeepImages"> <!-- CSV of existing image IDs in order -->
+                            <input type="hidden" name="remove_images" id="editRemoveImages"> <!-- CSV of removed image IDs -->
                         </div>
                     </div>
                     <div class="modal-actions">

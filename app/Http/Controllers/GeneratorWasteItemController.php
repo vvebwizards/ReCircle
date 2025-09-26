@@ -55,11 +55,33 @@ class GeneratorWasteItemController extends Controller
             }
         }
 
+        if ($request->wantsJson() || $request->expectsJson()) {
+            $wasteItem->load('photos');
+
+            return response()->json([
+                'message' => 'Created',
+                'data' => [
+                    'id' => $wasteItem->id,
+                    'title' => $wasteItem->title,
+                    'condition' => $wasteItem->condition,
+                    'estimated_weight' => $wasteItem->estimated_weight,
+                    'notes' => $wasteItem->notes,
+                    'location' => $wasteItem->location,
+                    'images' => $wasteItem->photos->map(fn ($p) => [
+                        'id' => $p->id,
+                        'url' => asset($p->image_path),
+                        'order' => $p->order,
+                    ]),
+                    'primary_image_url' => $wasteItem->primary_image_url,
+                ],
+            ], 201);
+        }
+
         return redirect()->route('generator.waste-items.index')
             ->with('success', 'Waste item "'.$wasteItem->title.'" created.');
     }
 
-    public function index(Request $request): View
+    public function index(Request $request): View|\Illuminate\Http\JsonResponse
     {
         $query = WasteItem::with('photos')->where('generator_id', Auth::id());
 
@@ -93,6 +115,38 @@ class GeneratorWasteItemController extends Controller
         $total = $wasteItems->total();
         $avgWeight = WasteItem::where('generator_id', Auth::id())->avg('estimated_weight') ?? 0;
 
+        if ($request->wantsJson()) {
+            return response()->json([
+                'data' => [
+                    'items' => $wasteItems->map(function ($w) {
+                        return [
+                            'id' => $w->id,
+                            'title' => $w->title,
+                            'condition' => $w->condition,
+                            'estimated_weight' => $w->estimated_weight,
+                            'notes' => $w->notes,
+                            'created_at' => $w->created_at?->toISOString(),
+                            'primary_image_url' => $w->primary_image_url,
+                            'images_count' => $w->photos->count(),
+                        ];
+                    }),
+                    'pagination' => [
+                        'current_page' => $wasteItems->currentPage(),
+                        'last_page' => $wasteItems->lastPage(),
+                        'per_page' => $wasteItems->perPage(),
+                        'total' => $wasteItems->total(),
+                        'next_page_url' => $wasteItems->nextPageUrl(),
+                        'prev_page_url' => $wasteItems->previousPageUrl(),
+                    ],
+                    'stats' => [
+                        'total' => $total,
+                        'avgWeight' => round($avgWeight, 2),
+                        'conditionsCount' => $conditionsCount,
+                    ],
+                ],
+            ]);
+        }
+
         return view('generator.waste_items', [
             'wasteItems' => $wasteItems,
             'conditionsCount' => $conditionsCount,
@@ -104,6 +158,7 @@ class GeneratorWasteItemController extends Controller
     public function show(WasteItem $wasteItem)
     {
         $this->ensureOwnership($wasteItem);
+        $wasteItem->loadCount('materials');
         $wasteItem->load('photos');
 
         return response()->json([
@@ -114,6 +169,10 @@ class GeneratorWasteItemController extends Controller
                 'estimated_weight' => $wasteItem->estimated_weight,
                 'notes' => $wasteItem->notes,
                 'location' => $wasteItem->location,
+                'created_at' => $wasteItem->created_at?->toISOString(),
+                'updated_at' => $wasteItem->updated_at?->toISOString(),
+                'materials_count' => $wasteItem->materials_count,
+                'primary_image_url' => $wasteItem->primary_image_url,
                 'images' => $wasteItem->photos->map(fn ($p) => [
                     'id' => $p->id,
                     'path' => $p->image_path,
@@ -132,10 +191,73 @@ class GeneratorWasteItemController extends Controller
             'condition' => ['sometimes', 'required', 'in:good,fixable,scrap'],
             'estimated_weight' => ['sometimes', 'nullable', 'numeric', 'min:0'],
             'notes' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'location.lat' => ['sometimes', 'nullable', 'numeric', 'between:-90,90'],
+            'location.lng' => ['sometimes', 'nullable', 'numeric', 'between:-180,180'],
+            'keep_images' => ['sometimes', 'nullable', 'string'], // CSV ids in final order
+            'remove_images' => ['sometimes', 'nullable', 'string'], // CSV ids to delete
+            'new_images.*' => ['sometimes', 'image', 'max:2048'],
         ]);
-        $wasteItem->update($validated);
+        // Extract structured location from bracket style if provided
+        if ($request->has('location')) {
+            $loc = $request->input('location');
+            $validated['location'] = [
+                'lat' => $loc['lat'] ?? null,
+                'lng' => $loc['lng'] ?? null,
+            ];
+        }
 
-        return response()->json(['message' => 'Updated', 'data' => $wasteItem->only(['id', 'title', 'condition', 'estimated_weight', 'notes'])]);
+        // Basic attribute update
+        $wasteItem->update(collect($validated)->only(['title', 'condition', 'estimated_weight', 'notes', 'location'])->toArray());
+
+        // Handle images
+        $keepIds = collect(explode(',', (string) $request->input('keep_images')))->filter()->map(fn ($v) => (int) $v)->values();
+        $removeIds = collect(explode(',', (string) $request->input('remove_images')))->filter()->map(fn ($v) => (int) $v)->values();
+
+        if ($removeIds->isNotEmpty()) {
+            $wasteItem->photos()->whereIn('id', $removeIds)->get()->each(function ($img) {
+                // Optionally unlink file
+                if ($img->image_path && file_exists(public_path($img->image_path))) {
+                    @unlink(public_path($img->image_path));
+                }
+                $img->delete();
+            });
+        }
+        // Reorder kept images
+        if ($keepIds->isNotEmpty()) {
+            foreach ($keepIds as $idx => $id) {
+                $wasteItem->photos()->where('id', $id)->update(['order' => $idx]);
+            }
+        }
+
+        // Add new images
+        if ($request->hasFile('new_images')) {
+            $currentCount = $wasteItem->photos()->count();
+            foreach ($request->file('new_images') as $idx => $file) {
+                $filename = uniqid('waste_').'.'.$file->getClientOriginalExtension();
+                $path = 'storage/images/waste-items/'.$filename;
+                $file->move(public_path('storage/images/waste-items'), $filename);
+                $wasteItem->photos()->create([
+                    'image_path' => $path,
+                    'order' => $currentCount + $idx,
+                ]);
+            }
+        }
+
+        $wasteItem->load('photos');
+
+        return response()->json(['message' => 'Updated', 'data' => [
+            'id' => $wasteItem->id,
+            'title' => $wasteItem->title,
+            'condition' => $wasteItem->condition,
+            'estimated_weight' => $wasteItem->estimated_weight,
+            'notes' => $wasteItem->notes,
+            'location' => $wasteItem->location,
+            'images' => $wasteItem->photos->map(fn ($p) => [
+                'id' => $p->id,
+                'url' => asset($p->image_path),
+                'order' => $p->order,
+            ]),
+        ]]);
     }
 
     public function destroy(WasteItem $wasteItem)
