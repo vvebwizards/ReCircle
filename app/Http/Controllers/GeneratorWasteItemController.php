@@ -21,18 +21,30 @@ class GeneratorWasteItemController extends Controller
             'condition' => ['required', 'in:good,fixable,scrap'],
             'estimated_weight' => ['nullable', 'numeric', 'min:0'],
             'images' => ['nullable', 'array', 'max:10'],
-            'images.*' => ['string'],
+            'images.*' => ['image', 'mimes:jpg,jpeg,png,gif,webp', 'max:2048'],
             'location.lat' => ['nullable', 'numeric', 'between:-90,90'],
             'location.lng' => ['nullable', 'numeric', 'between:-180,180'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
+        $storedImagePaths = [];
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $uploaded) {
+                if (! $uploaded->isValid()) {
+                    continue; // skip invalid
+                }
+                $path = $uploaded->store('public/images/waste-items');
+                // store relative path for public access via storage symlink
+                $storedImagePaths[] = str_replace('public/', 'storage/', $path);
+            }
+        }
+
         $payload = [
             'title' => $validated['title'],
             'condition' => $validated['condition'],
             'estimated_weight' => $validated['estimated_weight'] ?? null,
-            'images' => $validated['images'] ?? [],
-            'location' => isset($validated['location.lat']) ? [
+            'images' => $storedImagePaths,
+            'location' => ($validated['location.lat'] ?? null) !== null || ($validated['location.lng'] ?? null) !== null ? [
                 'lat' => $validated['location.lat'] ?? null,
                 'lng' => $validated['location.lng'] ?? null,
             ] : null,

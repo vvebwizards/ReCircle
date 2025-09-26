@@ -45,6 +45,18 @@ class WasteItemController extends Controller
         $data = $request->validated();
         $data['generator_id'] = $request->user()->id;
 
+        $storedImagePaths = [];
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $uploaded) {
+                if (! $uploaded->isValid()) {
+                    continue;
+                }
+                $path = $uploaded->store('public/images/waste-items');
+                $storedImagePaths[] = str_replace('public/', 'storage/', $path);
+            }
+            $data['images'] = $storedImagePaths;
+        }
+
         $wasteItem = WasteItem::create($data);
 
         return response()->json([
@@ -62,8 +74,21 @@ class WasteItemController extends Controller
     public function update(UpdateWasteItemRequest $request, WasteItem $wasteItem): JsonResponse
     {
         $this->authorizeOwnership($request, $wasteItem);
+        $data = $request->validated();
 
-        $wasteItem->update($request->validated());
+        if ($request->hasFile('images')) {
+            $storedImagePaths = [];
+            foreach ($request->file('images') as $uploaded) {
+                if (! $uploaded->isValid()) {
+                    continue;
+                }
+                $path = $uploaded->store('public/images/waste-items');
+                $storedImagePaths[] = str_replace('public/', 'storage/', $path);
+            }
+            $data['images'] = $storedImagePaths; // replace existing set
+        }
+
+        $wasteItem->update($data);
 
         return response()->json([
             'data' => $this->transform($wasteItem->fresh()),

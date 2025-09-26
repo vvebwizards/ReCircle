@@ -1,7 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const addBtn = document.getElementById('addImageUrlBtn');
-    const input = document.getElementById('newImageUrl');
-    const list = document.getElementById('imageUrlList');
+    const dropzone = document.getElementById('imageDropzone');
+    const fileInput = document.getElementById('images');
+    const previewList = document.getElementById('imagePreviewList');
+    const maxFiles = 10;
 
     const toggleButton = document.querySelector('.instructions-toggle');
     if (toggleButton) {
@@ -12,68 +13,118 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function rebuildHiddenInputs() {
-        // remove old hidden inputs
-        list.querySelectorAll('input[type=hidden]').forEach(e => e.remove());
-        // re-add based on current visible items
-        const urls = Array.from(list.querySelectorAll('.image-url-item span'))
-            .map(s => s.textContent.trim());
-        urls.forEach(u => {
-            const hidden = document.createElement('input');
-            hidden.type = 'hidden';
-            hidden.name = 'images[]';
-            hidden.value = u;
-            list.appendChild(hidden);
+    let filesState = []; // array of File objects
+
+    function syncFileInput() {
+        // Create a new DataTransfer to update the underlying input's FileList
+        const dt = new DataTransfer();
+        filesState.forEach(f => dt.items.add(f));
+        fileInput.files = dt.files;
+    }
+
+    function renderPreviews() {
+        previewList.innerHTML = '';
+        filesState.forEach((file, index) => {
+            const item = document.createElement('div');
+            item.className = 'preview-item';
+
+            const img = document.createElement('img');
+            img.alt = file.name;
+            img.loading = 'lazy';
+            img.className = 'preview-thumb';
+
+            const reader = new FileReader();
+            reader.onload = e => { img.src = e.target.result; };
+            reader.readAsDataURL(file);
+
+            const meta = document.createElement('div');
+            meta.className = 'preview-meta';
+            meta.innerHTML = `<strong>${index === 0 ? 'Primary • ' : ''}</strong>${file.name}<br><small>${(file.size/1024).toFixed(1)} KB</small>`;
+
+            const actions = document.createElement('div');
+            actions.className = 'preview-actions';
+
+            if (index > 0) {
+                const upBtn = document.createElement('button');
+                upBtn.type = 'button';
+                upBtn.title = 'Move earlier';
+                upBtn.className = 'btn btn-sm btn-secondary';
+                upBtn.innerHTML = '<i class="fa-solid fa-arrow-up"></i>';
+                upBtn.onclick = () => {
+                    const tmp = filesState[index-1];
+                    filesState[index-1] = filesState[index];
+                    filesState[index] = tmp;
+                    renderPreviews();
+                    syncFileInput();
+                };
+                actions.appendChild(upBtn);
+            }
+
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'btn btn-sm btn-danger';
+            removeBtn.title = 'Remove image';
+            removeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+            removeBtn.onclick = () => {
+                filesState.splice(index, 1);
+                renderPreviews();
+                syncFileInput();
+            };
+            actions.appendChild(removeBtn);
+
+            item.appendChild(img);
+            item.appendChild(meta);
+            item.appendChild(actions);
+            previewList.appendChild(item);
         });
     }
 
-    function addUrl(url) {
-        if (!url) return;
-        const existing = Array.from(list.querySelectorAll('.image-url-item span'))
-            .some(s => s.textContent.trim() === url);
-        if (existing) return;
-        const count = list.querySelectorAll('.image-url-item').length;
-        if (count >= 10) return alert('Maximum of 10 images');
-
-        const wrapper = document.createElement('div');
-        wrapper.className = 'image-url-item';
-        wrapper.style.display = 'flex';
-        wrapper.style.alignItems = 'center';
-        wrapper.style.gap = '0.5rem';
-        wrapper.style.marginTop = '0.4rem';
-
-        const order = document.createElement('span');
-        order.textContent = url;
-        order.style.flex = '1';
-        order.style.fontSize = '0.75rem';
-        order.style.wordBreak = 'break-all';
-
-        const remove = document.createElement('button');
-        remove.type = 'button';
-        remove.textContent = 'Remove';
-        remove.className = 'btn btn-danger';
-        remove.style.fontSize = '0.65rem';
-        remove.onclick = () => {
-            wrapper.remove();
-            rebuildHiddenInputs();
-        };
-
-        wrapper.appendChild(order);
-        wrapper.appendChild(remove);
-        list.appendChild(wrapper);
-        rebuildHiddenInputs();
+    function addFiles(fileList) {
+        const incoming = Array.from(fileList);
+        for (const f of incoming) {
+            if (!f.type.startsWith('image/')) continue;
+            if (f.size > 2 * 1024 * 1024) { // 2MB
+                alert(`${f.name} exceeds 2MB limit and was skipped.`);
+                continue;
+            }
+            if (filesState.length >= maxFiles) {
+                alert('Maximum of 10 images reached.');
+                break;
+            }
+            filesState.push(f);
+        }
+        renderPreviews();
+        syncFileInput();
     }
 
-    addBtn?.addEventListener('click', () => {
-        const url = input.value.trim();
-        if (!url) return;
-        try {
-            new URL(url);
-        } catch (e) {
-            alert('Invalid URL');
-            return;
+    dropzone?.addEventListener('click', () => fileInput.click());
+    dropzone?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            fileInput.click();
         }
-        addUrl(url);
-        input.value = '';
+    });
+
+    ;['dragenter','dragover'].forEach(ev => dropzone?.addEventListener(ev, e => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.add('drag-active');
+    }));
+    ;['dragleave','drop'].forEach(ev => dropzone?.addEventListener(ev, e => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (ev === 'dragleave' && e.target !== dropzone) return;
+        dropzone.classList.remove('drag-active');
+    }));
+    dropzone?.addEventListener('drop', e => {
+        if (e.dataTransfer?.files) {
+            addFiles(e.dataTransfer.files);
+        }
+    });
+
+    fileInput?.addEventListener('change', () => {
+        addFiles(fileInput.files);
+        // Clear the real input so re-selecting same file triggers change
+        fileInput.value = '';
     });
 });

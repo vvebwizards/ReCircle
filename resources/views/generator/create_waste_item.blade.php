@@ -15,7 +15,7 @@
 
     <div class="material-container">
       <div class="material-form-container">
-        <form action="{{ route('generator.waste-items.store') }}" method="POST" class="material-form" id="wasteItemForm" novalidate>
+  <form action="{{ route('generator.waste-items.store') }}" method="POST" class="material-form" id="wasteItemForm" novalidate enctype="multipart/form-data">
           @csrf
           <div class="form-group full-width {{ $errors->has('title') ? 'has-error' : '' }}">
             <label for="title">Title *</label>
@@ -40,14 +40,15 @@
             @error('estimated_weight')<small class="error-text">{{ $message }}</small>@enderror
           </div>
 
-          <div class="form-group full-width">
-            <label for="images">Images (URLs)</label>
-            <div id="imageUrlList" class="image-url-list"></div>
-            <div style="display:flex; gap:0.5rem; margin-top:0.4rem;">
-              <input type="url" id="newImageUrl" placeholder="https://..." style="flex:1;">
-              <button type="button" class="btn btn-primary" id="addImageUrlBtn" style="white-space:nowrap;">Add</button>
+          <div class="form-group full-width {{ $errors->has('images') || $errors->has('images.*') ? 'has-error' : '' }}">
+            <label for="images">Images</label>
+            <div id="imageDropzone" class="image-dropzone" tabindex="0" role="button" aria-label="Upload images">
+              <p class="dz-instructions"><i class="fa-solid fa-cloud-arrow-up"></i> Drag & drop images here or <span class="link">browse</span><br><small>Up to 10 images, max 2MB each (jpg, jpeg, png, gif, webp)</small></p>
+              <input type="file" id="images" name="images[]" multiple accept="image/*" hidden>
             </div>
-            <small class="helper-text">Add up to 10 image URLs. First image will be primary.</small>
+            <div id="imagePreviewList" class="image-preview-list"></div>
+            @error('images')<small class="error-text">{{ $message }}</small>@enderror
+            @error('images.*')<small class="error-text">{{ $message }}</small>@enderror
           </div>
 
           <div class="form-group full-width">
@@ -81,11 +82,11 @@
               <li>Use a clear, descriptive title (e.g., Sorted PET Plastic Bottles)</li>
               <li>Choose the most accurate condition for processing</li>
               <li>Include an estimated weight if known</li>
-              <li>Add image URLs (from CDN or temporary hosting) for visual clarity</li>
+              <li>Upload clear, well-lit images (first image becomes the primary)</li>
               <li>Location helps logistics and buyers plan transport</li>
             </ul>
             <div class="instruction-warning">
-              <strong><i class="fa-solid fa-exclamation-triangle"></i> Note:</strong> You can edit waste items later to refine details or add images.
+              <strong><i class="fa-solid fa-exclamation-triangle"></i> Note:</strong> You can edit waste items later to refine details or manage images.
             </div>
           </div>
         </div>
