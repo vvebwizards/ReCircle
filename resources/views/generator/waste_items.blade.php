@@ -14,7 +14,7 @@
                 </h1>
                 <p>Manage waste items you've generated</p>
             </div>
-            <a href="#" class="btn-create">
+            <a href="{{ route('generator.waste-items.create') }}" class="btn-create">
                 <i class="fa-solid fa-plus"></i> New Waste Item
             </a>
         </div>
