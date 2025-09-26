@@ -25,35 +25,39 @@
             </a>
         </div>
 
-        <div class="filters-section">
-            <form action="{{ route('generator.waste-items.index') }}" method="GET" id="filterForm">
-                <div class="filters-row">
-                    <div class="filter-group">
-                        <label class="filter-label" for="search">Search</label>
-                        <input type="text" name="search" id="search" class="filter-input" placeholder="Search waste items..." value="{{ request('search') }}">
+        <div class="filters-section modern">
+            <form action="{{ route('generator.waste-items.index') }}" method="GET" id="filterForm" class="filter-toolbar" novalidate>
+                <div class="ft-row">
+                    <div class="ft-search">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" name="search" id="search" placeholder="Search waste items..." value="{{ request('search') }}" autocomplete="off" />
+                        @if(request('search'))
+                            <button type="button" class="clear-search" aria-label="Clear search" title="Clear search">&times;</button>
+                        @endif
                     </div>
-                    <div class="filter-group">
-                        <label class="filter-label" for="condition">Condition</label>
-                        <select name="condition" id="condition" class="filter-select">
-                            <option value="">All</option>
+                    <div class="ft-select">
+                        <label for="condition" class="sr-only">Condition</label>
+                        <i class="fa-solid fa-screwdriver-wrench"></i>
+                        <select name="condition" id="condition">
+                            <option value="">Condition: All</option>
                             @foreach(['good','fixable','scrap'] as $c)
                                 <option value="{{ $c }}" {{ request('condition') === $c ? 'selected' : '' }}>{{ ucfirst($c) }}</option>
                             @endforeach
                         </select>
                     </div>
-                    <div class="filter-group">
-                        <label class="filter-label" for="sort">Sort By</label>
-                        <select name="sort" id="sort" class="filter-select">
+                    <div class="ft-select">
+                        <label for="sort" class="sr-only">Sort</label>
+                        <i class="fa-solid fa-arrow-down-wide-short"></i>
+                        <select name="sort" id="sort">
                             <option value="newest" {{ request('sort')=='newest' ? 'selected' : '' }}>Newest</option>
                             <option value="oldest" {{ request('sort')=='oldest' ? 'selected' : '' }}>Oldest</option>
                             <option value="title_asc" {{ request('sort')=='title_asc' ? 'selected' : '' }}>Title A-Z</option>
                             <option value="title_desc" {{ request('sort')=='title_desc' ? 'selected' : '' }}>Title Z-A</option>
                         </select>
                     </div>
-                    <div class="filter-group">
-                        <button type="submit" class="btn-filter">
-                            <i class="fa-solid fa-filter"></i> Apply Filters
-                        </button>
+                    <div class="ft-actions">
+                        <button type="reset" id="filtersReset" class="ft-btn ghost" title="Reset filters" aria-label="Reset filters"><i class="fa-solid fa-rotate"></i><span class="txt">Reset</span></button>
+                        
                     </div>
                 </div>
             </form>
