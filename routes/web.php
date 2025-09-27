@@ -23,6 +23,8 @@ Route::prefix('admin')->group(function () {
     Route::get('/users', [UserManagementController::class, 'index'])->name('admin.users');
     Route::post('/users/{user}/role', [UserManagementController::class, 'updateRole'])->name('admin.users.updateRole');
     Route::post('/users/{user}/toggle', [UserManagementController::class, 'toggleStatus'])->name('admin.users.toggleStatus');
+    // Admin listings routes (limited CRUD: no create/store)
+    require __DIR__.'/admin_listings.php';
 });
 // Security settings (2FA) page — gated client-side via /api/auth/me
 Route::get('/settings/security', function () {
