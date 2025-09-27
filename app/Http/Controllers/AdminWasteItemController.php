@@ -40,7 +40,7 @@ class AdminWasteItemController extends Controller
         if ($request->wantsJson()) {
             return response()->json([
                 'data' => [
-                    'items' => $items->map(fn($w) => [
+                    'items' => $items->map(fn ($w) => [
                         'id' => $w->id,
                         'title' => $w->title,
                         'condition' => $w->condition,
@@ -73,6 +73,7 @@ class AdminWasteItemController extends Controller
     public function show(WasteItem $wasteItem)
     {
         $wasteItem->loadCount('materials')->load('photos', 'generator');
+
         return response()->json([
             'data' => [
                 'id' => $wasteItem->id,
@@ -89,7 +90,7 @@ class AdminWasteItemController extends Controller
                     'name' => $wasteItem->generator?->name,
                     'email' => $wasteItem->generator?->email,
                 ],
-                'images' => $wasteItem->photos->map(fn($p) => [
+                'images' => $wasteItem->photos->map(fn ($p) => [
                     'id' => $p->id,
                     'url' => asset($p->image_path),
                     'order' => $p->order,
@@ -105,15 +106,15 @@ class AdminWasteItemController extends Controller
     public function update(Request $request, WasteItem $wasteItem)
     {
         $validated = $request->validate([
-            'title' => ['sometimes','required','string','max:255'],
-            'condition' => ['sometimes','required','in:good,fixable,scrap'],
-            'estimated_weight' => ['sometimes','nullable','numeric','min:0'],
-            'notes' => ['sometimes','nullable','string','max:2000'],
-            'location.lat' => ['sometimes','nullable','numeric','between:-90,90'],
-            'location.lng' => ['sometimes','nullable','numeric','between:-180,180'],
-            'keep_images' => ['sometimes','nullable','string'],
-            'remove_images' => ['sometimes','nullable','string'],
-            'new_images.*' => ['sometimes','image','max:2048'],
+            'title' => ['sometimes', 'required', 'string', 'max:255'],
+            'condition' => ['sometimes', 'required', 'in:good,fixable,scrap'],
+            'estimated_weight' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'notes' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'location.lat' => ['sometimes', 'nullable', 'numeric', 'between:-90,90'],
+            'location.lng' => ['sometimes', 'nullable', 'numeric', 'between:-180,180'],
+            'keep_images' => ['sometimes', 'nullable', 'string'],
+            'remove_images' => ['sometimes', 'nullable', 'string'],
+            'new_images.*' => ['sometimes', 'image', 'max:2048'],
         ]);
 
         if ($request->has('location')) {
@@ -124,13 +125,13 @@ class AdminWasteItemController extends Controller
             ];
         }
 
-        $wasteItem->update(collect($validated)->only(['title','condition','estimated_weight','notes','location'])->toArray());
+        $wasteItem->update(collect($validated)->only(['title', 'condition', 'estimated_weight', 'notes', 'location'])->toArray());
 
-        $keepIds = collect(explode(',', (string)$request->input('keep_images')))->filter()->map(fn($v)=>(int)$v)->values();
-        $removeIds = collect(explode(',', (string)$request->input('remove_images')))->filter()->map(fn($v)=>(int)$v)->values();
+        $keepIds = collect(explode(',', (string) $request->input('keep_images')))->filter()->map(fn ($v) => (int) $v)->values();
+        $removeIds = collect(explode(',', (string) $request->input('remove_images')))->filter()->map(fn ($v) => (int) $v)->values();
 
         if ($removeIds->isNotEmpty()) {
-            $wasteItem->photos()->whereIn('id',$removeIds)->get()->each(function($img){
+            $wasteItem->photos()->whereIn('id', $removeIds)->get()->each(function ($img) {
                 if ($img->image_path && file_exists(public_path($img->image_path))) {
                     @unlink(public_path($img->image_path));
                 }
@@ -147,7 +148,9 @@ class AdminWasteItemController extends Controller
             foreach ($request->file('new_images') as $idx => $file) {
                 $filename = uniqid('waste_').'.'.$file->getClientOriginalExtension();
                 $dir = public_path('storage/images/waste-items');
-                if (!is_dir($dir)) { @mkdir($dir, 0775, true); }
+                if (! is_dir($dir)) {
+                    @mkdir($dir, 0775, true);
+                }
                 $file->move($dir, $filename);
                 $wasteItem->photos()->create([
                     'image_path' => 'storage/images/waste-items/'.$filename,
@@ -157,17 +160,18 @@ class AdminWasteItemController extends Controller
         }
 
         $wasteItem->load('photos');
-        return response()->json(['message' => 'Updated','data' => [
+
+        return response()->json(['message' => 'Updated', 'data' => [
             'id' => $wasteItem->id,
             'title' => $wasteItem->title,
             'condition' => $wasteItem->condition,
             'estimated_weight' => $wasteItem->estimated_weight,
             'notes' => $wasteItem->notes,
             'location' => $wasteItem->location,
-            'images' => $wasteItem->photos->map(fn($p)=>[
-                'id'=>$p->id,
-                'url'=>asset($p->image_path),
-                'order'=>$p->order,
+            'images' => $wasteItem->photos->map(fn ($p) => [
+                'id' => $p->id,
+                'url' => asset($p->image_path),
+                'order' => $p->order,
             ]),
             'primary_image_url' => $wasteItem->primary_image_url,
         ]]);
@@ -179,6 +183,7 @@ class AdminWasteItemController extends Controller
     public function destroy(WasteItem $wasteItem)
     {
         $wasteItem->delete();
+
         return response()->json(['message' => 'Deleted']);
     }
 }
