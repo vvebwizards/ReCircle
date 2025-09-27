@@ -40,6 +40,11 @@ class Material extends Model
         return $this->hasMany(MaterialImage::class);
     }
 
+    public function processSteps(): HasMany
+    {
+        return $this->hasMany(ProcessStep::class, 'material_id');
+    }
+
     public function getPrimaryImageAttribute()
     {
         return $this->images->first()->image_path ?? null;
