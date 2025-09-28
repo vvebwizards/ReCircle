@@ -40,4 +40,13 @@ class OrderController extends Controller
             'order' => $order,
         ]);
     }
+
+    public function destroy($id)
+{
+    $order = Order::findOrFail($id);
+    $order->delete();
+
+    return redirect()->route('cart.index')->with('success', 'Order removed from cart.');
+}
+
 }

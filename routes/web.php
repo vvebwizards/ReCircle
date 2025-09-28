@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\UserManagementController;
 use Illuminate\Support\Facades\Route;
 
@@ -46,8 +47,8 @@ Route::middleware(['jwt.auth'])->group(function () {
 Route::get('/marketplace', function () {
     return view('marketplace.marketplace');
 })->name('marketplace');
-Route::get('/cart', function () {
-    return view('cart.cart');
-})->name('cart');
+Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+Route::delete('/orders/{order}', [OrderController::class, 'destroy'])->name('orders.destroy');
+
 
 Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
