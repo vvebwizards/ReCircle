@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Models\Order;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentGateway;
+use App\Models\Order;
+use Illuminate\Http\Request;
 
 class OrderController extends Controller
 {
@@ -20,7 +19,7 @@ class OrderController extends Controller
             'street' => '123 Main St',
             'city' => 'SomeCity',
             'postal_code' => '12345',
-            'country' => 'CountryName'
+            'country' => 'CountryName',
         ];
 
         $order = Order::create([
@@ -38,7 +37,7 @@ class OrderController extends Controller
 
         return response()->json([
             'message' => 'Order created successfully',
-            'order' => $order
+            'order' => $order,
         ]);
     }
 }
