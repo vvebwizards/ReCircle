@@ -1,0 +1,265 @@
+/* Marketplace page layout (mirror Settings spacing) */
+.marketplace {
+    padding: 8rem 0 4rem;
+    background: var(--color-off-white);
+    min-height: 100vh;
+}
+
+/* Search section */
+.search-section {
+    margin-bottom: 2rem;
+}
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+    max-width: 500px;
+}
+.form-label {
+    display: block;
+    margin-bottom: .5rem;
+    color: var(--color-deep-green);
+    font-weight: 600;
+    font-size: 1rem;
+}
+.input {
+    width: 100%;
+    border: 2px solid var(--color-warm-sand);
+    border-radius: 10px;
+    height: 48px;
+    padding: 1rem;
+    font-size: 1rem;
+    color: #111827;
+    background: #fff;
+}
+.input:focus {
+    outline: none;
+    border-color: var(--color-emerald);
+}
+.muted {
+    color: #6b7280;
+    font-size: .875rem;
+}
+
+/* Horizontal cards: responsive grid */
+.marketplace-stack {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(3, minmax(280px, 1fr));
+    align-items: stretch;
+}
+@media (max-width: 1100px) {
+    .marketplace-stack {
+        grid-template-columns: repeat(2, minmax(260px, 1fr));
+    }
+}
+@media (max-width: 700px) {
+    .marketplace-stack {
+        grid-template-columns: 1fr;
+    }
+}
+.marketplace-stack .dash-card {
+    height: 100%;
+}
+/* Explicit gap after the cards stack */
+.marketplace .marketplace-stack {
+    margin-bottom: 4rem;
+}
+@media (min-width: 1024px) {
+    .marketplace .marketplace-stack {
+        margin-bottom: 6rem;
+    }
+}
+/* Add breathing room before footer */
+.marketplace .container {
+    padding-bottom: 6rem;
+}
+@media (min-width: 1024px) {
+    .marketplace .container {
+        padding-bottom: 8rem;
+    }
+}
+
+/* Card polish */
+.marketplace .dash-card {
+    transition: box-shadow .2s ease, transform .12s ease;
+}
+.marketplace .dash-card:hover {
+    box-shadow: 0 10px 24px rgba(0,0,0,.08);
+    transform: translateY(-1px);
+}
+.marketplace .dash-card:active {
+    transform: translateY(0);
+}
+.marketplace .dash-card .card-stack {
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+    padding: 1rem;
+}
+.marketplace .dash-card .card-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    background: #eaf5ef;
+    color: #1f7a4a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+.marketplace .dash-card:hover .card-icon {
+    transform: scale(1.08) rotate(-6deg);
+    box-shadow: 0 6px 14px rgba(31,122,74,.15);
+}
+.marketplace .dash-card .card-title {
+    margin: 0;
+    font-size: 1.15rem;
+    color: #184a2f;
+}
+.marketplace .dash-card .card-desc {
+    margin: 0;
+    color: #4b5563;
+    line-height: 1.45;
+}
+.marketplace .dash-card .card-actions {
+    margin-top: .5rem;
+}
+
+/* Better primary buttons */
+.marketplace .btn.btn-primary {
+    background: #1f7a4a;
+    border: none;
+    color: #fff;
+    border-radius: 999px;
+    padding: .7rem 1.1rem;
+    box-shadow: 0 4px 14px rgba(31,122,74,.22);
+    transition: transform .08s ease, box-shadow .15s ease, background .15s ease;
+}
+.marketplace .btn.btn-primary:hover {
+    background: #19643e;
+    box-shadow: 0 6px 18px rgba(31,122,74,.28);
+    transform: translateY(-1px);
+}
+.marketplace .btn.btn-primary:active {
+    transform: translateY(0);
+    box-shadow: 0 3px 10px rgba(31,122,74,.2);
+}
+.marketplace .btn.btn-primary:focus {
+    outline: 2px solid #a7f3d0;
+    outline-offset: 2px;
+}
+
+/* Secondary buttons */
+.marketplace .btn.btn-secondary {
+    background: #eef2f7;
+    color: #184a2f;
+    border: none;
+    border-radius: 999px;
+    padding: .7rem 1.1rem;
+}
+.marketplace .btn.btn-secondary:hover {
+    background: #e5ecf5;
+}
+
+/* Chip styling */
+.marketplace .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .25rem .6rem;
+    border-radius: 999px;
+    background: #eef3ee;
+    color: #1f5f3e;
+    font-weight: 600;
+}
+.marketplace .chip .fa-tag {
+    color: #16a34a;
+}
+
+/* Auth-style modal overlay */
+.modal-overlay.hidden {
+    display: none;
+}
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    background: rgba(0,0,0,.45);
+    backdrop-filter: saturate(120%) blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4vh 1rem;
+    box-sizing: border-box;
+}
+.modal {
+    position: relative;
+    background: #fff;
+    border-radius: 16px;
+    width: min(90vw, 860px);
+    max-height: 90vh;
+    overflow: auto;
+    box-shadow: 0 18px 60px rgba(0,0,0,.35);
+}
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #e6e7eb;
+}
+.modal-body {
+    padding: 1rem 1.25rem;
+}
+.modal-close {
+    background: #f3f4f6;
+    border: 0;
+    color: #6b7280;
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+}
+.modal-close:hover {
+    background: #e5e7eb;
+    color: #374151;
+}
+.modal-header h3 {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    margin: 0;
+    font-size: 1.15rem;
+}
+.modal-header h3 i {
+    color: #16a34a;
+    background: #eaf5ef;
+    border-radius: 999px;
+    padding: .35rem;
+}
+.listing-content {
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+}
+.listing-actions {
+    display: flex;
+    gap: .5rem;
+    justify-content: flex-end;
+    margin-top: 1rem;
+}
+.listing-details p {
+    margin: .5rem 0;
+}
+/* Lock scroll when modal is open */
+html.modal-open, body.modal-open {
+    overflow: hidden;
+    height: 100%;
+}

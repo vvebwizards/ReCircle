@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\UserManagementController;
+use App\Http\Controllers\OrderController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -42,3 +43,11 @@ require __DIR__.'/materials.php';
 Route::middleware(['jwt.auth'])->group(function () {
     require __DIR__.'/waste_items.php';
 });
+Route::get('/marketplace', function () {
+    return view('marketplace.marketplace');
+})->name('marketplace');
+Route::get('/cart', function () {
+    return view('cart.cart');
+})->name('cart');
+
+Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');

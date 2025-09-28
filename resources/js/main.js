@@ -214,6 +214,12 @@ document.addEventListener('DOMContentLoaded', () => {
             li.className = 'nav-item';
             li.innerHTML = `<a href="${dashUrl}" class="nav-cta">Dashboard</a>`;
             menu.appendChild(li);
+
+            // Add cart link after Dashboard
+            const cartLi = document.createElement('li');
+            cartLi.className = 'nav-item';
+            cartLi.innerHTML = `<a href="/cart" class="nav-cta" aria-label="View cart"><i class="fa-solid fa-cart-shopping"></i> Cart</a>`;
+            li.insertAdjacentElement('afterend', cartLi);
         }
         if (!menu.querySelector('.nav-item.profile')) {
             const liP = document.createElement('li');
