@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\OrderController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\UserManagementController;
 use Illuminate\Support\Facades\Route;
 
@@ -49,6 +49,5 @@ Route::get('/marketplace', function () {
 })->name('marketplace');
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::delete('/orders/{order}', [OrderController::class, 'destroy'])->name('orders.destroy');
-
-
+Route::put('/orders/{id}', [OrderController::class, 'update'])->name('orders.update');
 Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
