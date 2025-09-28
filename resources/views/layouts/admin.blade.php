@@ -30,6 +30,7 @@
         @yield('admin-content')
     </main>
 </div>
+@stack('admin-modals')
 @stack('admin-scripts')
 @unless (app()->environment('testing'))
     @vite(['resources/js/admin-dashboard.js','resources/js/admin-users-dashboard.js'])

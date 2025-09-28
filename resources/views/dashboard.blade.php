@@ -54,7 +54,7 @@
       <div class="dash-card wide">
         <h3 class="dash-card-title"><i class="fa-solid fa-bolt"></i> Quick Actions</h3>
         <div class="qa-grid">
-          <a href="#" class="qa-card qa-new" aria-label="Create new waste listing">
+          <a href="{{ route('generator.waste-items.index') }}" class="qa-card qa-new" aria-label="Create new waste listing">
             <span class="qa-icon"><i class="fa-solid fa-plus"></i></span>
             <span class="qa-title">New Listing</span>
             <span class="qa-sub">List waste with AI assist</span>

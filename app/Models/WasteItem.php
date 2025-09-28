@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class WasteItem extends Model
@@ -39,8 +38,19 @@ class WasteItem extends Model
         return $this->hasMany(Material::class, 'waste_item_id');
     }
 
-    public function listing(): HasOne
+    public function photos(): HasMany
     {
-        return $this->hasOne(Listing::class, 'waste_item_id');
+        return $this->hasMany(WasteItemImage::class)->orderBy('order');
+    }
+
+    public function getPrimaryImageAttribute(): ?string
+    {
+        // relation now 'photos' to avoid collision with images attribute cast
+        return $this->photos->first()->image_path ?? null;
+    }
+
+    public function getPrimaryImageUrlAttribute(): string
+    {
+        return $this->photos->first()->image_url ?? asset('images/default-material.png');
     }
 }

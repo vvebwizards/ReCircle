@@ -17,7 +17,7 @@ vendor/bin/pint --test || {
 	exit 1;
 }
 
-# (Static analysis disabled here. Run manually if needed: composer exec phpstan analyse)
+
 
 # Run ESLint on JS sources if available
 if command -v npm >/dev/null 2>&1; then

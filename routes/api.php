@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ApiAuthController;
+use App\Http\Controllers\WasteItemController;
 use App\Http\Middleware\JwtAuthenticate;
 use Illuminate\Support\Facades\Route;
 
@@ -11,4 +12,5 @@ Route::post('auth/logout', [ApiAuthController::class, 'logout']);
 
 Route::middleware(JwtAuthenticate::class)->group(function () {
     Route::get('auth/me', [ApiAuthController::class, 'me']);
+    Route::apiResource('waste-items', WasteItemController::class);
 });
