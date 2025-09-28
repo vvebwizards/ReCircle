@@ -279,6 +279,36 @@ class MaterialController extends Controller
             ->with('success', 'Material updated successfully!');
     }
 
+  public function show(int $id): View
+{
+    $material = Material::with([
+        'images' => function ($query) {
+            $query->orderBy('order', 'asc');
+        },
+        'wasteItem',
+        'processSteps.workOrder'
+    ])->where('maker_id', Auth::id())
+      ->findOrFail($id);
+
+    $relatedMaterials = Material::with(['images' => function ($query) {
+            $query->orderBy('order', 'asc');
+        }])
+        ->where('maker_id', Auth::id())
+        ->where('category', $material->category)
+        ->where('id', '!=', $material->id)
+        ->limit(4)
+        ->get();
+
+    $usageCount = $material->processSteps()->count();
+    $availableStock = $material->quantity;
+
+    return view('maker.material-details', compact(
+        'material', 
+        'relatedMaterials', 
+        'usageCount', 
+        'availableStock'
+    ));
+}
     private function reorderImages(int $materialId): void
     {
         $images = MaterialImage::where('material_id', $materialId)
