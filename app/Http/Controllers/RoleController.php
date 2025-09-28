@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\UserRole;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -19,17 +20,18 @@ class RoleController extends Controller
         ]);
 
         $user = $request->user();
-        $user->role = $data['role'];
+        
+        $user->role = UserRole::from($data['role']);
         $user->save();
 
         switch ($user->role) {
-            case 'generator':
+            case UserRole::GENERATOR:
                 $redirectTo = route('dashboard');
                 break;
-            case 'maker':
+            case UserRole::MAKER:
                 $redirectTo = route('maker.dashboard');
                 break;
-            case 'admin':
+            case UserRole::ADMIN:
                 $redirectTo = route('admin.dashboard');
                 break;
             default:
