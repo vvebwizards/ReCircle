@@ -14,6 +14,9 @@ Route::middleware('jwt.auth')->group(function () {
     Route::get('/materials', [MaterialController::class, 'index'])
         ->name('maker.materials.index');
 
+    Route::get('/materials/{material}', [MaterialController::class, 'show'])
+        ->name('maker.materials.show');
+
     Route::get('/materials/{material}/images', [MaterialController::class, 'getMaterialImages'])
         ->name('materials.images');
 
@@ -28,5 +31,7 @@ Route::middleware('jwt.auth')->group(function () {
 
     Route::put('/materials/{material}', [MaterialController::class, 'update'])
         ->name('maker.materials.update');
+    
+
 
 });

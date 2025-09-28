@@ -10,6 +10,7 @@ export default defineConfig({
                 'resources/css/style.css',
                 'resources/css/material-create.css',
                 'resources/css/update-material.css',
+                'resources/css/material-details.css',
                 'resources/js/app.js',
                 'resources/js/main.js',
                 'resources/js/auth.js',
