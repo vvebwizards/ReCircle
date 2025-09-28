@@ -154,7 +154,7 @@
                             <a href="#" class="btn-action btn-view">
                                 <i class="fa-solid fa-eye"></i> View
                             </a>
-                            <a href="#" class="btn-action btn-edit">
+                            <a href="{{ route('maker.materials.edit', $material->id) }}" class="btn-action btn-edit">
                                 <i class="fa-solid fa-edit"></i> Edit
                             </a>
                             
