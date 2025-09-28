@@ -83,16 +83,13 @@
         <div class="materials-grid">
             @forelse($materials as $material)
                 <div class="material-card">
-                    <!-- Container d'image avec navigation -->
                     <div class="material-image-container" id="image-container-{{ $material->id }}">
                         @if($material->images->count() > 0)
-                            <!-- Première image visible -->
                             <img src="{{ asset($material->images->first()->image_path) }}" 
                                  alt="{{ $material->name }}" 
                                  class="material-image"
                                  id="current-image-{{ $material->id }}">
                             
-                            <!-- Boutons de navigation -->
                             @if($material->images->count() > 1)
                                 <button class="image-nav-button image-nav-prev" 
                                         onclick="prevImage({{ $material->id }}, {{ $material->images->count() }})">
@@ -103,12 +100,10 @@
                                     <i class="fa-solid fa-chevron-right"></i>
                                 </button>
                                 
-                                <!-- Badge du nombre d'images -->
                                 <div class="image-count-badge">
                                     <i class="fa-solid fa-images"></i> {{ $material->images->count() }}
                                 </div>
                                 
-                                <!-- Indicateur de position -->
                                 <div class="image-position" id="position-{{ $material->id }}">
                                     1/{{ $material->images->count() }}
                                 </div>
@@ -162,11 +157,19 @@
                             <a href="#" class="btn-action btn-edit">
                                 <i class="fa-solid fa-edit"></i> Edit
                             </a>
-                            <form action="#" method="POST" style="display: inline;">
+                            
+                            <form action="{{ route('maker.materials.destroy', $material->id) }}" 
+                                method="POST" 
+                                class="delete-material-form">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn-action btn-delete" 
-                                        onclick="return confirm('Delete this material?')">
+                                <input type="hidden" name="confirm" value="1">
+                                <button type="button"
+                                        class="btn-action btn-delete delete-material-btn"
+                                        data-action="delete"
+                                        data-material-name="{{ $material->name }}"
+                                        data-material-id="{{ $material->id }}"
+                                        title="Delete material">
                                     <i class="fa-solid fa-trash"></i> Delete
                                 </button>
                             </form>
@@ -212,133 +215,127 @@
         @endif
     </div>
 </div>
+@include('components.confirm-modal')
 @endsection
 
 @push('scripts')
 <script>
-// Stockage des images par matériau
-const materialImages = {};
+document.addEventListener('DOMContentLoaded', function() {
+    const popup = document.getElementById('genericConfirmPopup');
+    const messageEl = popup.querySelector('.popup-message');
+    const confirmBtn = popup.querySelector('.btn-confirm');
+    const cancelBtn = popup.querySelector('.btn-cancel');
 
-// Charger les images d'un matériau
-async function loadMaterialImages(materialId) {
-    if (!materialImages[materialId]) {
-        try {
-            const response = await fetch(`/api/materials/${materialId}/images`);
-            const data = await response.json();
-            materialImages[materialId] = data.images;
-        } catch (error) {
-            console.error('Error loading images:', error);
-            materialImages[materialId] = [];
+    let currentForm = null;
+    let currentMaterialName = null;
+
+    function openDeleteConfirmation(materialName, form) {
+        currentForm = form;
+        currentMaterialName = materialName;
+        
+        messageEl.textContent = `Are you sure you want to delete "${materialName}"? This action cannot be undone.`;
+        popup.classList.remove('hidden');
+    }
+
+    confirmBtn.addEventListener('click', () => {
+        if (currentForm) {
+            currentForm.submit();
+        }
+        popup.classList.add('hidden');
+        currentForm = null;
+        currentMaterialName = null;
+    });
+
+    cancelBtn.addEventListener('click', () => {
+        popup.classList.add('hidden');
+        currentForm = null;
+        currentMaterialName = null;
+    });
+
+    document.querySelectorAll('.delete-material-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const form = btn.closest('.delete-material-form');
+            const materialName = btn.dataset.materialName;
+            
+            openDeleteConfirmation(materialName, form);
+        });
+    });
+
+    popup.addEventListener('click', (e) => {
+        if (e.target === popup) {
+            popup.classList.add('hidden');
+            currentForm = null;
+            currentMaterialName = null;
+        }
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !popup.classList.contains('hidden')) {
+            popup.classList.add('hidden');
+            currentForm = null;
+            currentMaterialName = null;
+        }
+    });
+
+    const imagePositions = {};
+
+    window.nextImage = function(materialId, totalImages) {
+        if (!imagePositions[materialId]) {
+            imagePositions[materialId] = 0;
+        }
+        
+        imagePositions[materialId] = (imagePositions[materialId] + 1) % totalImages;
+        updateImageSimple(materialId, totalImages);
+    }
+
+    window.prevImage = function(materialId, totalImages) {
+        if (!imagePositions[materialId]) {
+            imagePositions[materialId] = 0;
+        }
+        
+        imagePositions[materialId] = (imagePositions[materialId] - 1 + totalImages) % totalImages;
+        updateImageSimple(materialId, totalImages);
+    }
+
+    function updateImageSimple(materialId, totalImages) {
+        const position = imagePositions[materialId] || 0;
+        const imageElement = document.getElementById(`current-image-${materialId}`);
+        const positionElement = document.getElementById(`position-${materialId}`);
+        
+        if (imageElement && materialImages[materialId] && materialImages[materialId][position]) {
+            imageElement.src = materialImages[materialId][position].path;
+        }
+        
+        if (positionElement) {
+            positionElement.textContent = `${position + 1}/${totalImages}`;
         }
     }
-    return materialImages[materialId];
-}
 
-// Navigation entre les images
-async function nextImage(materialId, totalImages) {
-    const images = await loadMaterialImages(materialId);
-    if (!imagePositions[materialId]) {
-        imagePositions[materialId] = 0;
+    function preloadAllImages() {
+        @foreach($materials as $material)
+            @if($material->images->count() > 0)
+                materialImages[{{ $material->id }}] = [
+                    @foreach($material->images as $image)
+                    {
+                        id: {{ $image->id }},
+                        path: "{{ asset($image->image_path) }}",
+                        order: {{ $image->order }}
+                    },
+                    @endforeach
+                ];
+            @endif
+        @endforeach
     }
-    
-    imagePositions[materialId] = (imagePositions[materialId] + 1) % totalImages;
-    await updateImage(materialId, totalImages, images);
-}
 
-async function prevImage(materialId, totalImages) {
-    const images = await loadMaterialImages(materialId);
-    if (!imagePositions[materialId]) {
-        imagePositions[materialId] = 0;
-    }
-    
-    imagePositions[materialId] = (imagePositions[materialId] - 1 + totalImages) % totalImages;
-    await updateImage(materialId, totalImages, images);
-}
-
-async function updateImage(materialId, totalImages, images = null) {
-    if (!images) {
-        images = await loadMaterialImages(materialId);
-    }
-    
-    const position = imagePositions[materialId] || 0;
-    const imageElement = document.getElementById(`current-image-${materialId}`);
-    const positionElement = document.getElementById(`position-${materialId}`);
-    
-    if (images[position] && imageElement) {
-        imageElement.src = images[position].path;
-        imageElement.alt = `Material image ${position + 1}`;
-    }
-    
-    if (positionElement) {
-        positionElement.textContent = `${position + 1}/${totalImages}`;
-    }
-}
-
-// Alternative plus simple : Précharger toutes les images au chargement de la page
-function preloadAllImages() {
-    @foreach($materials as $material)
-        @if($material->images->count() > 0)
-            materialImages[{{ $material->id }}] = [
-                @foreach($material->images as $image)
-                {
-                    id: {{ $image->id }},
-                    path: "{{ asset($image->image_path) }}",
-                    order: {{ $image->order }}
-                },
-                @endforeach
-            ];
-        @endif
-    @endforeach
-}
-
-// Version simplifiée sans API call
-function nextImageSimple(materialId, totalImages) {
-    if (!imagePositions[materialId]) {
-        imagePositions[materialId] = 0;
-    }
-    
-    imagePositions[materialId] = (imagePositions[materialId] + 1) % totalImages;
-    updateImageSimple(materialId, totalImages);
-}
-
-function prevImageSimple(materialId, totalImages) {
-    if (!imagePositions[materialId]) {
-        imagePositions[materialId] = 0;
-    }
-    
-    imagePositions[materialId] = (imagePositions[materialId] - 1 + totalImages) % totalImages;
-    updateImageSimple(materialId, totalImages);
-}
-
-function updateImageSimple(materialId, totalImages) {
-    const position = imagePositions[materialId] || 0;
-    const imageElement = document.getElementById(`current-image-${materialId}`);
-    const positionElement = document.getElementById(`position-${materialId}`);
-    
-    // Les images sont déjà préchargées dans materialImages
-    const images = materialImages[materialId];
-    if (images && images[position] && imageElement) {
-        imageElement.src = images[position].path;
-    }
-    
-    if (positionElement) {
-        positionElement.textContent = `${position + 1}/${totalImages}`;
-    }
-}
-
-// Initialisation
-document.addEventListener('DOMContentLoaded', function() {
-    // Précharger les images au chargement
     preloadAllImages();
     
-    // Initialiser les positions
     @foreach($materials as $material)
         @if($material->images->count() > 1)
             imagePositions[{{ $material->id }}] = 0;
         @endif
     @endforeach
-    
-    // Filtrage automatique
+
     const categorySelect = document.getElementById('category');
     const sortSelect = document.getElementById('sort');
     
@@ -355,6 +352,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-const imagePositions = {};
+const materialImages = {};
 </script>
 @endpush

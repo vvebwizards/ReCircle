@@ -474,3 +474,27 @@
         opacity: 1; 
     }
 }
+
+.delete-material-form {
+    display: inline;
+}
+
+.delete-material-btn {
+    border: none;
+    font-family: inherit;
+    cursor: pointer;
+    width: 100%;
+}
+
+.btn-action.delete-material-btn {
+    flex: 1;
+    padding: 0.3rem 0.6rem;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+    justify-content: center;
+    transition: all 0.2s ease;
+}

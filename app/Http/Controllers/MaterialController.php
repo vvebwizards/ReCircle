@@ -10,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Storage;
 
 class MaterialController extends Controller
 {
@@ -164,6 +165,23 @@ class MaterialController extends Controller
         $categoriesCount = Material::where('maker_id', Auth::id())->distinct()->count('category');
 
         return view('maker.materials', compact('materials', 'averageScore', 'categoriesCount'));
+    }
+
+    public function destroy(int $materialId): RedirectResponse
+    {
+        $material = Material::where('maker_id', Auth::id())->findOrFail($materialId);
+
+        foreach ($material->images as $image) {
+            if (Storage::exists($image->image_path)) {
+                Storage::delete($image->image_path);
+            }
+            $image->delete();
+        }
+
+        $material->delete();
+
+        return redirect()->route('maker.materials.index')
+            ->with('success', 'Material deleted successfully!');
     }
 
     public function getMaterialImages(int $materialId): JsonResponse
