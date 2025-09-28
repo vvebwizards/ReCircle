@@ -9,8 +9,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\View\View;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\View\View;
 
 class MaterialController extends Controller
 {
@@ -101,7 +101,7 @@ class MaterialController extends Controller
             'maker_id' => Auth::id(),
         ]);
 
-        $order = 0; 
+        $order = 0;
         if ($request->hasFile('image_path')) {
             foreach ($request->file('image_path') as $image) {
                 $imageName = time().'_'.uniqid().'_'.$order.'.'.$image->getClientOriginalExtension();
@@ -184,14 +184,14 @@ class MaterialController extends Controller
             ->with('success', 'Material deleted successfully!');
     }
 
-      public function edit(int $id): View
+    public function edit(int $id): View
     {
         $material = Material::with('images')
             ->where('maker_id', Auth::id())
             ->findOrFail($id);
-            
+
         $wasteItems = WasteItem::all();
-        
+
         return view('maker.update_materials', compact('material', 'wasteItems'));
     }
 
@@ -243,7 +243,7 @@ class MaterialController extends Controller
                 $image = MaterialImage::where('material_id', $material->id)
                     ->where('id', $imageId)
                     ->first();
-                    
+
                 if ($image) {
                     $imagePath = public_path($image->image_path);
                     if (file_exists($imagePath)) {
@@ -257,7 +257,7 @@ class MaterialController extends Controller
         if ($request->hasFile('image_path')) {
             $existingImagesCount = $material->images()->count();
             $order = $existingImagesCount;
-            
+
             foreach ($request->file('image_path') as $image) {
                 $imageName = time().'_'.uniqid().'_'.$order.'.'.$image->getClientOriginalExtension();
                 $image->move(public_path('images/materials'), $imageName);
@@ -279,42 +279,43 @@ class MaterialController extends Controller
             ->with('success', 'Material updated successfully!');
     }
 
-  public function show(int $id): View
-{
-    $material = Material::with([
-        'images' => function ($query) {
-            $query->orderBy('order', 'asc');
-        },
-        'wasteItem',
-        'processSteps.workOrder'
-    ])->where('maker_id', Auth::id())
-      ->findOrFail($id);
+    public function show(int $id): View
+    {
+        $material = Material::with([
+            'images' => function ($query) {
+                $query->orderBy('order', 'asc');
+            },
+            'wasteItem',
+            'processSteps.workOrder',
+        ])->where('maker_id', Auth::id())
+            ->findOrFail($id);
 
-    $relatedMaterials = Material::with(['images' => function ($query) {
+        $relatedMaterials = Material::with(['images' => function ($query) {
             $query->orderBy('order', 'asc');
         }])
-        ->where('maker_id', Auth::id())
-        ->where('category', $material->category)
-        ->where('id', '!=', $material->id)
-        ->limit(4)
-        ->get();
+            ->where('maker_id', Auth::id())
+            ->where('category', $material->category)
+            ->where('id', '!=', $material->id)
+            ->limit(4)
+            ->get();
 
-    $usageCount = $material->processSteps()->count();
-    $availableStock = $material->quantity;
+        $usageCount = $material->processSteps()->count();
+        $availableStock = $material->quantity;
 
-    return view('maker.material-details', compact(
-        'material', 
-        'relatedMaterials', 
-        'usageCount', 
-        'availableStock'
-    ));
-}
+        return view('maker.material-details', compact(
+            'material',
+            'relatedMaterials',
+            'usageCount',
+            'availableStock'
+        ));
+    }
+
     private function reorderImages(int $materialId): void
     {
         $images = MaterialImage::where('material_id', $materialId)
             ->orderBy('order')
             ->get();
-            
+
         foreach ($images as $index => $image) {
             $image->update(['order' => $index]);
         }

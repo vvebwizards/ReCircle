@@ -20,10 +20,10 @@ Route::middleware('jwt.auth')->group(function () {
     Route::get('/materials/{material}/images', [MaterialController::class, 'getMaterialImages'])
         ->name('materials.images');
 
-     Route::delete('/materials/{material}', [MaterialController::class, 'destroy'])
+    Route::delete('/materials/{material}', [MaterialController::class, 'destroy'])
         ->name('maker.materials.destroy');
 
-   Route::put('/materials/{material}', [MaterialController::class, 'destroy'])
+    Route::put('/materials/{material}', [MaterialController::class, 'destroy'])
         ->name('maker.materials.destroy');
 
     Route::get('/materials/{material}/edit', [MaterialController::class, 'edit'])
@@ -31,7 +31,5 @@ Route::middleware('jwt.auth')->group(function () {
 
     Route::put('/materials/{material}', [MaterialController::class, 'update'])
         ->name('maker.materials.update');
-    
-
 
 });

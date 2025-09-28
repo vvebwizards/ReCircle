@@ -104,35 +104,35 @@ class GoogleAuthController extends Controller
         $minutes = (int) config('jwt.ttl');
         $secure = app()->environment('production');
 
-$role = $user->role;
-    
-    if ($role instanceof \App\Enums\UserRole) {
-        $role = $role->value;
-    }
-    
-    $role = (string) $role;
+        $role = $user->role;
 
-    Log::info('Google Auth Callback - User Role Check', [
-        'user_id' => $user->id,
-        'email' => $user->email,
-        'role_value' => $role,
-    ]);
+        if ($role instanceof \App\Enums\UserRole) {
+            $role = $role->value;
+        }
 
-    switch ($role) {
-        case 'admin':
-            $redirectTo = route('admin.dashboard');
-            break;
-        case 'maker':
-            $redirectTo = route('maker.dashboard');
-            break;
-        case 'generator':
-            $redirectTo = route('dashboard');
-            break;
-        default:
-            $redirectTo = route('choose-role.show');
-            break;
-    }
-    
+        $role = (string) $role;
+
+        Log::info('Google Auth Callback - User Role Check', [
+            'user_id' => $user->id,
+            'email' => $user->email,
+            'role_value' => $role,
+        ]);
+
+        switch ($role) {
+            case 'admin':
+                $redirectTo = route('admin.dashboard');
+                break;
+            case 'maker':
+                $redirectTo = route('maker.dashboard');
+                break;
+            case 'generator':
+                $redirectTo = route('dashboard');
+                break;
+            default:
+                $redirectTo = route('choose-role.show');
+                break;
+        }
+
         return response()->view('auth.oauth-bridge', [
             'redirectTo' => $redirectTo,
         ])->withCookie(cookie(

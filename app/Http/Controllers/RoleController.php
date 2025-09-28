@@ -20,7 +20,7 @@ class RoleController extends Controller
         ]);
 
         $user = $request->user();
-        
+
         $user->role = UserRole::from($data['role']);
         $user->save();
 
