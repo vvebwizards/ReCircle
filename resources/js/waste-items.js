@@ -8,6 +8,7 @@
   // Elements
   const viewModal = document.getElementById('viewModal');
   const editModal = document.getElementById('editModal');
+  const photosModal = document.getElementById('photosModal');
   const deleteModal = document.getElementById('deleteModal');
   const createModal = document.getElementById('createModal');
 
@@ -15,9 +16,20 @@
   const viewContent = document.getElementById('viewContent');
   const viewCondition = document.getElementById('viewCondition');
   const viewWeight = document.getElementById('viewWeight');
-  const viewNotes = document.getElementById('viewNotes');
+  // removed unused: const viewNotes (query again where needed for freshness)
   const viewImages = document.getElementById('viewImages');
-  const openEditFromView = document.getElementById('openEditFromView');
+  // removed unused: openEditFromView (accessed via event delegation by id)
+  const viewAllPhotosBtn = document.getElementById('viewAllPhotosBtn');
+  // Photos lightbox elements
+  const photosLoader = document.getElementById('photosLoader');
+  const photosMainWrap = document.getElementById('photosMainWrap');
+  const photosMainImg = document.getElementById('photosMainImage');
+  const photosThumbs = document.getElementById('photosThumbs');
+  const photosCaption = document.getElementById('photosCaption');
+  const photosError = document.getElementById('photosError');
+
+  let lightboxImages = [];
+  let lightboxIndex = 0;
 
   const editForm = document.getElementById('editForm');
   const editTitle = document.getElementById('editTitle');
@@ -42,126 +54,14 @@
   const csrf = window.csrfToken;
   const base = (window.wasteItemRoutes && window.wasteItemRoutes.base) || '/waste-items';
   const filterForm = document.getElementById('filterForm');
-  const gridEl = document.querySelector('.materials-grid');
+  // removed unused: gridEl (DOM always queried on demand for freshness)
+  const usingNewFilters = !!window.WasteItemsUI; // new partial-based filter system active
 
-  // Abort controller for in-flight list requests (live search / filters)
-  let listAbortController = null;
-  async function fetchList(params){
-    const url = new URL(base, window.location.origin);
-    Object.entries(params).forEach(([k,v])=>{ if(v!=='' && v!=null) url.searchParams.append(k,v); });
-    // cancel any previous request
-    if(listAbortController){
-      listAbortController.abort();
-    }
-    listAbortController = new AbortController();
-    try {
-      const res = await fetch(url.toString(), { headers:{'Accept':'application/json'}, signal: listAbortController.signal });
-      if(!res.ok) throw new Error('Failed loading list');
-      const data = await res.json();
-      return data.data;
-    } catch(e){
-      if(e.name === 'AbortError') return Promise.reject(e); // silently ignore outside
-      showToast(e.message,'error');
-      throw e;
-    }
+  // Legacy inline filtering system removed (superseded by partial-based WasteItemsUI). Keep a graceful
+  // no-op submit preventer only when old system would have been active.
+  if(!usingNewFilters){
+    filterForm?.addEventListener('submit', e => { e.preventDefault(); });
   }
-
-  function renderListItems(items){
-    if(!gridEl) return;
-    gridEl.innerHTML = '';
-    if(!items.length){
-      gridEl.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">\n<div class='empty-icon'><i class='fa-solid fa-trash'></i></div>\n<h3 class='empty-text'>No waste items found</h3>\n<p>Try adjusting filters.</p>\n<a href='#' class='btn-create open-create-modal' style='display:inline-flex;margin-top:1rem;'><i class='fa-solid fa-plus'></i> Create Waste Item</a>\n</div>`;
-      return;
-    }
-    const frag = document.createDocumentFragment();
-    items.forEach(it => {
-      const temp = document.createElement('div');
-      temp.innerHTML = buildCard({
-        id: it.id,
-        title: it.title,
-        condition: it.condition,
-        estimated_weight: it.estimated_weight,
-        notes: it.notes,
-        images: it.primary_image_url ? [{url: it.primary_image_url, order:0}] : [],
-        primary_image_url: it.primary_image_url
-      });
-      frag.appendChild(temp.firstElementChild);
-    });
-    gridEl.appendChild(frag);
-  }
-
-  function updateStats(stats){
-    if(!stats) return;
-    const totalEl = document.querySelector('.stat-card:nth-child(1) .stat-number');
-    const avgEl = document.querySelector('.stat-card:nth-child(2) .stat-number');
-    const condEl = document.querySelector('.stat-card:nth-child(3) .stat-number');
-    if(totalEl) totalEl.textContent = stats.total;
-    if(avgEl) avgEl.textContent = Number(stats.avgWeight).toFixed(2);
-    if(condEl) condEl.textContent = Object.keys(stats.conditionsCount||{}).length;
-  }
-
-  function replacePagination(pagination){
-    const pagContainer = document.querySelector('.pagination');
-    if(!pagContainer || !pagination) return;
-    let html = '';
-    const { current_page, last_page, prev_page_url, next_page_url } = pagination;
-    html += prev_page_url ? `<a href='${prev_page_url}' class='page-link' data-page='${current_page-1}'>&laquo; Previous</a>` : `<span class='page-link disabled'>&laquo; Previous</span>`;
-    for(let p=1;p<=last_page;p++){
-      if(p===current_page) html += `<span class='page-link active'>${p}</span>`; else html += `<a href='?page=${p}' class='page-link' data-page='${p}'>${p}</a>`;
-    }
-    html += next_page_url ? `<a href='${next_page_url}' class='page-link' data-page='${current_page+1}'>Next &raquo;</a>` : `<span class='page-link disabled'>Next &raquo;</span>`;
-    pagContainer.innerHTML = html;
-  }
-
-  async function applyFilters(pushState=true){
-    if(!filterForm) return;
-    const formData = new FormData(filterForm);
-    const params = {};
-    formData.forEach((v,k)=> params[k]=v);
-    params.page = params.page || 1;
-    const data = await fetchList(params);
-    renderListItems(data.items || []);
-    updateStats(data.stats);
-    replacePagination(data.pagination);
-    if(pushState){
-      const url = new URL(window.location.href);
-      Object.keys(params).forEach(k=>{ if(params[k]) url.searchParams.set(k, params[k]); else url.searchParams.delete(k); });
-      window.history.replaceState({}, '', url.toString());
-    }
-  }
-
-  // change handler (non-text inputs like selects)
-  filterForm?.addEventListener('change', e => {
-    if(e.target.id === 'search') return; // search handled by keyup
-    applyFilters();
-  });
-  // live search (keyup debounce + abortable fetch)
-  if(filterForm){
-    const searchInput = filterForm.querySelector('#search');
-    if(searchInput){
-      let debounceTimer = null;
-      searchInput.addEventListener('keyup', () => {
-        if(debounceTimer) clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(()=>{
-          // reset page when initiating a new search
-          const pageField = filterForm.querySelector('input[name="page"]');
-          if(pageField) pageField.value = 1;
-          applyFilters();
-        }, 320);
-      });
-    }
-  }
-  filterForm?.addEventListener('submit', e => { e.preventDefault(); applyFilters(); });
-  document.addEventListener('click', e => {
-    const pagLink = e.target.closest('.pagination a.page-link');
-    if(pagLink && pagLink.dataset.page){ e.preventDefault();
-      const page = pagLink.dataset.page;
-      const fd = new FormData(filterForm); fd.set('page', page); // stash temporarily
-      filterForm.querySelector('input[name="page"]') || filterForm.insertAdjacentHTML('beforeend', `<input type='hidden' name='page' value='${page}'>`);
-      filterForm.querySelector('input[name="page"]').value = page;
-      applyFilters();
-    }
-  });
 
   let currentId = null;
   let lastLoadedData = null;
@@ -266,6 +166,9 @@
 
   document.addEventListener('keydown', e => {
     if(e.key === 'Escape') closeAll();
+    if(!photosModal || photosModal.classList.contains('hidden')) return;
+    if(e.key === 'ArrowRight') navigateLightbox(1);
+    if(e.key === 'ArrowLeft') navigateLightbox(-1);
   });
 
   function showToast(msg, type='info'){
@@ -290,7 +193,25 @@
   }
 
   function populateView(data){
-    viewCondition.textContent = data.condition ? data.condition.toUpperCase() : '—';
+    // Condition badge styling
+    if(viewCondition){
+      const cond = (data.condition || '').toLowerCase();
+      viewCondition.classList.remove('condition-good','condition-fixable','condition-scrap');
+      if(cond) viewCondition.classList.add('condition-'+cond);
+      // inject icon if not present
+      if(!viewCondition.querySelector('i')){
+        const ic = document.createElement('i');
+        ic.className='fa-solid fa-circle';
+        viewCondition.prepend(ic);
+      }
+      const iconMap = { good:'fa-check', fixable:'fa-wrench', scrap:'fa-recycle' };
+      const iEl = viewCondition.querySelector('i');
+      if(iEl){
+        iEl.className = 'fa-solid ' + (iconMap[cond] || 'fa-circle');
+      }
+      viewCondition.lastChild && (viewCondition.lastChild.nodeType===3 ? viewCondition.lastChild.remove() : null); // remove stray text node
+      viewCondition.appendChild(document.createTextNode(cond ? cond.toUpperCase() : '—'));
+    }
     viewWeight.textContent = data.estimated_weight ? `${data.estimated_weight} kg` : '';
     const idEl = document.getElementById('viewId'); if(idEl) idEl.textContent = data.id ? `#${data.id}` : '—';
     const titleEl = document.getElementById('viewTitle'); if(titleEl) titleEl.textContent = data.title || '—';
@@ -317,10 +238,93 @@
       const el = document.createElement('img');
       el.src = img.url || img.path;
       el.alt = data.title || '';
+      el.loading = 'lazy';
       viewImages.appendChild(el);
     });
     const imgCount = document.getElementById('viewImagesCount'); if(imgCount) imgCount.textContent = imgs.length;
   }
+
+  /* ============================= */
+  /* Photos Lightbox               */
+  /* ============================= */
+  function openPhotosLightbox(id){
+    if(!photosModal) return;
+    photosError?.classList.add('hidden');
+    photosMainWrap?.classList.add('hidden');
+    photosLoader?.classList.remove('hidden');
+    photosThumbs.innerHTML = '';
+    photosCaption.textContent='';
+    lightboxImages = []; lightboxIndex = 0;
+    openModal(photosModal);
+    fetchItem(id).then(data => {
+      const imgs = (data.images||[]).sort((a,b)=>(a.order??0)-(b.order??0));
+      lightboxImages = imgs.map(i => i.url || i.path);
+      if(!lightboxImages.length){
+        photosLoader?.classList.add('hidden');
+        photosError?.classList.remove('hidden');
+        photosError && (photosError.querySelector('span').textContent = 'No photos to display.');
+        return;
+      }
+      // Build thumbnails
+      lightboxImages.forEach((src, idx) => {
+        const t = document.createElement('img');
+        t.src = src; t.alt = 'Photo '+(idx+1);
+        t.loading='lazy';
+        t.dataset.index = idx;
+        photosThumbs.appendChild(t);
+      });
+      photosThumbs.addEventListener('click', onThumbClick, { once:true }); // delegate once to attach listener
+      setLightboxIndex(0);
+      photosLoader?.classList.add('hidden');
+      photosMainWrap?.classList.remove('hidden');
+    }).catch(()=>{
+      photosLoader?.classList.add('hidden');
+      photosError?.classList.remove('hidden');
+    });
+  }
+
+  function onThumbClick(e){
+    const img = e.target.closest('img[data-index]');
+    if(!img) return;
+    const idx = parseInt(img.dataset.index,10);
+    if(!isNaN(idx)) setLightboxIndex(idx);
+    // keep delegation active
+    photosThumbs.addEventListener('click', onThumbClick);
+  }
+
+  function setLightboxIndex(idx){
+    if(!lightboxImages.length) return;
+    lightboxIndex = (idx+lightboxImages.length)%lightboxImages.length;
+    const src = lightboxImages[lightboxIndex];
+    photosMainImg.src = src + (src.includes('?')?'&':'?') + 'v=' + Date.now();
+    photosMainImg.classList.remove('hidden');
+    // update active thumb
+    photosThumbs.querySelectorAll('img').forEach(t => t.classList.toggle('active', parseInt(t.dataset.index,10)===lightboxIndex));
+    photosCaption.textContent = `Image ${lightboxIndex+1} of ${lightboxImages.length}`;
+    // hide nav if single image
+    const prevBtn = photosMainWrap.querySelector('.lb-nav.prev');
+    const nextBtn = photosMainWrap.querySelector('.lb-nav.next');
+    if(prevBtn) prevBtn.style.display = lightboxImages.length>1 ? '' : 'none';
+    if(nextBtn) nextBtn.style.display = lightboxImages.length>1 ? '' : 'none';
+  }
+
+  function navigateLightbox(delta){
+    if(!lightboxImages.length) return;
+    setLightboxIndex(lightboxIndex + delta);
+  }
+
+  photosMainWrap?.addEventListener('click', e => {
+    if(e.target.classList.contains('lb-nav')) return; // handled separately
+  });
+  photosMainWrap?.querySelector('.lb-nav.prev')?.addEventListener('click', ()=>navigateLightbox(-1));
+  photosMainWrap?.querySelector('.lb-nav.next')?.addEventListener('click', ()=>navigateLightbox(1));
+
+  // View modal 'See all photos' button
+  viewAllPhotosBtn?.addEventListener('click', () => {
+    if(lastLoadedData?.id){
+      openPhotosLightbox(lastLoadedData.id);
+    }
+  });
 
   function formatDate(str){
     try { return new Date(str).toLocaleString(); } catch { return str; }
@@ -432,63 +436,57 @@
   });
 
   function updateCardDom(id, data){
+    // Simplest: refresh entire grid when new filter system active; avoids DOM drift
+    if(usingNewFilters && window.WasteItemsUI){
+      window.WasteItemsUI.updateContent(window.location.href, { pushState:false });
+      return;
+    }
+    // Legacy fallback (kept if old markup still in use)
     const card = document.querySelector(`.material-card[data-id='${id}']`);
     if(!card) return;
-    card.querySelector('.material-name').textContent = data.title;
-    card.querySelector('.material-badge').textContent = (data.condition||'').charAt(0).toUpperCase()+ (data.condition||'').slice(1);
-    // weight
-    const metaItems = card.querySelectorAll('.meta-item span');
-    if(metaItems[0]) metaItems[0].textContent = (data.estimated_weight ?? '—') + ' kg';
-    // notes
-    const desc = card.querySelector('.material-description');
-    if(desc) desc.textContent = (data.notes || '').slice(0,100);
-    // images (primary + count)
+    const nameEl = card.querySelector('.material-name'); if(nameEl) nameEl.textContent = data.title;
+    const badgeEl = card.querySelector('.material-badge'); if(badgeEl) badgeEl.textContent = (data.condition||'').charAt(0).toUpperCase()+ (data.condition||'').slice(1);
+    const weightLi = card.querySelector('.mc-meta li:first-child');
+    if(weightLi && data.estimated_weight!=null) weightLi.innerHTML = `<i class="fa-solid fa-weight-hanging"></i>${data.estimated_weight} kg`;
+    const notesEl = card.querySelector('.mc-notes'); if(notesEl) notesEl.textContent = (data.notes||'').slice(0,90);
     if(data.images){
-      const countEl = card.querySelector('.card-img-count .count-val');
-      if(countEl) countEl.textContent = data.images.length;
-      const primary = [...data.images].sort((a,b)=> (a.order??0)-(b.order??0))[0];
-      const imgEl = card.querySelector('img.card-primary-img');
-      const fallback = card.querySelector('.card-primary-fallback');
+      const countEl = card.querySelector('.card-img-count .count-val'); if(countEl) countEl.textContent = data.images.length;
+      const primary = [...data.images].sort((a,b)=>(a.order??0)-(b.order??0))[0];
       if(primary){
-        if(imgEl){
-          imgEl.src = primary.url + '?v=' + Date.now();
-        } else if(fallback){
-          const newImg = document.createElement('img');
-          newImg.className='card-primary-img';
-          newImg.style.cssText='width:100%;height:100%;object-fit:cover;';
-          newImg.src = primary.url + '?v=' + Date.now();
-          fallback.replaceWith(newImg);
-        }
-      } else {
-        if(imgEl){
-          const fb = document.createElement('div');
-          fb.className='card-primary-fallback';
-          fb.style.cssText='font-size:0.85rem;color:#888;display:flex;flex-direction:column;align-items:center;gap:0.25rem;';
-          fb.innerHTML = "<i class='fa-solid fa-image' style='font-size:1.4rem;'></i><span>No Image</span>";
-          imgEl.replaceWith(fb);
-        }
+        const imgEl = card.querySelector('img.card-primary-img');
+        if(imgEl) imgEl.src = primary.url + '?v=' + Date.now();
       }
     }
   }
 
   async function handleView(id){
     currentId = id;
-    viewLoading.classList.remove('hidden');
-    viewContent.classList.add('hidden');
+    const errorEl = document.getElementById('viewError');
+    if(errorEl) errorEl.classList.add('hidden');
+    if(viewLoading) viewLoading.classList.remove('hidden');
+    if(viewContent) viewContent.classList.add('hidden');
     openModal(viewModal);
     try {
       const data = await fetchItem(id);
       lastLoadedData = data;
       populateView(data);
-      viewLoading.classList.add('hidden');
-      viewContent.classList.remove('hidden');
+      if(viewLoading) viewLoading.classList.add('hidden');
+      if(viewContent) viewContent.classList.remove('hidden');
     } catch(err){
-      closeModal(viewModal);
+      if(viewLoading) viewLoading.classList.add('hidden');
+      const errorEl2 = document.getElementById('viewError');
+      if(errorEl2) errorEl2.classList.remove('hidden');
     }
   }
 
   function handleEditFromView(){
-    if(!lastLoadedData) return;
+    // If data not yet loaded but we have an id, fetch first
+    if(!lastLoadedData){
+      if(currentId){
+        fetchItem(currentId).then(data => { lastLoadedData = data; populateEdit(data); closeModal(viewModal); openModal(editModal); }).catch(()=>{});
+      }
+      return;
+    }
     populateEdit(lastLoadedData);
     closeModal(viewModal);
     openModal(editModal);
@@ -501,7 +499,7 @@
       lastLoadedData = data;
       populateEdit(data);
       openModal(editModal);
-    } catch(err){}
+  } catch{}
   }
 
   editForm?.addEventListener('submit', async e => {
@@ -536,7 +534,7 @@
       updateCardDom(id, data.data || {});
       showToast('Updated successfully','success');
       closeModal(editModal);
-    } catch(err){
+    } catch(err){ // keep toast message
       showToast(err.message || 'Error updating','error');
     } finally {
       editSubmitBtn.disabled = false;
@@ -563,8 +561,8 @@
       if(card){ card.style.transition='opacity .25s'; card.style.opacity='0'; setTimeout(()=>card.remove(),260); }
       showToast('Deleted','success');
       closeModal(deleteModal);
-    } catch(err){
-      showToast(err.message || 'Error deleting','error');
+    } catch(_e){ // keep toast message (unused variable renamed for lint)
+      showToast(_e.message || 'Error deleting','error');
     } finally {
       confirmDeleteBtn.disabled = false;
       deleteTargetId = null;
@@ -581,35 +579,22 @@
     const deleteBtn = e.target.closest('.btn-delete');
     if(deleteBtn){ e.preventDefault(); handleDelete(deleteBtn.getAttribute('data-id')); }
     if(e.target.closest(createTriggerSelector)){ e.preventDefault(); openCreate(); }
+    const photosBtn = e.target.closest('.view-photos');
+    if(photosBtn){
+      e.preventDefault();
+      const card = photosBtn.closest('.material-card');
+      if(card){
+        const id = card.getAttribute('data-id');
+        openPhotosLightbox(id);
+      }
+    }
+    if(e.target.closest('#openEditFromView')){
+      e.preventDefault();
+      handleEditFromView();
+    }
   });
 
-  function buildCard(item){
-    const primary = item.primary_image_url || (item.images && [...item.images].sort((a,b)=>(a.order??0)-(b.order??0))[0] && [...item.images].sort((a,b)=>(a.order??0)-(b.order??0))[0].url);
-    return `<div class="material-card" data-id="${item.id}">
-      <div class="material-image-wrapper" style="height:140px;overflow:hidden;position:relative;border-radius:4px 4px 0 0;background:#f5f5f5;display:flex;align-items:center;justify-content:center;">
-        <div class="card-img-count" style="position:absolute;top:4px;left:4px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;padding:2px 4px;border-radius:3px;z-index:2;">imgs: <span class='count-val'>${(item.images?item.images.length:0)}</span></div>
-        ${primary ? `<img src="${primary}" alt="${item.title}" class="card-primary-img" style="width:100%;height:100%;object-fit:cover;" onerror="this.onerror=null;this.src='https://via.placeholder.com/400x240?text=Image';">` : `<div class='card-primary-fallback' style='font-size:.85rem;color:#888;display:flex;flex-direction:column;align-items:center;gap:.25rem;'><i class='fa-solid fa-image' style='font-size:1.4rem;'></i><span>No Image</span></div>`}
-      </div>
-      <div class="material-content" style="padding-top:0.8rem;">
-        <div class="material-header">
-          <h3 class="material-name">${item.title}</h3>
-          <span class="material-badge">${(item.condition||'').charAt(0).toUpperCase()+ (item.condition||'').slice(1)}</span>
-        </div>
-        <div class="material-meta">
-          <div class="meta-item"><i class="fa-solid fa-weight-hanging meta-icon"></i><span>${item.estimated_weight ?? '—'} kg</span></div>
-          <div class="meta-item"><i class="fa-solid fa-calendar meta-icon"></i><span>${(new Date()).toLocaleDateString()}</span></div>
-        </div>
-        <p class="material-description">${(item.notes||'').slice(0,100)}</p>
-        <div class="material-actions" data-id="${item.id}">
-          <a href="#" class="btn-action btn-view" data-id="${item.id}"><i class="fa-solid fa-eye"></i> View</a>
-          <a href="#" class="btn-action btn-edit" data-id="${item.id}"><i class="fa-solid fa-edit"></i> Edit</a>
-          <form action="#" method="POST" style="display:inline;" class="delete-form" data-id="${item.id}">
-            <button type="button" class="btn-action btn-delete" data-id="${item.id}"><i class="fa-solid fa-trash"></i> Delete</button>
-          </form>
-        </div>
-      </div>
-    </div>`;
-  }
+  // buildCard & other legacy DOM construction helpers removed (superseded by server-rendered partials)
 
   createForm?.addEventListener('submit', async e => {
     e.preventDefault();
@@ -619,19 +604,26 @@
       const res = await fetch(base, { method:'POST', headers:{ 'X-CSRF-TOKEN':csrf, 'Accept':'application/json' }, body: fd });
       if(res.status===422){
         const j = await res.json();
-        showToast('Validation error','error');
-        console.error(j);
+        // Clear existing inline errors
+        createForm.querySelectorAll('[data-error-for]').forEach(el => { el.textContent=''; el.style.display='none'; });
+        if(j.errors){
+          Object.entries(j.errors).forEach(([field, messages]) => {
+            const sel = `[data-error-for="${field}"]`;
+            const target = createForm.querySelector(sel);
+            if(target){
+              target.textContent = messages[0];
+              target.style.display = 'block';
+            }
+          });
+        }
+        showToast('Fix validation errors','error');
         return;
       }
       if(!res.ok) throw new Error('Create failed');
-      const data = await res.json();
-      // Prepend new card
-      const grid = document.querySelector('.materials-grid');
-      if(grid){
-        const temp = document.createElement('div');
-        temp.innerHTML = buildCard(data.data);
-        const card = temp.firstElementChild;
-        grid.prepend(card);
+      await res.json();
+      if(usingNewFilters && window.WasteItemsUI){
+        // Refresh sections so new item appears with consistent markup
+        await window.WasteItemsUI.updateContent(window.location.href, { pushState:false });
       }
       showToast('Created successfully','success');
       closeModal(createModal);

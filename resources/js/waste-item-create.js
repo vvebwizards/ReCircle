@@ -126,4 +126,93 @@ document.addEventListener('DOMContentLoaded', () => {
         addFiles(fileInput.files);
         // Do NOT clear the input; we rely on underlying FileList for submission.
     });
+
+    // ---------------- Inline Validation -----------------
+    const form = document.getElementById('wasteItemForm');
+    if (form) {
+        // remove native required to avoid browser tooltip interfering
+        form.querySelectorAll('[required]').forEach(el => el.removeAttribute('required'));
+
+        function clearErrors() {
+            form.querySelectorAll('.error-text.inline').forEach(e => e.remove());
+            form.querySelectorAll('.has-error').forEach(e => e.classList.remove('has-error'));
+        }
+
+        function showError(inputEl, message) {
+            if (!inputEl) return;
+            const group = inputEl.closest('.form-group') || inputEl.parentElement;
+            if (!group) return;
+            group.classList.add('has-error');
+            // Avoid duplicate
+            const existing = group.querySelector('.error-text.inline');
+            if (existing) existing.remove();
+            const small = document.createElement('small');
+            small.className = 'error-text inline';
+            small.textContent = message;
+            // Place after label if exists else at end
+            const label = group.querySelector('label');
+            if (label && label.nextSibling) {
+                label.parentNode.insertBefore(small, label.nextSibling);
+            } else {
+                group.appendChild(small);
+            }
+        }
+
+        function validate() {
+            clearErrors();
+            let valid = true;
+            const title = form.querySelector('#title');
+            if (!title.value.trim()) { showError(title, 'A title is required.'); valid = false; }
+
+            // images required
+            if (filesState.length === 0) {
+                showError(dropzone, 'Please upload at least one image.');
+                valid = false;
+            }
+
+            const condition = form.querySelector('#condition');
+            if (!condition.value) { showError(condition, 'Select a condition.'); valid = false; }
+
+            const est = form.querySelector('#estimated_weight');
+            if (est.value === '' || isNaN(Number(est.value)) || Number(est.value) < 0) {
+                showError(est, 'Provide a non-negative number.');
+                valid = false;
+            }
+
+            const lat = form.querySelector('input[name="location[lat]"]');
+            const lng = form.querySelector('input[name="location[lng]"]');
+            const latVal = lat.value.trim();
+            const lngVal = lng.value.trim();
+            const latNum = Number(latVal);
+            const lngNum = Number(lngVal);
+            if (latVal === '' || isNaN(latNum) || latNum < -90 || latNum > 90) {
+                showError(lat, 'Latitude must be between -90 and 90.');
+                valid = false;
+            }
+            if (lngVal === '' || isNaN(lngNum) || lngNum < -180 || lngNum > 180) {
+                showError(lng, 'Longitude must be between -180 and 180.');
+                valid = false;
+            }
+            return valid;
+        }
+
+        form.addEventListener('submit', (e) => {
+            if (!validate()) {
+                e.preventDefault();
+                // focus first error
+                const firstErr = form.querySelector('.has-error input, .has-error select, .has-error textarea, #imageDropzone');
+                if (firstErr && firstErr.focus) firstErr.focus();
+            }
+        });
+
+        // live validation on blur/change
+        form.querySelectorAll('input, select').forEach(el => {
+            el.addEventListener('blur', () => {
+                // run a lightweight validation for that field only
+                const name = el.getAttribute('name');
+                // run full for simplicity (fields interdependent minimal)
+                validate();
+            });
+        });
+    }
 });

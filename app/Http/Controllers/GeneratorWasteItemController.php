@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreWasteItemRequest;
 use App\Models\WasteItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -9,40 +10,78 @@ use Illuminate\View\View;
 
 class GeneratorWasteItemController extends Controller
 {
+    public function index(Request $request): View|\Illuminate\Http\JsonResponse
+    {
+        $query = WasteItem::with('photos')->where('generator_id', Auth::id());
+
+        if ($request->filled('search')) {
+            $query->where('title', 'like', '%'.$request->search.'%');
+        }
+
+        if ($request->filled('condition')) {
+            $query->where('condition', $request->condition);
+        }
+
+        switch ($request->get('sort', 'newest')) {
+            case 'oldest':
+                $query->oldest();
+                break;
+            case 'title_asc':
+                $query->orderBy('title');
+                break;
+            case 'title_desc':
+                $query->orderByDesc('title');
+                break;
+            default:
+                $query->latest();
+        }
+
+        // Clone the base query BEFORE pagination for accurate aggregates across all pages
+        $aggregateQuery = clone $query;
+        $wasteItems = $query->paginate(12)->withQueryString();
+
+        // Get statistics (total already available from paginator)
+        $total = $wasteItems->total();
+        // Average only over non-null, positive weights to avoid skew / division by zero issues
+        $avgWeight = (float) $aggregateQuery->whereNotNull('estimated_weight')
+            ->where('estimated_weight', '>', 0)
+            ->avg('estimated_weight');
+        $avgWeight = $avgWeight ?: 0; // ensure numeric 0 fallback
+        $conditionsCount = WasteItem::where('generator_id', Auth::id())
+            ->where('deleted_at', null)
+            ->distinct('condition')
+            ->count('condition');
+
+        if ($request->ajax()) {
+            return response()->json([
+                'grid' => view('generator.partials.waste_items_grid', compact('wasteItems'))->render(),
+                'stats' => view('generator.partials.waste_items_stats', compact('total', 'avgWeight', 'conditionsCount'))->render(),
+                'pagination' => view('generator.partials.waste_items_pagination', compact('wasteItems'))->render(),
+            ]);
+        }
+
+        return view('generator.waste_items', compact('wasteItems', 'total', 'avgWeight', 'conditionsCount'));
+    }
+
     public function create(): View
     {
         return view('generator.create_waste_item');
     }
 
-    public function store(Request $request)
+    public function store(StoreWasteItemRequest $request)
     {
-        $validated = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'condition' => ['required', 'in:good,fixable,scrap'],
-            'estimated_weight' => ['nullable', 'numeric', 'min:0'],
-            'images' => ['nullable', 'array', 'max:10'],
-            'images.*' => ['image', 'mimes:jpg,jpeg,png,gif,webp', 'max:2048'],
-            'location.lat' => ['nullable', 'numeric', 'between:-90,90'],
-            'location.lng' => ['nullable', 'numeric', 'between:-180,180'],
-            'notes' => ['nullable', 'string', 'max:2000'],
-        ]);
+        $data = $request->validated();
+        $data['generator_id'] = Auth::id();
 
-        $payload = [
-            'title' => $validated['title'],
-            'condition' => $validated['condition'],
-            'estimated_weight' => $validated['estimated_weight'] ?? null,
-            'location' => ($validated['location.lat'] ?? null) !== null || ($validated['location.lng'] ?? null) !== null ? [
-                'lat' => $validated['location.lat'] ?? null,
-                'lng' => $validated['location.lng'] ?? null,
-            ] : null,
-            'notes' => $validated['notes'] ?? null,
-            'generator_id' => Auth::id(),
-        ];
-        $wasteItem = WasteItem::create($payload);
+        // images handled separately; remove to avoid mass assignment issue
+        $images = $request->file('images');
+        unset($data['images']);
 
-        if ($request->hasFile('images')) {
+        $wasteItem = WasteItem::create($data);
+
+        if ($images) {
             $order = 0;
-            foreach ($request->file('images') as $uploaded) {
+            foreach ($images as $uploaded) {
                 if (! $uploaded->isValid()) {
                     continue;
                 }
@@ -79,80 +118,6 @@ class GeneratorWasteItemController extends Controller
 
         return redirect()->route('generator.waste-items.index')
             ->with('success', 'Waste item "'.$wasteItem->title.'" created.');
-    }
-
-    public function index(Request $request): View|\Illuminate\Http\JsonResponse
-    {
-        $query = WasteItem::with('photos')->where('generator_id', Auth::id());
-
-        if ($search = $request->get('search')) {
-            $query->where('title', 'like', "%{$search}%");
-        }
-        if ($condition = $request->get('condition')) {
-            $query->where('condition', $condition);
-        }
-
-        switch ($request->get('sort', 'newest')) {
-            case 'oldest':
-                $query->oldest();
-                break;
-            case 'title_asc':
-                $query->orderBy('title');
-                break;
-            case 'title_desc':
-                $query->orderByDesc('title');
-                break;
-            default:
-                $query->latest();
-        }
-
-        $wasteItems = $query->paginate(12);
-        $conditionsCount = WasteItem::where('generator_id', Auth::id())
-            ->selectRaw('`condition` as cond, COUNT(*) as aggregate')
-            ->groupBy('cond')
-            ->pluck('aggregate', 'cond');
-
-        $total = $wasteItems->total();
-        $avgWeight = WasteItem::where('generator_id', Auth::id())->avg('estimated_weight') ?? 0;
-
-        if ($request->wantsJson()) {
-            return response()->json([
-                'data' => [
-                    'items' => $wasteItems->map(function ($w) {
-                        return [
-                            'id' => $w->id,
-                            'title' => $w->title,
-                            'condition' => $w->condition,
-                            'estimated_weight' => $w->estimated_weight,
-                            'notes' => $w->notes,
-                            'created_at' => $w->created_at?->toISOString(),
-                            'primary_image_url' => $w->primary_image_url,
-                            'images_count' => $w->photos->count(),
-                        ];
-                    }),
-                    'pagination' => [
-                        'current_page' => $wasteItems->currentPage(),
-                        'last_page' => $wasteItems->lastPage(),
-                        'per_page' => $wasteItems->perPage(),
-                        'total' => $wasteItems->total(),
-                        'next_page_url' => $wasteItems->nextPageUrl(),
-                        'prev_page_url' => $wasteItems->previousPageUrl(),
-                    ],
-                    'stats' => [
-                        'total' => $total,
-                        'avgWeight' => round($avgWeight, 2),
-                        'conditionsCount' => $conditionsCount,
-                    ],
-                ],
-            ]);
-        }
-
-        return view('generator.waste_items', [
-            'wasteItems' => $wasteItems,
-            'conditionsCount' => $conditionsCount,
-            'total' => $total,
-            'avgWeight' => $avgWeight,
-        ]);
     }
 
     public function show(WasteItem $wasteItem)

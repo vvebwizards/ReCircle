@@ -6,7 +6,8 @@
     'resources/css/material-create.css',
     'resources/css/waste-items.css',
     'resources/js/waste-item-create.js',
-    'resources/js/waste-items.js'
+    'resources/js/waste-items.js',
+    'resources/js/waste-items-filters.js'
 ])
 @endpush
 
@@ -26,38 +27,56 @@
         </div>
 
         <div class="filters-section modern">
-            <form action="{{ route('generator.waste-items.index') }}" method="GET" id="filterForm" class="filter-toolbar" novalidate>
+            <form action="{{ route('generator.waste-items.index') }}" method="GET" id="filterForm" class="filter-toolbar" novalidate data-ajax="true">
                 <div class="ft-row">
                     <div class="ft-search">
                         <i class="fa-solid fa-magnifying-glass"></i>
                         <input type="text" name="search" id="search" placeholder="Search waste items..." value="{{ request('search') }}" autocomplete="off" />
                         @if(request('search'))
-                            <button type="button" class="clear-search" aria-label="Clear search" title="Clear search">&times;</button>
+                            <button type="button" class="clear-search" aria-label="Clear search" title="Clear search">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
                         @endif
                     </div>
                     <div class="ft-select">
-                        <label for="condition" class="sr-only">Condition</label>
-                        <i class="fa-solid fa-screwdriver-wrench"></i>
-                        <select name="condition" id="condition">
-                            <option value="">Condition: All</option>
-                            @foreach(['good','fixable','scrap'] as $c)
-                                <option value="{{ $c }}" {{ request('condition') === $c ? 'selected' : '' }}>{{ ucfirst($c) }}</option>
-                            @endforeach
+                        <label for="condition" class="sr-only">Filter by Condition</label>
+                        <i class="fa-solid fa-filter-circle-xmark"></i>
+                        <select name="condition" id="condition" class="modern-select">
+                            <option value="">All Conditions</option>
+                            <option value="good" {{ request('condition') === 'good' ? 'selected' : '' }} data-icon="check-circle">
+                                Good
+                            </option>
+                            <option value="fixable" {{ request('condition') === 'fixable' ? 'selected' : '' }} data-icon="wrench">
+                                Fixable
+                            </option>
+                            <option value="scrap" {{ request('condition') === 'scrap' ? 'selected' : '' }} data-icon="recycle">
+                                Scrap
+                            </option>
                         </select>
                     </div>
                     <div class="ft-select">
-                        <label for="sort" class="sr-only">Sort</label>
-                        <i class="fa-solid fa-arrow-down-wide-short"></i>
-                        <select name="sort" id="sort">
-                            <option value="newest" {{ request('sort')=='newest' ? 'selected' : '' }}>Newest</option>
-                            <option value="oldest" {{ request('sort')=='oldest' ? 'selected' : '' }}>Oldest</option>
-                            <option value="title_asc" {{ request('sort')=='title_asc' ? 'selected' : '' }}>Title A-Z</option>
-                            <option value="title_desc" {{ request('sort')=='title_desc' ? 'selected' : '' }}>Title Z-A</option>
+                        <label for="sort" class="sr-only">Sort Items</label>
+                        <i class="fa-solid fa-arrow-up-wide-short"></i>
+                        <select name="sort" id="sort" class="modern-select">
+                            <option value="newest" {{ request('sort')=='newest' ? 'selected' : '' }} data-icon="clock">
+                                Newest First
+                            </option>
+                            <option value="oldest" {{ request('sort')=='oldest' ? 'selected' : '' }} data-icon="clock-rotate-left">
+                                Oldest First
+                            </option>
+                            <option value="title_asc" {{ request('sort')=='title_asc' ? 'selected' : '' }} data-icon="arrow-down-a-z">
+                                Title A-Z
+                            </option>
+                            <option value="title_desc" {{ request('sort')=='title_desc' ? 'selected' : '' }} data-icon="arrow-down-z-a">
+                                Title Z-A
+                            </option>
                         </select>
                     </div>
                     <div class="ft-actions">
-                        <button type="reset" id="filtersReset" class="ft-btn ghost" title="Reset filters" aria-label="Reset filters"><i class="fa-solid fa-rotate"></i><span class="txt">Reset</span></button>
-                        
+                        <button type="reset" id="filtersReset" class="ft-btn ghost" title="Reset all filters">
+                            <i class="fa-solid fa-rotate"></i>
+                            <span class="txt">Reset Filters</span>
+                        </button>
                     </div>
                 </div>
             </form>
@@ -65,74 +84,35 @@
 
         <div class="stats-grid">
             <div class="stat-card">
-                <h3 class="stat-number">{{ $total }}</h3>
-                <p class="stat-label">Total Items</p>
+                <div class="stat-icon">
+                    <i class="fa-solid fa-box-archive"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-number">{{ $total }}</h3>
+                    <p class="stat-label">Total Items</p>
+                </div>
             </div>
             <div class="stat-card">
-                <h3 class="stat-number">{{ number_format($avgWeight,2) }}</h3>
-                <p class="stat-label">Avg Weight</p>
+                <div class="stat-icon">
+                    <i class="fa-solid fa-weight-scale"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-number">{{ number_format($avgWeight,2) }}</h3>
+                    <p class="stat-label">Avg Weight (kg)</p>
+                </div>
             </div>
             <div class="stat-card">
-                <h3 class="stat-number">{{ $conditionsCount->count() }}</h3>
-                <p class="stat-label">Conditions</p>
+                <div class="stat-icon">
+                    <i class="fa-solid fa-list-check"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-number">{{ $conditionsCount }}</h3>
+                    <p class="stat-label">Conditions</p>
+                </div>
             </div>
         </div>
 
-        <div class="materials-grid">
-            @forelse($wasteItems as $item)
-                <div class="material-card" data-id="{{ $item->id }}">
-                    @php 
-                        $primary = $item->primary_image_url ?? null;
-                        $src = $primary; 
-                    @endphp
-                    <div class="material-image-wrapper" style="height:140px;overflow:hidden;position:relative;border-radius:4px 4px 0 0;background:#f5f5f5;display:flex;align-items:center;justify-content:center;">
-                        @php $photosCount = $item->photos->count(); @endphp
-                        <div class="card-img-count" style="position:absolute;top:4px;left:4px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;padding:2px 4px;border-radius:3px;z-index:2;">imgs: <span class="count-val">{{ $photosCount }}</span></div>
-                        @if($src)
-                            <img src="{{ $src }}" alt="{{ $item->title }}" class="card-primary-img" style="width:100%;height:100%;object-fit:cover;" onerror="this.onerror=null;this.src='https://via.placeholder.com/400x240?text=Image';">
-                        @else
-                            <div class="card-primary-fallback" style="font-size:0.85rem;color:#888;display:flex;flex-direction:column;align-items:center;gap:0.25rem;">
-                                <i class="fa-solid fa-image" style="font-size:1.4rem;"></i>
-                                <span>No Image</span>
-                            </div>
-                        @endif
-                    </div>
-                    <div class="material-content" style="padding-top:0.8rem;">
-                        <div class="material-header">
-                            <h3 class="material-name">{{ $item->title }}</h3>
-                            <span class="material-badge">{{ ucfirst($item->condition) }}</span>
-                        </div>
-                        <div class="material-meta">
-                            <div class="meta-item">
-                                <i class="fa-solid fa-weight-hanging meta-icon"></i>
-                                <span>{{ $item->estimated_weight ?? '—' }} kg</span>
-                            </div>
-                            <div class="meta-item">
-                                <i class="fa-solid fa-calendar meta-icon"></i>
-                                <span>{{ $item->created_at->format('M d, Y') }}</span>
-                            </div>
-                        </div>
-                        <p class="material-description">{{ Str::limit($item->notes, 100) }}</p>
-                        <div class="material-actions" data-id="{{ $item->id }}">
-                            <a href="#" class="btn-action btn-view" data-id="{{ $item->id }}"><i class="fa-solid fa-eye"></i> View</a>
-                            <a href="#" class="btn-action btn-edit" data-id="{{ $item->id }}"><i class="fa-solid fa-edit"></i> Edit</a>
-                            <form action="#" method="POST" style="display:inline;" class="delete-form" data-id="{{ $item->id }}">
-                                @csrf
-                                @method('DELETE')
-                                <button type="button" class="btn-action btn-delete" data-id="{{ $item->id }}"><i class="fa-solid fa-trash"></i> Delete</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            @empty
-                <div class="empty-state">
-                    <div class="empty-icon"><i class="fa-solid fa-trash"></i></div>
-                    <h3 herf class="empty-text">No waste items found</h3>
-                    <p>Create your first waste item.</p>
-                    <a href="#" class="btn-create open-create-modal" style="display:inline-flex;margin-top:1rem;"><i class="fa-solid fa-plus"></i> Create Waste Item</a>
-                </div>
-            @endforelse
-        </div>
+        @include('generator.partials.waste_items_grid')
 
         @if($wasteItems->hasPages())
             <div class="pagination">
@@ -173,38 +153,45 @@
                     <div class="form-grid">
                         <div class="full">
                             <label class="block text-xs font-semibold tracking-wide uppercase text-gray-600">Title *</label>
-                            <input type="text" name="title" class="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" required placeholder="e.g., Mixed Plastic Batch">
+                            <input type="text" name="title" class="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="e.g., Mixed Plastic Batch">
+                            <small class="error-text inline" data-error-for="title" style="display:none;"></small>
                         </div>
                         <div>
                             <label class="block text-xs font-semibold tracking-wide uppercase text-gray-600">Condition *</label>
-                            <select name="condition" class="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" required>
+                            <select name="condition" class="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
                                 <option value="good">Good</option>
                                 <option value="fixable">Fixable</option>
                                 <option value="scrap">Scrap</option>
                             </select>
+                            <small class="error-text inline" data-error-for="condition" style="display:none;"></small>
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold tracking-wide uppercase text-gray-600">Weight (kg)</label>
+                            <label class="block text-xs font-semibold tracking-wide uppercase text-gray-600">Weight (kg) *</label>
                             <input type="number" step="0.01" min="0" name="estimated_weight" class="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="0.00">
+                            <small class="error-text inline" data-error-for="estimated_weight" style="display:none;"></small>
                         </div>
                         <div class="full">
-                            <label class="block text-xs font-semibold tracking-wide uppercase text-gray-600">Location (Lat / Lng)</label>
+                            <label class="block text-xs font-semibold tracking-wide uppercase text-gray-600">Location (Lat / Lng) *</label>
                             <div style="display:flex;gap:.5rem;">
                                 <input type="number" step="0.000001" name="location[lat]" placeholder="Latitude" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
                                 <input type="number" step="0.000001" name="location[lng]" placeholder="Longitude" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
                             </div>
+                            <small class="error-text inline" data-error-for="location.lat" style="display:none;"></small>
+                            <small class="error-text inline" data-error-for="location.lng" style="display:none;"></small>
                         </div>
                         <div class="full">
                             <label class="block text-xs font-semibold tracking-wide uppercase text-gray-600">Notes</label>
                             <textarea name="notes" rows="3" class="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Additional details..."></textarea>
+                            <small class="error-text inline" data-error-for="notes" style="display:none;"></small>
                         </div>
                         <div class="full">
-                            <label class="block text-xs font-semibold tracking-wide uppercase text-gray-600">Images</label>
+                            <label class="block text-xs font-semibold tracking-wide uppercase text-gray-600">Images *</label>
                             <div id="imageDropzone" class="image-dropzone" tabindex="0" role="button" aria-label="Upload images">
                                 <p class="dz-instructions"><i class="fa-solid fa-cloud-arrow-up"></i> Drag & drop images here or <span class="link">browse</span><br><small>Up to 10 images, max 2MB each</small></p>
                                 <input type="file" id="images" name="images[]" multiple accept="image/*" hidden>
                             </div>
                             <div id="imagePreviewList" class="image-preview-list"></div>
+                            <small class="error-text inline" data-error-for="images" style="display:none;"></small>
                         </div>
                     </div>
                     <div class="modal-actions">
@@ -215,64 +202,16 @@
             </div>
         </div>
 
-        <!-- VIEW MODAL -->
-        <div class="modal hidden" id="viewModal" role="dialog" aria-modal="true" aria-labelledby="viewModalTitle">
-            <div class="modal-header">
-                <h3 class="modal-title" id="viewModalTitle"><i class="fa-solid fa-eye"></i> <span class="title-text">View Waste Item</span></h3>
-                <button class="modal-close" data-close="viewModal" aria-label="Close view"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="modal-body">
-                <div id="viewLoading" class="loading-spinner hidden"></div>
-                <div id="viewContent" class="hidden">
-                    <div class="wi-header-block" style="display:flex;flex-direction:column;gap:.35rem;margin-bottom:.9rem;">
-                        <h2 id="viewTitle" style="font-size:1.15rem;font-weight:600;color:#111827;letter-spacing:.01em;margin:0;">—</h2>
-                        <div style="display:flex;align-items:center;gap:.45rem;flex-wrap:wrap;">
-                            <span class="badge" id="viewCondition">—</span>
-                            <span class="wi-pill" id="viewWeight"></span>
-                            <span class="wi-pill subtle" id="viewId"></span>
-                            <span class="wi-pill geo" id="viewLocation"></span>
-                        </div>
-                    </div>
-
-                    <div class="wi-detail-layout" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.1rem;align-items:start;margin-bottom:1.1rem;">
-                        <div class="wi-panel" style="background:var(--wi-gray-50);border:1px solid var(--wi-gray-200);padding:.85rem .9rem;border-radius:14px;display:flex;flex-direction:column;gap:.75rem;">
-                            <div>
-                                <h4 style="margin:0 0 .55rem;font-size:.62rem;letter-spacing:.12em;font-weight:700;text-transform:uppercase;color:var(--wi-gray-600);">Summary</h4>
-                                <dl class="wi-attrs" style="margin:0;display:grid;grid-template-columns:auto 1fr;row-gap:.4rem;column-gap:.65rem;font-size:.72rem;color:var(--wi-gray-700);">
-                                    <dt style="font-weight:600;">Created</dt><dd id="viewCreated" style="margin:0;">—</dd>
-                                    <dt style="font-weight:600;">Updated</dt><dd id="viewUpdated" style="margin:0;">—</dd>
-                                    <dt style="font-weight:600;">Materials</dt><dd id="viewMaterials" style="margin:0;">0</dd>
-                                    <dt style="font-weight:600;">Location</dt><dd id="viewLocationDetail" style="margin:0;">—</dd>
-                                </dl>
-                            </div>
-                            <div>
-                                <h4 style="margin:0 0 .55rem;font-size:.62rem;letter-spacing:.12em;font-weight:700;text-transform:uppercase;color:var(--wi-gray-600);">Notes</h4>
-                                <div id="viewNotes" style="white-space:pre-line;font-size:.72rem;line-height:1.35;min-height:40px;color:var(--wi-gray-800);">—</div>
-                            </div>
-                        </div>
-                        <div class="wi-panel" style="background:var(--wi-gray-50);border:1px solid var(--wi-gray-200);padding:.85rem .9rem;border-radius:14px;display:flex;flex-direction:column;gap:.55rem;">
-                            <div style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;">
-                                <h4 style="margin:0;font-size:.62rem;letter-spacing:.12em;font-weight:700;text-transform:uppercase;color:var(--wi-gray-600);">Images</h4>
-                                <span id="viewImagesCount" style="background:var(--wi-gray-200);color:var(--wi-gray-700);font-size:.6rem;padding:.25rem .55rem;border-radius:999px;font-weight:600;letter-spacing:.05em;">0</span>
-                            </div>
-                            <div id="viewImages" class="gallery-grid" style="--cols:3;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));"></div>
-                        </div>
-                    </div>
-                    <div class="modal-actions">
-                        <button class="btn btn-secondary" data-close="viewModal">Close</button>
-                        <button class="btn btn-primary" id="openEditFromView"><i class="fa-solid fa-edit"></i> Edit</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        @include('generator.partials.waste_item_view_modal')
+    @include('generator.partials.waste_item_photos_lightbox')
 
         <!-- EDIT MODAL -->
         <div class="modal hidden" id="editModal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
-            <div class="modal-header">
-                <h3 class="modal-title" id="editModalTitle"><i class="fa-solid fa-pen-to-square"></i> <span>Edit Waste Item</span></h3>
+            <div class="modal-header minimal" style="justify-content:flex-end;">
+                <h3 id="editModalTitle" class="sr-only">Edit Waste Item</h3>
                 <button class="modal-close" data-close="editModal" aria-label="Close edit"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body edit-modal-body">
                 <form id="editForm">
                     <div class="form-grid">
                         <div class="full">
@@ -316,9 +255,9 @@
                             <input type="hidden" name="remove_images" id="editRemoveImages"> <!-- CSV of removed image IDs -->
                         </div>
                     </div>
-                    <div class="modal-actions">
+                    <div class="modal-actions edit-actions">
                         <button type="button" class="btn btn-secondary" data-close="editModal">Cancel</button>
-                        <button type="submit" class="btn btn-primary" id="editSubmitBtn"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
+                        <button type="submit" class="btn btn-primary edit-primary" id="editSubmitBtn"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
                     </div>
                 </form>
             </div>
