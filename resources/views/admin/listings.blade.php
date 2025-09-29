@@ -68,39 +68,61 @@
 
 @push('admin-modals')
 <div class="modal-overlay" id="al-modal-overlay" aria-hidden="true">
-  <!-- View Modal (generator style) -->
+  <!-- View Modal (generator style parity with skeleton & error states) -->
   <div class="modal hidden" id="al-view-modal" role="dialog" aria-modal="true" aria-labelledby="al-view-title">
-    <div class="modal-header">
-      <h3 class="modal-title" id="al-view-title"><i class="fa-solid fa-eye"></i> <span>View Listing</span></h3>
+    <div class="modal-header minimal">
+      <h3 class="modal-title" id="al-view-title"><i class="fa-solid fa-eye"></i> <span>Listing</span></h3>
       <button class="modal-close" data-close aria-label="Close view"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="modal-body" id="al-view-body">
-      <div class="wi-header-block" style="display:flex;flex-direction:column;gap:.35rem;margin-bottom:.9rem;">
-        <h2 id="al-vh-title" style="font-size:1.05rem;font-weight:600;color:#111827;letter-spacing:.01em;margin:0;">—</h2>
-        <div id="al-vh-meta" style="display:flex;align-items:center;gap:.45rem;flex-wrap:wrap;"></div>
-      </div>
-      <div class="wi-detail-layout" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.05rem;align-items:start;margin-bottom:1.1rem;">
-        <div class="wi-panel" style="background:var(--wi-gray-50);border:1px solid var(--wi-gray-200);padding:.85rem .9rem;border-radius:14px;display:flex;flex-direction:column;gap:.65rem;">
-          <div>
-            <h4 style="margin:0 0 .55rem;font-size:.6rem;letter-spacing:.12em;font-weight:700;text-transform:uppercase;color:var(--wi-gray-600);">Summary</h4>
-            <dl id="al-view-summary" style="margin:0;display:grid;grid-template-columns:auto 1fr;row-gap:.4rem;column-gap:.65rem;font-size:.68rem;color:var(--wi-gray-700);"></dl>
-          </div>
-          <div>
-            <h4 style="margin:0 0 .55rem;font-size:.6rem;letter-spacing:.12em;font-weight:700;text-transform:uppercase;color:var(--wi-gray-600);">Notes</h4>
-            <div id="al-view-notes" style="white-space:pre-line;font-size:.68rem;line-height:1.35;min-height:40px;color:var(--wi-gray-800);">—</div>
-          </div>
+      <!-- Loading skeleton -->
+      <div id="al-view-loading" class="modal-skeleton">
+        <div class="sk-header-line" style="width:55%;height:14px;"></div>
+        <div class="sk-pills" style="display:flex;gap:.4rem;margin:.6rem 0 1rem;">
+          <div class="sk-pill" style="width:70px;height:20px;"></div>
+          <div class="sk-pill" style="width:55px;height:20px;"></div>
+          <div class="sk-pill" style="width:40px;height:20px;"></div>
         </div>
-        <div class="wi-panel" style="background:var(--wi-gray-50);border:1px solid var(--wi-gray-200);padding:.85rem .9rem;border-radius:14px;display:flex;flex-direction:column;gap:.55rem;">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;">
-            <h4 style="margin:0;font-size:.6rem;letter-spacing:.12em;font-weight:700;text-transform:uppercase;color:var(--wi-gray-600);">Images</h4>
-            <span id="al-view-img-count" style="background:var(--wi-gray-200);color:var(--wi-gray-700);font-size:.55rem;padding:.25rem .55rem;border-radius:999px;font-weight:600;letter-spacing:.05em;">0</span>
-          </div>
-          <div id="al-view-images" class="gallery-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:.55rem;"></div>
+        <div class="sk-panels" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.9rem;">
+          <div class="sk-box" style="height:140px;"></div>
+          <div class="sk-box" style="height:140px;"></div>
         </div>
       </div>
-      <div class="modal-actions">
-        <button class="btn btn-secondary" data-close type="button">Close</button>
-        <button class="btn btn-primary" id="al-open-edit" type="button"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+      <!-- Error -->
+      <div id="al-view-error" class="hidden" style="text-align:center;padding:2rem 1rem;">
+        <p style="margin:0 0 .75rem;font-size:.8rem;color:var(--wi-gray-700);"><i class="fa-solid fa-triangle-exclamation" style="color:#dc2626;margin-right:.4rem;"></i>Failed to load listing.</p>
+        <button type="button" class="btn btn-secondary" data-close>Close</button>
+      </div>
+      <!-- Content -->
+      <div id="al-view-content" class="hidden al-view-wrap">
+        <div class="al-view-head">
+          <h2 id="al-vh-title" class="al-view-title">—</h2>
+          <div id="al-vh-meta" class="al-pill-row"></div>
+        </div>
+        <div class="al-section al-images-block">
+          <div class="al-section-head">
+            <span class="al-icon-badge"><i class="fa-solid fa-image"></i></span>
+            <span class="al-section-label">Images</span>
+            <div class="al-section-spacer"></div>
+            <span id="al-view-img-count" class="al-count-pill">0</span>
+            <button type="button" id="al-view-open-lightbox" class="al-btn-ghost-sm" style="display:none"><i class="fa-solid fa-images"></i><span>See all</span></button>
+          </div>
+          <div id="al-view-images" class="al-image-strip"></div>
+        </div>
+        <div class="al-panels-grid">
+          <div class="al-panel">
+            <div class="al-panel-head"><span class="al-icon-badge"><i class="fa-solid fa-circle-info"></i></span><span class="al-panel-title">Summary</span></div>
+            <dl id="al-view-summary" class="al-dl"></dl>
+          </div>
+          <div class="al-panel">
+            <div class="al-panel-head"><span class="al-icon-badge"><i class="fa-solid fa-note-sticky"></i></span><span class="al-panel-title">Notes</span></div>
+            <div id="al-view-notes" class="al-notes">—</div>
+          </div>
+        </div>
+        <div class="al-actions-row">
+          <button class="al-btn ghost" data-close type="button">Close</button>
+          <button class="al-btn primary" id="al-open-edit" type="button"><i class="fa-solid fa-pen-to-square"></i><span>Edit</span></button>
+        </div>
       </div>
     </div>
   </div>
@@ -160,6 +182,32 @@
       <div class="modal-actions">
         <button class="btn btn-secondary" data-close type="button">Cancel</button>
         <button class="btn btn-danger" id="al-delete-confirm" type="button"><i class="fa-solid fa-trash"></i> Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Photos Lightbox Modal (shared styling with generator) -->
+  <div class="modal hidden" id="al-photos-modal" role="dialog" aria-modal="true" aria-labelledby="al-photos-title" style="max-width:900px;">
+    <div class="modal-header minimal">
+      <h3 class="modal-title" id="al-photos-title"><i class="fa-solid fa-images"></i> <span>Listing Photos</span></h3>
+      <button class="modal-close" data-close aria-label="Close photos"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <div id="al-photos-loader" class="photos-loader" style="text-align:center;padding:2rem 0;">
+        <div class="spinner" style="width:32px;height:32px;border:4px solid var(--wi-gray-300);border-top-color:var(--wi-accent-600);border-radius:50%;margin:0 auto;animation:spin .9s linear infinite"></div>
+        <p style="font-size:.7rem;color:var(--wi-gray-600);margin-top:.75rem;letter-spacing:.05em;">Loading photos…</p>
+      </div>
+      <div id="al-photos-error" class="hidden" style="text-align:center;padding:2rem 0;">
+        <p style="font-size:.75rem;color:var(--wi-gray-700);"><i class="fa-solid fa-triangle-exclamation" style="color:#dc2626;margin-right:.35rem;"></i><span>Failed to load photos.</span></p>
+      </div>
+      <div id="al-photos-main-wrap" class="hidden lb-main-wrap">
+        <div class="lb-image-area" style="position:relative;">
+          <button type="button" class="lb-nav prev" aria-label="Previous image">&#10094;</button>
+          <img id="al-photos-main-image" src="" alt="Listing photo" class="hidden" style="max-height:420px;object-fit:contain;width:100%;background:#fff;border:1px solid var(--wi-gray-200);border-radius:10px;" />
+          <button type="button" class="lb-nav next" aria-label="Next image">&#10095;</button>
+        </div>
+        <div id="al-photos-caption" class="lb-caption" style="font-size:.65rem;text-align:center;margin-top:.55rem;color:var(--wi-gray-700);"></div>
+        <div id="al-photos-thumbs" class="lb-thumbs" style="display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.7rem;max-height:140px;overflow:auto;"></div>
       </div>
     </div>
   </div>
