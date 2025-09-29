@@ -54,11 +54,19 @@
       <div class="dash-card wide">
         <h3 class="dash-card-title"><i class="fa-solid fa-bolt"></i> Quick Actions</h3>
         <div class="qa-grid">
-          <a href="{{ route('generator.waste-items.index') }}" class="qa-card qa-new" aria-label="Create new waste listing">
-            <span class="qa-icon"><i class="fa-solid fa-plus"></i></span>
-            <span class="qa-title">New Listing</span>
-            <span class="qa-sub">List waste with AI assist</span>
-          </a>
+
+      <a href="{{ route('pickups.index') }}" class="block rounded-xl border p-6 hover:shadow transition">
+        <div class="flex items-center gap-4">
+            <div class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                {{-- Icône camion / pickup --}}
+                <i class="fa-solid fa-truck"></i>
+            </div>
+            <div>
+                <div class="font-semibold">Pickups</div>
+                <div class="text-sm text-gray-500">View the list of pickups</div>
+            </div>
+        </div>
+     </a>
           <a href="#" class="qa-card qa-bids" aria-label="View and manage bids">
             <span class="qa-icon"><i class="fa-solid fa-gavel"></i></span>
             <span class="qa-title">View Bids</span>

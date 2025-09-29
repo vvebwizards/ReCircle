@@ -43,6 +43,15 @@
                 <li class="nav-item"><a href="{{ route('home') }}#how-it-works" class="nav-link">How It Works</a></li>
                 <li class="nav-item"><a href="{{ route('home') }}#roles" class="nav-link">Roles</a></li>
                 <li class="nav-item"><a href="{{ route('home') }}#impact" class="nav-link">Impact</a></li>
+                {{-- Bouton Pick up visible quand connecté --}}
+               
+              
+                
+               <li class="nav-item">
+                <a href="{{ route('pickups.create') }}" class="nav-cta">Pick up</a>
+               </li>
+
+
                 <li class="nav-item"><a href="{{ route('auth') }}" class="nav-cta" aria-label="Sign in">Sign In</a></li>
             </ul>
             <div class="hamburger" aria-label="Toggle navigation" aria-expanded="false" role="button" tabindex="0">
