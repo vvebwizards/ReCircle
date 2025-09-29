@@ -234,21 +234,34 @@
     });
   });
 
-  editForm?.addEventListener('submit', e=>{
+  editForm?.addEventListener('submit', async e=>{
     e.preventDefault(); if(!state.currentId) return;
     // sync hidden fields
     ef.keepField.value = state.keepImages.join(',');
     ef.removeField.value = state.removeImages.join(',');
     const formData = new FormData(editForm);
-    fetch(`/admin/listings/${state.currentId}`, {
-      method: 'POST',
-      headers: { 'X-HTTP-Method-Override': 'PATCH' },
-      body: formData
-    }).then(r=>r.json())
-      .then(json=>{
-        closeModal(editModal);
-        fetchList();
-      }).catch(err=>console.error(err));
+    // true PUT for JSON fields + files is tricky; easier: spoof method via _method field
+    if(!formData.has('_method')) formData.append('_method','PUT');
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    try {
+      const resp = await fetch(`/admin/listings/${state.currentId}`, {
+        method: 'POST',
+        headers: { 'Accept':'application/json','X-CSRF-TOKEN': csrf },
+        body: formData
+      });
+      if(!resp.ok){
+        console.warn('[admin-listings] update failed status', resp.status);
+        try { const err = await resp.json(); console.warn(err); } catch {}
+        alert('Update failed.');
+        return;
+      }
+      await resp.json().catch(()=>null);
+      closeModal(editModal);
+      fetchList();
+    } catch(err){
+      console.error('[admin-listings] update error', err);
+      alert('Network error updating listing');
+    }
   });
 
   function confirmDelete(id, tr){
@@ -259,13 +272,16 @@
   }
 
   function doDelete(id, tr){
-    fetch(`/admin/listings/${id}`, { method: 'POST', headers: { 'X-HTTP-Method-Override':'DELETE','Accept':'application/json' } })
-      .then(r=>r.json())
-      .then(()=>{
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    const fd = new FormData(); fd.append('_method','DELETE');
+    fetch(`/admin/listings/${id}`, { method: 'POST', headers: { 'Accept':'application/json','X-CSRF-TOKEN': csrf }, body: fd })
+      .then(async r=>{
+        if(!r.ok){ console.warn('[admin-listings] delete failed', r.status); alert('Delete failed'); return; }
+        try { await r.json(); } catch {}
         tr?.remove();
         closeModal(deleteModal);
         fetchList();
-      });
+      }).catch(err=>{ console.error('[admin-listings] delete error', err); alert('Network error deleting'); });
   }
 
   // Initial fetch after DOM ready (replace server-provided table soon)
