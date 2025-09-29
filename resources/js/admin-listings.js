@@ -106,9 +106,11 @@
           const tr = document.createElement('tr');
           tr.dataset.id = i.id;
           tr.innerHTML = `<td>${i.id}</td><td>${escapeHtml(i.title)}</td><td><span class="badge cond-${i.condition}">${i.condition}</span></td><td>${escapeHtml(i.generator||'—')}</td><td>${i.images_count}</td><td>${formatDate(i.created_at)}</td><td class="actions">`+
-            `<button class="tbl-btn" data-view title="View"><i class="fa-regular fa-eye"></i></button>`+
-            `<button class="tbl-btn" data-edit title="Edit"><i class="fa-regular fa-pen-to-square"></i></button>`+
-            `<button class="tbl-btn danger" data-delete title="Delete"><i class="fa-regular fa-trash-can"></i></button>`+
+            `<div class="action-group">`+
+              `<button class="icon-btn view is-blue" data-action="view" data-view data-tooltip="View" aria-label="View listing"><i class="fa-solid fa-eye"></i><span class="sr-only">View</span></button>`+
+              `<button class="icon-btn edit is-green" data-action="edit" data-edit data-tooltip="Edit" aria-label="Edit listing"><i class="fa-solid fa-pen"></i><span class="sr-only">Edit</span></button>`+
+              `<button class="icon-btn delete is-red" data-action="delete" data-delete data-tooltip="Delete" aria-label="Delete listing"><i class="fa-solid fa-trash"></i><span class="sr-only">Delete</span></button>`+
+            `</div>`+
           `</td>`;
           tbody.appendChild(tr);
         });
@@ -158,14 +160,13 @@
 
   // Delegated actions
   tbody.addEventListener('click', e=>{
-    const btn = e.target.closest('button'); if(!btn) return;
+    const btn = e.target.closest('button.icon-btn'); if(!btn) return;
     const tr = btn.closest('tr'); const id = tr?.dataset.id; if(!id) return;
-    if(btn.hasAttribute('data-view')){ 
-      console.debug('[admin-listings] view button clicked for id', id);
-      loadView(id); 
-    }
-    else if(btn.hasAttribute('data-edit')){ loadEdit(id); }
-    else if(btn.hasAttribute('data-delete')){ confirmDelete(id, tr); }
+    const action = btn.getAttribute('data-action') || (btn.hasAttribute('data-view')?'view': btn.hasAttribute('data-edit')?'edit': btn.hasAttribute('data-delete')?'delete': null);
+    if(!action) return;
+    if(action==='view'){ console.debug('[admin-listings] view button clicked for id', id); loadView(id); }
+    else if(action==='edit'){ loadEdit(id); }
+    else if(action==='delete'){ confirmDelete(id, tr); }
   });
 
   function resetViewStates(){

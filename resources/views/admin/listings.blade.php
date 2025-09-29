@@ -28,7 +28,8 @@
   <div style="margin-left:auto;font-size:.875rem;color:#64748b" id="al-meta"></div>
 </div>
 
-<div class="a-card" style="padding:0">
+<div class="a-card wide">
+  <div class="a-title"><i class="fa-solid fa-recycle"></i> Listings</div>
   <table class="a-table" id="al-table">
     <thead>
       <tr>
@@ -51,9 +52,20 @@
           <td>{{ $w->photos->count() }}</td>
           <td>{{ $w->created_at?->diffForHumans() }}</td>
           <td class="actions">
-            <button class="tbl-btn" data-view title="View" aria-label="View listing"><i class="fa-regular fa-eye"></i></button>
-            <button class="tbl-btn" data-edit title="Edit" aria-label="Edit listing"><i class="fa-regular fa-pen-to-square"></i></button>
-            <button class="tbl-btn danger" data-delete title="Delete" aria-label="Delete listing"><i class="fa-regular fa-trash-can"></i></button>
+            <div class="action-group">
+              <button class="icon-btn view is-blue" data-action="view" data-view data-tooltip="View" aria-label="View listing">
+                <i class="fa-solid fa-eye"></i>
+                <span class="sr-only">View</span>
+              </button>
+              <button class="icon-btn edit is-green" data-action="edit" data-edit data-tooltip="Edit" aria-label="Edit listing">
+                <i class="fa-solid fa-pen"></i>
+                <span class="sr-only">Edit</span>
+              </button>
+              <button class="icon-btn delete is-red" data-action="delete" data-delete data-tooltip="Delete" aria-label="Delete listing">
+                <i class="fa-solid fa-trash"></i>
+                <span class="sr-only">Delete</span>
+              </button>
+            </div>
           </td>
         </tr>
       @endforeach
@@ -127,48 +139,60 @@
     </div>
   </div>
 
-  <!-- Edit Modal -->
+  <!-- Edit Modal (modernized) -->
   <div class="modal hidden" id="al-edit-modal" role="dialog" aria-modal="true" aria-labelledby="al-edit-title-h">
-    <div class="modal-header"><h3 class="modal-title" id="al-edit-title-h"><i class="fa-solid fa-pen-to-square"></i> <span>Edit Listing</span></h3><button class="modal-close" data-close aria-label="Close edit"><i class="fa-solid fa-xmark"></i></button></div>
-    <div class="modal-body">
-      <form id="al-edit-form" enctype="multipart/form-data">
+    <div class="modal-header minimal"><h3 class="modal-title" id="al-edit-title-h"><i class="fa-solid fa-pen-to-square"></i> <span>Edit Listing</span></h3><button class="modal-close" data-close aria-label="Close edit"><i class="fa-solid fa-xmark"></i></button></div>
+    <div class="modal-body al-edit-body">
+      <form id="al-edit-form" enctype="multipart/form-data" class="al-edit-form">
         <input type="hidden" name="keep_images" id="al-edit-keep" />
         <input type="hidden" name="remove_images" id="al-edit-remove" />
-        <div class="form-grid">
-          <label>Title
-            <input type="text" name="title" id="al-edit-title" required />
-          </label>
-          <label>Condition
-            <select name="condition" id="al-edit-condition" required>
+        <div class="al-edit-grid">
+          <div class="al-field">
+            <label for="al-edit-title" class="al-field-label">Title</label>
+            <input type="text" name="title" id="al-edit-title" required class="al-input" />
+          </div>
+          <div class="al-field">
+            <label for="al-edit-condition" class="al-field-label">Condition</label>
+            <select name="condition" id="al-edit-condition" required class="al-input">
               <option value="good">Good</option>
               <option value="fixable">Fixable</option>
               <option value="scrap">Scrap</option>
             </select>
-          </label>
-          <label>Est. Weight (kg)
-            <input type="number" step="0.01" min="0" name="estimated_weight" id="al-edit-weight" />
-          </label>
-          <label>Latitude
-            <input type="number" step="0.000001" name="location[lat]" id="al-edit-lat" />
-          </label>
-            <label>Longitude
-            <input type="number" step="0.000001" name="location[lng]" id="al-edit-lng" />
-          </label>
-          <label style="grid-column:1/-1">Notes
-            <textarea name="notes" id="al-edit-notes" rows="3"></textarea>
-          </label>
+          </div>
+          <div class="al-field">
+            <label for="al-edit-weight" class="al-field-label">Est. Weight (kg)</label>
+            <input type="number" step="0.01" min="0" name="estimated_weight" id="al-edit-weight" class="al-input" />
+          </div>
+          <div class="al-field">
+            <label for="al-edit-lat" class="al-field-label">Latitude</label>
+            <input type="number" step="0.000001" name="location[lat]" id="al-edit-lat" class="al-input" />
+          </div>
+          <div class="al-field">
+            <label for="al-edit-lng" class="al-field-label">Longitude</label>
+            <input type="number" step="0.000001" name="location[lng]" id="al-edit-lng" class="al-input" />
+          </div>
+          <div class="al-field al-notes-field">
+            <label for="al-edit-notes" class="al-field-label">Notes</label>
+            <textarea name="notes" id="al-edit-notes" rows="3" class="al-input al-textarea"></textarea>
+          </div>
         </div>
-        <div class="img-manage">
-          <div class="img-list" id="al-edit-existing" style="display:flex;flex-wrap:wrap;gap:.5rem"></div>
-          <label class="upload-tile">
-            <input type="file" name="new_images[]" id="al-edit-new" multiple hidden accept="image/*" />
-            <span><i class="fa-solid fa-upload"></i> Add Images</span>
-          </label>
-          <div id="al-edit-new-previews" style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.5rem"></div>
+        <div class="al-edit-images">
+          <div class="al-section-head" style="margin-bottom:.55rem;">
+            <span class="al-icon-badge"><i class="fa-solid fa-images"></i></span>
+            <span class="al-section-label">Images</span>
+          </div>
+          <div id="al-edit-existing" class="al-edit-existing"></div>
+          <div class="al-edit-upload-row">
+            <label class="upload-tile al-upload-tile">
+              <input type="file" name="new_images[]" id="al-edit-new" multiple hidden accept="image/*" />
+              <span><i class="fa-solid fa-upload"></i> Add Images</span>
+            </label>
+            <div id="al-edit-new-previews" class="al-edit-new-previews"></div>
+          </div>
         </div>
-        <div class="modal-actions">
-          <button type="button" class="btn btn-secondary" data-close>Cancel</button>
-          <button type="submit" class="btn btn-primary">Save Changes</button>
+        <div class="al-actions-row">
+          <button type="button" class="al-btn ghost" data-close>Cancel</button>
+            <button type="submit" class="al-btn primary"><i class="fa-solid fa-floppy-disk"></i><span>Save Changes</span></button>
         </div>
       </form>
     </div>
@@ -216,7 +240,7 @@
 
 
 @push('admin-head')
-  @vite(['resources/css/waste-items.css','resources/css/admin-listings.css'])
+  @vite(['resources/css/admin.css','resources/css/waste-items.css','resources/css/admin-listings.css'])
 @endpush
 @push('admin-scripts')
   @vite(['resources/js/admin-listings.js'])
