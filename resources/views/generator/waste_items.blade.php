@@ -153,38 +153,45 @@
                     <div class="form-grid">
                         <div class="full">
                             <label class="block text-xs font-semibold tracking-wide uppercase text-gray-600">Title *</label>
-                            <input type="text" name="title" class="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" required placeholder="e.g., Mixed Plastic Batch">
+                            <input type="text" name="title" class="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="e.g., Mixed Plastic Batch">
+                            <small class="error-text inline" data-error-for="title" style="display:none;"></small>
                         </div>
                         <div>
                             <label class="block text-xs font-semibold tracking-wide uppercase text-gray-600">Condition *</label>
-                            <select name="condition" class="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" required>
+                            <select name="condition" class="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
                                 <option value="good">Good</option>
                                 <option value="fixable">Fixable</option>
                                 <option value="scrap">Scrap</option>
                             </select>
+                            <small class="error-text inline" data-error-for="condition" style="display:none;"></small>
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold tracking-wide uppercase text-gray-600">Weight (kg)</label>
+                            <label class="block text-xs font-semibold tracking-wide uppercase text-gray-600">Weight (kg) *</label>
                             <input type="number" step="0.01" min="0" name="estimated_weight" class="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="0.00">
+                            <small class="error-text inline" data-error-for="estimated_weight" style="display:none;"></small>
                         </div>
                         <div class="full">
-                            <label class="block text-xs font-semibold tracking-wide uppercase text-gray-600">Location (Lat / Lng)</label>
+                            <label class="block text-xs font-semibold tracking-wide uppercase text-gray-600">Location (Lat / Lng) *</label>
                             <div style="display:flex;gap:.5rem;">
                                 <input type="number" step="0.000001" name="location[lat]" placeholder="Latitude" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
                                 <input type="number" step="0.000001" name="location[lng]" placeholder="Longitude" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
                             </div>
+                            <small class="error-text inline" data-error-for="location.lat" style="display:none;"></small>
+                            <small class="error-text inline" data-error-for="location.lng" style="display:none;"></small>
                         </div>
                         <div class="full">
                             <label class="block text-xs font-semibold tracking-wide uppercase text-gray-600">Notes</label>
                             <textarea name="notes" rows="3" class="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Additional details..."></textarea>
+                            <small class="error-text inline" data-error-for="notes" style="display:none;"></small>
                         </div>
                         <div class="full">
-                            <label class="block text-xs font-semibold tracking-wide uppercase text-gray-600">Images</label>
+                            <label class="block text-xs font-semibold tracking-wide uppercase text-gray-600">Images *</label>
                             <div id="imageDropzone" class="image-dropzone" tabindex="0" role="button" aria-label="Upload images">
                                 <p class="dz-instructions"><i class="fa-solid fa-cloud-arrow-up"></i> Drag & drop images here or <span class="link">browse</span><br><small>Up to 10 images, max 2MB each</small></p>
                                 <input type="file" id="images" name="images[]" multiple accept="image/*" hidden>
                             </div>
                             <div id="imagePreviewList" class="image-preview-list"></div>
+                            <small class="error-text inline" data-error-for="images" style="display:none;"></small>
                         </div>
                     </div>
                     <div class="modal-actions">

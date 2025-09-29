@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreWasteItemRequest;
 use App\Models\WasteItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -67,35 +68,20 @@ class GeneratorWasteItemController extends Controller
         return view('generator.create_waste_item');
     }
 
-    public function store(Request $request)
+    public function store(StoreWasteItemRequest $request)
     {
-        $validated = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'condition' => ['required', 'in:good,fixable,scrap'],
-            'estimated_weight' => ['nullable', 'numeric', 'min:0'],
-            'images' => ['nullable', 'array', 'max:10'],
-            'images.*' => ['image', 'mimes:jpg,jpeg,png,gif,webp', 'max:2048'],
-            'location.lat' => ['nullable', 'numeric', 'between:-90,90'],
-            'location.lng' => ['nullable', 'numeric', 'between:-180,180'],
-            'notes' => ['nullable', 'string', 'max:2000'],
-        ]);
+        $data = $request->validated();
+        $data['generator_id'] = Auth::id();
 
-        $payload = [
-            'title' => $validated['title'],
-            'condition' => $validated['condition'],
-            'estimated_weight' => $validated['estimated_weight'] ?? null,
-            'location' => ($validated['location.lat'] ?? null) !== null || ($validated['location.lng'] ?? null) !== null ? [
-                'lat' => $validated['location.lat'] ?? null,
-                'lng' => $validated['location.lng'] ?? null,
-            ] : null,
-            'notes' => $validated['notes'] ?? null,
-            'generator_id' => Auth::id(),
-        ];
-        $wasteItem = WasteItem::create($payload);
+        // images handled separately; remove to avoid mass assignment issue
+        $images = $request->file('images');
+        unset($data['images']);
 
-        if ($request->hasFile('images')) {
+        $wasteItem = WasteItem::create($data);
+
+        if ($images) {
             $order = 0;
-            foreach ($request->file('images') as $uploaded) {
+            foreach ($images as $uploaded) {
                 if (! $uploaded->isValid()) {
                     continue;
                 }

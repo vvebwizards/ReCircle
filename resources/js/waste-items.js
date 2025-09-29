@@ -604,8 +604,19 @@
       const res = await fetch(base, { method:'POST', headers:{ 'X-CSRF-TOKEN':csrf, 'Accept':'application/json' }, body: fd });
       if(res.status===422){
         const j = await res.json();
-        showToast('Validation error','error');
-        console.error(j);
+        // Clear existing inline errors
+        createForm.querySelectorAll('[data-error-for]').forEach(el => { el.textContent=''; el.style.display='none'; });
+        if(j.errors){
+          Object.entries(j.errors).forEach(([field, messages]) => {
+            const sel = `[data-error-for="${field}"]`;
+            const target = createForm.querySelector(sel);
+            if(target){
+              target.textContent = messages[0];
+              target.style.display = 'block';
+            }
+          });
+        }
+        showToast('Fix validation errors','error');
         return;
       }
       if(!res.ok) throw new Error('Create failed');

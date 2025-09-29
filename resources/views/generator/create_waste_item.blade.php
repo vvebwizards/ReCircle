@@ -17,15 +17,25 @@
       <div class="material-form-container">
   <form action="{{ route('generator.waste-items.store') }}" method="POST" class="material-form" id="wasteItemForm" novalidate enctype="multipart/form-data">
           @csrf
+          @if ($errors->any())
+            <div class="alert alert-danger" role="alert">
+              <strong>Please fix the errors below:</strong>
+              <ul style="margin:0.5rem 0 0; padding-left:1.2rem;">
+                @foreach ($errors->all() as $error)
+                  <li>{{ $error }}</li>
+                @endforeach
+              </ul>
+            </div>
+          @endif
           <div class="form-group full-width {{ $errors->has('title') ? 'has-error' : '' }}">
             <label for="title">Title *</label>
-            <input type="text" name="title" id="title" value="{{ old('title') }}" required placeholder="e.g., Mixed Plastic Batch" class="{{ $errors->has('title') ? 'is-invalid' : '' }}">
+            <input type="text" name="title" id="title" value="{{ old('title') }}" placeholder="e.g., Mixed Plastic Batch" class="{{ $errors->has('title') ? 'is-invalid' : '' }}">
             @error('title')<small class="error-text">{{ $message }}</small>@enderror
           </div>
 
           <div class="form-group {{ $errors->has('condition') ? 'has-error' : '' }}">
             <label for="condition">Condition *</label>
-            <select name="condition" id="condition" required class="{{ $errors->has('condition') ? 'is-invalid' : '' }}">
+            <select name="condition" id="condition" class="{{ $errors->has('condition') ? 'is-invalid' : '' }}">
               <option value="">Select</option>
               @foreach(['good','fixable','scrap'] as $c)
                 <option value="{{ $c }}" {{ old('condition') === $c ? 'selected' : '' }}>{{ ucfirst($c) }}</option>
@@ -35,14 +45,14 @@
           </div>
 
           <div class="form-group {{ $errors->has('estimated_weight') ? 'has-error' : '' }}">
-            <label for="estimated_weight">Estimated Weight (kg)</label>
+            <label for="estimated_weight">Estimated Weight (kg) *</label>
             <input type="number" step="0.01" min="0" name="estimated_weight" id="estimated_weight" value="{{ old('estimated_weight') }}" placeholder="0.00" class="{{ $errors->has('estimated_weight') ? 'is-invalid' : '' }}">
             @error('estimated_weight')<small class="error-text">{{ $message }}</small>@enderror
           </div>
 
           <div class="form-group full-width {{ $errors->has('images') || $errors->has('images.*') ? 'has-error' : '' }}">
-            <label for="images">Images</label>
-            <div id="imageDropzone" class="image-dropzone" tabindex="0" role="button" aria-label="Upload images">
+            <label for="images">Images *</label>
+            <div id="imageDropzone" class="image-dropzone" tabindex="0" role="button" aria-label="Upload images" data-required="true">
               <p class="dz-instructions"><i class="fa-solid fa-cloud-arrow-up"></i> Drag & drop images here or <span class="link">browse</span><br><small>Up to 10 images, max 2MB each (jpg, jpeg, png, gif, webp)</small></p>
               <input type="file" id="images" name="images[]" multiple accept="image/*" hidden>
             </div>
@@ -52,11 +62,14 @@
           </div>
 
           <div class="form-group full-width">
-            <label>Location (Lat / Lng)</label>
+            <label>Location (Lat / Lng) *</label>
             <div style="display:flex; gap:0.5rem;">
               <input type="number" step="0.000001" name="location[lat]" placeholder="Latitude" value="{{ old('location.lat') }}">
               <input type="number" step="0.000001" name="location[lng]" placeholder="Longitude" value="{{ old('location.lng') }}">
             </div>
+            @error('location')<small class="error-text">{{ $message }}</small>@enderror
+            @error('location.lat')<small class="error-text">{{ $message }}</small>@enderror
+            @error('location.lng')<small class="error-text">{{ $message }}</small>@enderror
           </div>
 
           <div class="form-group full-width {{ $errors->has('notes') ? 'has-error' : '' }}">
