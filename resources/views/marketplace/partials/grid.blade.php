@@ -54,6 +54,10 @@
                         <i class="fa-solid fa-images"></i>
                         <span>See Photos</span>
                     </button>
+                    <button class="btn-action btn-bid" data-id="{{ $item->id }}" title="Make a bid">
+                        <i class="fa-solid fa-gavel"></i>
+                        <span>Make a Bid</span>
+                    </button>
                 </div>
             </div>
         </div>

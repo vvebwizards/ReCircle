@@ -361,8 +361,26 @@
     color: white;
 }
 
+/* Photos (blue) */
+.btn-photos {
+    background:#2563eb; /* blue-600 */
+    color:#fff;
+}
+.btn-photos:hover { background:#1d4ed8; color:#fff; opacity:1; }
+
 .btn-action:hover {
     opacity: 0.9;
+}
+
+/* Bid (orange) */
+.btn-bid {
+    background: #ea580c; /* orange-600 */
+    color: #fff;
+}
+.btn-bid:hover {
+    background: #c2410c; /* darker hover */
+    color: #fff;
+    opacity: 1;
 }
 
 .empty-state {
