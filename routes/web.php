@@ -42,3 +42,6 @@ require __DIR__.'/materials.php';
 Route::middleware(['jwt.auth'])->group(function () {
     require __DIR__.'/waste_items.php';
 });
+
+// Marketplace routes (authenticated browse)
+require __DIR__.'/marketplace.php';
