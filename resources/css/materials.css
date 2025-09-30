@@ -516,3 +516,52 @@
     justify-content: center;
     transition: all 0.2s ease;
 }
+
+/* === Bid Modal & Bids List === */
+#marketplaceBidModal.hidden { display:none; }
+/* Bid modal overlay inherits .modal-overlay base (from other css). Reinforce centering & scroll behavior */
+#bidModalOverlay.modal-overlay { display:none; position:fixed; inset:0; padding:1.5rem .75rem; align-items:center; justify-content:center; background:rgba(0,0,0,.55); z-index:1200; overflow-y:auto; }
+#bidModalOverlay.modal-overlay.active { display:flex; }
+#marketplaceBidModal .modal-card { background:#fff; width:520px; max-width:min(100%, 520px); border-radius:14px; box-shadow:0 10px 30px -5px rgba(0,0,0,.25); display:flex; flex-direction:column; margin:0 auto; }
+/* Prevent unexpected inherited width from generic .modal (which might be 100%). */
+#marketplaceBidModal.modal { width:auto; max-width:none; background:transparent; box-shadow:none; padding:0; }
+@media (max-width:640px){
+    #marketplaceBidModal .modal-card { width:100%; }
+}
+#marketplaceBidModal .modal-header { padding:1rem 1.25rem; border-bottom:1px solid #e5e7eb; display:flex; align-items:center; justify-content:space-between; }
+#marketplaceBidModal .modal-header h2 { font-size:1.1rem; display:flex; gap:.5rem; align-items:center; margin:0; }
+#marketplaceBidModal .modal-body { padding:1.25rem 1.25rem 1.5rem; overflow-y:auto; max-height:70vh; }
+#marketplaceBidModal form .form-row { margin-bottom:1rem; display:flex; flex-direction:column; gap:.4rem; }
+#marketplaceBidModal form label { font-weight:600; font-size:.75rem; text-transform:uppercase; letter-spacing:.5px; color:#374151; }
+#marketplaceBidModal form input[type=number],
+#marketplaceBidModal form select,
+#marketplaceBidModal form textarea { border:1px solid #d1d5db; border-radius:8px; padding:.65rem .75rem; font-size:.85rem; width:100%; background:#f9fafb; }
+#marketplaceBidModal form textarea { resize:vertical; }
+#marketplaceBidModal .input-group { display:flex; gap:.5rem; }
+#marketplaceBidModal .input-group select { flex:0 0 110px; }
+#marketplaceBidModal .error { color:#dc2626; font-size:.6rem; min-height:.75rem; }
+#marketplaceBidModal .form-actions { display:flex; justify-content:flex-end; gap:.75rem; margin-top:.5rem; }
+#marketplaceBidModal .btn.primary { background:linear-gradient(90deg,#2563eb,#1d4ed8); color:#fff; }
+#marketplaceBidModal .btn.primary:hover { background:linear-gradient(90deg,#3b82f6,#2563eb); }
+#marketplaceBidModal .btn.ghost { background:#f3f4f6; color:#374151; }
+#marketplaceBidModal .btn.ghost:hover { background:#e5e7eb; }
+#marketplaceBidModal .btn[disabled] { opacity:.6; cursor:not-allowed; }
+#marketplaceBidModal .bid-feedback.success { color:#065f46; background:#d1fae5; padding:.5rem .75rem; border-radius:6px; font-size:.7rem; }
+#marketplaceBidModal .bid-feedback.error { color:#991b1b; background:#fee2e2; padding:.5rem .75rem; border-radius:6px; font-size:.7rem; }
+
+.bid-existing { margin-top:1.25rem; }
+.bid-existing .section-title { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.5px; margin:0 0 .5rem; color:#374151; }
+.bid-list { display:flex; flex-direction:column; gap:.5rem; }
+.bid-row { border:1px solid #e5e7eb; border-radius:10px; padding:.6rem .75rem; background:#fff; display:flex; justify-content:space-between; align-items:center; gap:.75rem; }
+.bid-row .bid-main { display:flex; flex-direction:column; }
+.bid-row .bid-amount { font-weight:600; font-size:.85rem; }
+.bid-row .bid-maker { font-size:.6rem; color:#6b7280; }
+.bid-row .bid-meta { display:flex; align-items:center; gap:.5rem; }
+.bid-status-badge { display:inline-block; padding:.2rem .5rem; font-size:.55rem; font-weight:600; border-radius:999px; text-transform:uppercase; letter-spacing:.5px; }
+.bid-status-pending .bid-status-badge { background:#fef3c7; color:#92400e; }
+.bid-status-accepted .bid-status-badge { background:#d1fae5; color:#065f46; }
+.bid-status-rejected .bid-status-badge { background:#fee2e2; color:#991b1b; }
+.bid-status-withdrawn .bid-status-badge { background:#e5e7eb; color:#374151; }
+.empty-bids { font-size:.65rem; color:#6b7280; padding:.6rem; text-align:center; border:1px dashed #d1d5db; border-radius:8px; }
+.loading-sm { font-size:.65rem; color:#374151; display:flex; gap:.5rem; align-items:center; }
+.error-text { font-size:.65rem; color:#b91c1c; }

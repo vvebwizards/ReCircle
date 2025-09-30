@@ -84,6 +84,9 @@
             <div class="modal-overlay" id="marketplaceModalOverlay" aria-hidden="true">
                 @include('marketplace.partials.photos_lightbox')
             </div>
+            <div class="modal-overlay" id="bidModalOverlay" aria-hidden="true">
+                @include('marketplace.partials.bid_modal')
+            </div>
         @endpush
     </div>
 </div>

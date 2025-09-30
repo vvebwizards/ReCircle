@@ -45,3 +45,6 @@ Route::middleware(['jwt.auth'])->group(function () {
 
 // Marketplace routes (authenticated browse)
 require __DIR__.'/marketplace.php';
+
+// Bid routes
+require __DIR__.'/bids.php';
