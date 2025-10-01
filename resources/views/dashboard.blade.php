@@ -59,7 +59,7 @@
             <span class="qa-title">New Listing</span>
             <span class="qa-sub">List waste with AI assist</span>
           </a>
-          <a href="#" class="qa-card qa-bids" aria-label="View and manage bids">
+            <a href="{{ route('dashboard.bids') }}" class="qa-card qa-bids" aria-label="View and manage bids">
             <span class="qa-icon"><i class="fa-solid fa-gavel"></i></span>
             <span class="qa-title">View Bids</span>
             <span class="qa-sub">Compare offers quickly</span>

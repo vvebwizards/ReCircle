@@ -11,6 +11,13 @@ Route::get('/dashboard', function () {
     return view('dashboard');
 })->name('dashboard');
 
+// Dashboard bids (generator) - only accessible when authenticated via JWT
+Route::middleware(['jwt.auth'])->get('/dashboard/bids', [\App\Http\Controllers\DashboardBidController::class, 'index'])->name('dashboard.bids');
+
+Route::get('/dashboard/bids', [\App\Http\Controllers\DashboardBidController::class, 'index'])
+    ->middleware(['jwt.auth'])
+    ->name('dashboard.bids');
+
 Route::get('/maker/dashboard', function () {
     return view('maker.dashboard');
 })->name('maker.dashboard');
