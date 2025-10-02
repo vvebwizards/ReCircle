@@ -13,7 +13,17 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'jwt.auth' => \App\Http\Middleware\JwtAuthenticate::class,
-            'role' => \App\Http\Middleware\EnsureUserRole::class,
+            'role' => \App\Http\Middleware\EnsureUserRoale::class,
+            'check.blocked.user' => \App\Http\Middleware\CheckBlockedUser::class,
+        ]);
+
+        // Add global middleware
+        $middleware->web(append: [
+            \App\Http\Middleware\CheckBlockedUser::class,
+        ]);
+
+        $middleware->api(append: [
+            \App\Http\Middleware\CheckBlockedUser::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

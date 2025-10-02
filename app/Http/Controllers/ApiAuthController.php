@@ -32,6 +32,11 @@ class ApiAuthController extends Controller
                 'email' => ['Invalid credentials'],
             ]);
         }
+        if ($user->isBlocked()) {
+            return response()->json([
+                'message' => 'Your account has been blocked. Please contact administrator.',
+            ], 403);
+        }
 
         // Enforce 2FA when enabled
         if ($user->two_factor_enabled) {

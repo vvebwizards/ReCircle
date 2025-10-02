@@ -5,13 +5,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const cancelBtn = popup.querySelector('.btn-cancel');
 
     let currentForm = null;
-    let currentAction = null;
-    let currentUser = null;
+
 
     function openPopup(action, user, form) {
         currentForm = form;
-        currentAction = action;
-        currentUser = user;
+
 
         messageEl.textContent = action === 'role-change'
             ? `Change ${user}'s role?`

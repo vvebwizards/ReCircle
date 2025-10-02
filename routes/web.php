@@ -24,6 +24,11 @@ Route::prefix('admin')->middleware(['jwt.auth'])->group(function () {
     Route::get('/users', [UserManagementController::class, 'index'])->middleware(['jwt.auth'])->name('admin.users');
     Route::post('/users/{user}/role', [UserManagementController::class, 'updateRole'])->name('admin.users.updateRole');
     Route::post('/users/{user}/toggle', [UserManagementController::class, 'toggleStatus'])->name('admin.users.toggleStatus');
+
+    // New blocking routes
+    Route::post('/users/{user}/block', [UserManagementController::class, 'blockUser'])->name('admin.users.block');
+    Route::post('/users/{user}/unblock', [UserManagementController::class, 'unblockUser'])->name('admin.users.unblock');
+
     // Admin listings routes (limited CRUD: no create/store)
     require __DIR__.'/admin_listings.php';
 });
