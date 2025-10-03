@@ -111,6 +111,8 @@ class User extends Authenticatable implements MustVerifyEmail
     public function bids(): HasMany
     {
         return $this->hasMany(Bid::class, 'maker_id');
+    }
+
     // Relationship to the admin who blocked this user
     public function blockedByUser()
     {
