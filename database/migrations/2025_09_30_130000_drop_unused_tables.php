@@ -25,7 +25,13 @@ return new class extends Migration
     public function up(): void
     {
         // Disable foreign key checks to allow dropping tables with dependencies
-        DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        $driver = DB::getDriverName();
+
+        if ($driver === 'mysql') {
+            DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        } elseif ($driver === 'sqlite') {
+            DB::statement('PRAGMA foreign_keys=OFF');
+        }
 
         foreach ($this->tables as $table) {
             if (Schema::hasTable($table)) {
@@ -34,7 +40,11 @@ return new class extends Migration
         }
 
         // Re-enable foreign key checks
-        DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        if ($driver === 'mysql') {
+            DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        } elseif ($driver === 'sqlite') {
+            DB::statement('PRAGMA foreign_keys=ON');
+        }
     }
 
     public function down(): void
