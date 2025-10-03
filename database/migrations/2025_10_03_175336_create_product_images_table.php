@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('image_path');
             $table->integer('order')->default(0);
             $table->timestamps();
-            
+
             $table->index(['product_id', 'order']);
         });
     }

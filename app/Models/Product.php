@@ -16,18 +16,18 @@ class Product extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'work_order_id', 
-        'maker_id', 
+        'work_order_id',
+        'maker_id',
         'material_id', // Direct link to source material
-        'sku', 
-        'name', 
-        'description', 
-        'material_passport', 
-        'stock', 
-        'price', 
-        'status', 
+        'sku',
+        'name',
+        'description',
+        'material_passport',
+        'stock',
+        'price',
+        'status',
         'published_at',
-        'dimensions', 
+        'dimensions',
         'weight',
         'care_instructions',
         'warranty_months',
@@ -40,7 +40,7 @@ class Product extends Model
         'price' => 'decimal:2',
         'published_at' => 'datetime',
         'status' => ProductStatus::class,
-        'dimensions' => 'array', 
+        'dimensions' => 'array',
         'weight' => 'decimal:2',
         'is_featured' => 'boolean',
         'tags' => 'array',
@@ -79,8 +79,8 @@ class Product extends Model
     public function materials(): BelongsToMany
     {
         return $this->belongsToMany(Material::class, 'product_materials')
-                    ->withPivot('quantity_used', 'unit')
-                    ->withTimestamps();
+            ->withPivot('quantity_used', 'unit')
+            ->withTimestamps();
     }
 
     public function scopePublished($query)
@@ -100,7 +100,7 @@ class Product extends Model
 
     public function scopeByCategory($query, $category)
     {
-        return $query->whereHas('material', function($q) use ($category) {
+        return $query->whereHas('material', function ($q) use ($category) {
             $q->where('category', $category);
         });
     }
@@ -122,7 +122,7 @@ class Product extends Model
 
     public function getFormattedPriceAttribute()
     {
-        return '€' . number_format($this->price, 2);
+        return '€'.number_format($this->price, 2);
     }
 
     public function getStockStatusAttribute()
@@ -152,7 +152,7 @@ class Product extends Model
     public function updateStock($quantity)
     {
         $this->update(['stock' => max(0, $quantity)]);
-        
+
         if ($this->stock === 0) {
             $this->update(['status' => ProductStatus::SOLD_OUT]);
         }
@@ -176,10 +176,11 @@ class Product extends Model
                 'landfill_avoided' => $this->impacts->first()->landfill_kg_avoided,
             ] : null,
             'care_instructions' => $this->care_instructions,
-            'warranty' => $this->warranty_months ? $this->warranty_months . ' months' : null,
+            'warranty' => $this->warranty_months ? $this->warranty_months.' months' : null,
         ];
 
         $this->update(['material_passport' => $passport]);
+
         return $passport;
     }
 }

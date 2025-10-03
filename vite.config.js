@@ -13,7 +13,7 @@ export default defineConfig({
                 'resources/css/material-details.css',
                 'resources/css/products.css',
                 'resources/css/create-product.css',
-                'resources/css/product-details.css',
+                'resources/css/product_details.css',
                 'resources/css/edit-product.css',
                 'resources/js/app.js',
                 'resources/js/main.js',

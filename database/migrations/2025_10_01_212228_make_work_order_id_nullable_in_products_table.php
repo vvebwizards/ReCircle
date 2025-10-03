@@ -1,6 +1,5 @@
 <?php
 
-
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -11,15 +10,15 @@ return new class extends Migration
     {
         Schema::table('products', function (Blueprint $table) {
             $table->dropForeign(['work_order_id']);
-            
+
             $table->foreignId('work_order_id')
-                  ->nullable()
-                  ->change();
-            
+                ->nullable()
+                ->change();
+
             $table->foreign('work_order_id')
-                  ->references('id')
-                  ->on('work_orders')
-                  ->nullOnDelete();
+                ->references('id')
+                ->on('work_orders')
+                ->nullOnDelete();
         });
     }
 
@@ -27,15 +26,15 @@ return new class extends Migration
     {
         Schema::table('products', function (Blueprint $table) {
             $table->dropForeign(['work_order_id']);
-            
+
             $table->foreignId('work_order_id')
-                  ->nullable(false)
-                  ->change();
-            
+                ->nullable(false)
+                ->change();
+
             $table->foreign('work_order_id')
-                  ->references('id')
-                  ->on('work_orders')
-                  ->cascadeOnDelete();
+                ->references('id')
+                ->on('work_orders')
+                ->cascadeOnDelete();
         });
     }
 };

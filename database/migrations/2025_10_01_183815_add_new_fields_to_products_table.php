@@ -6,16 +6,15 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    
     public function up(): void
     {
         Schema::table('products', function (Blueprint $table) {
             $table->foreignId('material_id')
-                  ->after('maker_id')
-                  ->nullable()
-                  ->constrained('materials')
-                  ->nullOnDelete();
-            
+                ->after('maker_id')
+                ->nullable()
+                ->constrained('materials')
+                ->nullOnDelete();
+
             $table->json('dimensions')->after('material_passport')->nullable();
             $table->decimal('weight', 8, 2)->after('dimensions')->nullable();
             $table->text('care_instructions')->after('weight')->nullable();
@@ -27,11 +26,11 @@ return new class extends Migration
         Schema::create('product_materials', function (Blueprint $table) {
             $table->id();
             $table->foreignId('product_id')
-                  ->constrained('products')
-                  ->cascadeOnDelete();
+                ->constrained('products')
+                ->cascadeOnDelete();
             $table->foreignId('material_id')
-                  ->constrained('materials')
-                  ->cascadeOnDelete();
+                ->constrained('materials')
+                ->cascadeOnDelete();
             $table->decimal('quantity_used', 10, 2);
             $table->string('unit', 10);
             $table->timestamps();
@@ -40,22 +39,21 @@ return new class extends Migration
         });
     }
 
-   
     public function down(): void
     {
         Schema::dropIfExists('product_materials');
-        
+
         Schema::table('products', function (Blueprint $table) {
             $table->dropForeign(['material_id']);
-            
+
             $table->dropColumn([
                 'material_id',
-                'dimensions', 
+                'dimensions',
                 'weight',
                 'care_instructions',
-                'warranty_months', 
+                'warranty_months',
                 'is_featured',
-                'tags'
+                'tags',
             ]);
         });
     }

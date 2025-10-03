@@ -1,14 +1,12 @@
 <?php
 
-use App\Http\Controllers\MaterialController;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProductController;
-use App\Http\Models\Product;
+use Illuminate\Support\Facades\Route;
 
 Route::middleware('jwt.auth')->group(function () {
 
     Route::get('/products', [ProductController::class, 'index'])
-       ->name('maker.products');
+        ->name('maker.products');
 
     Route::get('/products/create', [ProductController::class, 'create'])
         ->name('maker.products.create');
@@ -18,7 +16,7 @@ Route::middleware('jwt.auth')->group(function () {
 
     Route::get('/products/{product}', [ProductController::class, 'show'])
         ->name('maker.products.show');
-    
+
     Route::get('/products/{product}/edit', [ProductController::class, 'edit'])
         ->name('maker.products.edit');
 
