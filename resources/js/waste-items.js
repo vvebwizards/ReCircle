@@ -472,7 +472,7 @@
       populateView(data);
       if(viewLoading) viewLoading.classList.add('hidden');
       if(viewContent) viewContent.classList.remove('hidden');
-    } catch(err){
+    } catch(_err){
       if(viewLoading) viewLoading.classList.add('hidden');
       const errorEl2 = document.getElementById('viewError');
       if(errorEl2) errorEl2.classList.remove('hidden');
