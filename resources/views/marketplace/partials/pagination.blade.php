@@ -1,0 +1,1 @@
+@include('generator.partials.waste_items_pagination')

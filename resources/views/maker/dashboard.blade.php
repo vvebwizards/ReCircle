@@ -66,12 +66,17 @@
             <span class="qa-title">My Materials</span>
             <span class="qa-sub">View and manage your materials</span>
           </a>
+          <a href="{{ Route::has('marketplace.index') ? route('marketplace.index') : '#' }}" class="qa-card qa-marketplace" aria-label="Browse marketplace">
+            <span class="qa-icon"><i class="fa-solid fa-store"></i></span>
+            <span class="qa-title">Marketplace</span>
+            <span class="qa-sub">Browse available waste & materials</span>
+          </a>
           <a href="#" class="qa-card qa-market" aria-label="View my products">
             <span class="qa-icon"><i class="fa-solid fa-store"></i></span>
             <span class="qa-title">My Products</span>
             <span class="qa-sub">Products ready for sale</span>
           </a>
-          <a href="#" class="qa-card qa-bids" aria-label="View my bids">
+          <a href="{{ route('maker.bids') }}" class="qa-card qa-bids" aria-label="View my bids">
             <span class="qa-icon"><i class="fa-solid fa-gavel"></i></span>
             <span class="qa-title">My Bids</span>
             <span class="qa-sub">Offers on waste items</span>
