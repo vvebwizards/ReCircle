@@ -199,6 +199,50 @@
             color: #047857 !important;
             background: rgba(5, 150, 105, 0.1) !important;
         }
+        
+        /* Social buttons styling */
+        .social-center {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+        
+        .social-btn {
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            width: 100%;
+            padding: 0.875rem 1.5rem !important;
+            text-decoration: none !important;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .social-btn i {
+            font-size: 1.1rem;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .social-btn span {
+            flex: 1;
+            text-align: center;
+        }
+        
+        /* Responsive: side-by-side on larger screens */
+        @media (min-width: 640px) {
+            .social-center {
+                flex-direction: row;
+                gap: 1rem;
+            }
+            
+            .social-btn {
+                flex: 1;
+            }
+        }
     </style>
 @endpush
 
