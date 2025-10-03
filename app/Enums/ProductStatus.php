@@ -9,7 +9,6 @@ enum ProductStatus: string
     case SOLD_OUT = 'sold_out';
     case ARCHIVED = 'archived';
 
-
     public static function getValues(): array
     {
         return array_column(self::cases(), 'value');
@@ -20,4 +19,3 @@ enum ProductStatus: string
         return array_column(self::cases(), 'name');
     }
 }
-

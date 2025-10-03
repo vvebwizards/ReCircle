@@ -20,20 +20,20 @@ class ProductController extends Controller
             ->where('maker_id', Auth::id())
             ->latest();
 
-        if ($request->has('search') && !empty($request->search)) {
+        if ($request->has('search') && ! empty($request->search)) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'LIKE', "%{$search}%")
-                  ->orWhere('description', 'LIKE', "%{$search}%")
-                  ->orWhere('sku', 'LIKE', "%{$search}%");
+                    ->orWhere('description', 'LIKE', "%{$search}%")
+                    ->orWhere('sku', 'LIKE', "%{$search}%");
             });
         }
 
-        if ($request->has('status') && !empty($request->status)) {
+        if ($request->has('status') && ! empty($request->status)) {
             $query->where('status', $request->status);
         }
 
-        if ($request->has('category') && !empty($request->category)) {
+        if ($request->has('category') && ! empty($request->category)) {
             $query->whereHas('material', function ($q) use ($request) {
                 $q->where('category', $request->category);
             });
@@ -72,7 +72,6 @@ class ProductController extends Controller
         return view('maker.create_product', compact('materials', 'workOrders', 'selectedMaterialId'));
     }
 
- 
     public function store(Request $request): RedirectResponse
     {
         $messages = [
@@ -99,7 +98,7 @@ class ProductController extends Controller
             'images.*' => 'required|image|mimes:jpeg,png,jpg,gif|max:5120',
         ], $messages);
 
-        $sku = 'PROD-' . strtoupper(uniqid());
+        $sku = 'PROD-'.strtoupper(uniqid());
 
         $product = Product::create([
             'maker_id' => Auth::id(),
@@ -115,9 +114,9 @@ class ProductController extends Controller
         $order = 0;
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
-                $imageName = time() . '_' . uniqid() . '_' . $order . '.' . $image->getClientOriginalExtension();
+                $imageName = time().'_'.uniqid().'_'.$order.'.'.$image->getClientOriginalExtension();
                 $image->move(public_path('images/products'), $imageName);
-                $imagePath = 'images/products/' . $imageName;
+                $imagePath = 'images/products/'.$imageName;
 
                 ProductImage::create([
                     'product_id' => $product->id,
@@ -132,28 +131,26 @@ class ProductController extends Controller
         $product->generateMaterialPassport();
 
         return redirect()->route('maker.products')
-            ->with('success', 'Product created successfully with ' . $order . ' images!');
+            ->with('success', 'Product created successfully with '.$order.' images!');
     }
 
- 
     public function show(int $id): View
     {
         $product = Product::with([
             'material.images',
             'workOrder.match.listing.wasteItem',
-            'images' => function($query) {
+            'images' => function ($query) {
                 $query->orderBy('order');
-            }
+            },
         ])->where('maker_id', Auth::id())
-          ->findOrFail($id);
+            ->findOrFail($id);
 
         return view('maker.product_details', compact('product'));
     }
 
-   
     public function edit(int $id): View
     {
-        $product = Product::with(['material', 'images' => function($query) {
+        $product = Product::with(['material', 'images' => function ($query) {
             $query->orderBy('order');
         }, 'workOrder'])
             ->where('maker_id', Auth::id())
@@ -190,7 +187,7 @@ class ProductController extends Controller
             'description' => 'required|string|max:2000',
             'price' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:1',
-            'status' => 'required|in:' . implode(',', ProductStatus::getValues()),
+            'status' => 'required|in:'.implode(',', ProductStatus::getValues()),
             'images' => 'sometimes|array',
             'images.*' => 'sometimes|image|mimes:jpeg,png,jpg,gif|max:5120',
             'remove_images' => 'sometimes|array',
@@ -199,11 +196,11 @@ class ProductController extends Controller
 
         $stock = $validated['stock'];
         $status = $validated['status'];
-        
+
         if ($stock == 0 && $status === ProductStatus::PUBLISHED) {
             $status = ProductStatus::SOLD_OUT;
         }
-        
+
         if ($stock > 0 && $status === ProductStatus::SOLD_OUT) {
             $status = ProductStatus::PUBLISHED;
         }
@@ -238,9 +235,9 @@ class ProductController extends Controller
             $order = $existingImagesCount;
 
             foreach ($request->file('images') as $image) {
-                $imageName = time() . '_' . uniqid() . '_' . $order . '.' . $image->getClientOriginalExtension();
+                $imageName = time().'_'.uniqid().'_'.$order.'.'.$image->getClientOriginalExtension();
                 $image->move(public_path('images/products'), $imageName);
-                $imagePath = 'images/products/' . $imageName;
+                $imagePath = 'images/products/'.$imageName;
 
                 ProductImage::create([
                     'product_id' => $product->id,
@@ -269,7 +266,7 @@ class ProductController extends Controller
             }
             $image->delete();
         }
-        
+
         $productName = $product->name;
         $product->delete();
 
@@ -287,7 +284,7 @@ class ProductController extends Controller
         }
 
         $product->update([
-            'status' => ProductStatus::PUBLISHED
+            'status' => ProductStatus::PUBLISHED,
         ]);
 
         return redirect()->back()
@@ -299,7 +296,7 @@ class ProductController extends Controller
         $product = Product::where('maker_id', Auth::id())->findOrFail($id);
 
         $validated = $request->validate([
-            'stock' => 'required|integer|min:0'
+            'stock' => 'required|integer|min:0',
         ]);
 
         $newStock = $validated['stock'];
@@ -317,7 +314,7 @@ class ProductController extends Controller
 
         $product->update([
             'stock' => $newStock,
-            'status' => $newStatus
+            'status' => $newStatus,
         ]);
 
         $message = 'Stock updated successfully!';
@@ -331,7 +328,6 @@ class ProductController extends Controller
             ->with('success', $message);
     }
 
-   
     private function reorderImages(int $productId): void
     {
         $images = ProductImage::where('product_id', $productId)
