@@ -27,7 +27,7 @@ return new class extends Migration
             $table->decimal('price', 10, 2);
             $table->unsignedInteger('stock')->default(0);
             $table->string('status', 32)->default('draft')->index();
-            
+
             $table->json('dimensions')->nullable();
             $table->json('material_passport')->nullable();
             $table->decimal('weight', 8, 2)->nullable();
@@ -35,12 +35,11 @@ return new class extends Migration
             $table->integer('warranty_months')->nullable();
             $table->boolean('is_featured')->default(false);
             $table->json('tags')->nullable();
-            
+
             $table->timestamp('published_at')->nullable();
             $table->timestamps();
             $table->softDeletes();
-            
-         
+
         });
 
         Schema::create('product_materials', function (Blueprint $table) {
