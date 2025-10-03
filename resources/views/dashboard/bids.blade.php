@@ -12,6 +12,52 @@
       <p class="db-sub">Listings with at least one bid. Top 3 shown; expand to view the rest. Sorted by highest amount.</p>
     </header>
 
+    <form class="b-filters" method="GET" action="{{ route('dashboard.bids') }}">
+      <div class="bf-grid">
+        <div class="bf-field">
+          <label>Status</label>
+          <select name="status">
+            <option value="">All</option>
+            @foreach(['pending','accepted','rejected','withdrawn'] as $st)
+              <option value="{{ $st }}" @if(($filters['status'] ?? '')===$st) selected @endif>{{ ucfirst($st) }}</option>
+            @endforeach
+          </select>
+        </div>
+        <div class="bf-field">
+          <label>Listing Title</label>
+          <input type="text" name="title" value="{{ $filters['title'] ?? '' }}" placeholder="Search listing..." />
+        </div>
+        <div class="bf-field">
+          <label>From</label>
+          <input type="date" name="from" value="{{ $filters['from'] ?? '' }}" />
+        </div>
+        <div class="bf-field">
+          <label>To</label>
+          <input type="date" name="to" value="{{ $filters['to'] ?? '' }}" />
+        </div>
+        <div class="bf-field">
+          <label>Min Amount</label>
+          <input type="number" step="0.01" name="min_amount" value="{{ $filters['min_amount'] ?? '' }}" />
+        </div>
+        <div class="bf-field">
+          <label>Max Amount</label>
+          <input type="number" step="0.01" name="max_amount" value="{{ $filters['max_amount'] ?? '' }}" />
+        </div>
+        <div class="bf-actions">
+          <a href="{{ route('dashboard.bids') }}" class="btn secondary sm bf-reset">Reset</a>
+        </div>
+      </div>
+      @php $hasFilters = array_filter([$filters['status'] ?? null,$filters['title'] ?? null,$filters['from'] ?? null,$filters['to'] ?? null,$filters['min_amount'] ?? null,$filters['max_amount'] ?? null], fn($v)=>$v!==''); @endphp
+      <div class="bf-chips @if($hasFilters) has-chips @endif">
+        @if($filters['status'] ?? false)<button type="button" class="chip" data-clear="status">Status: {{ ucfirst($filters['status']) }} <i class="fa-solid fa-xmark"></i></button>@endif
+        @if($filters['title'] ?? false)<button type="button" class="chip" data-clear="title">Title: {{ $filters['title'] }} <i class="fa-solid fa-xmark"></i></button>@endif
+        @if($filters['from'] ?? false)<button type="button" class="chip" data-clear="from">From: {{ $filters['from'] }} <i class="fa-solid fa-xmark"></i></button>@endif
+        @if($filters['to'] ?? false)<button type="button" class="chip" data-clear="to">To: {{ $filters['to'] }} <i class="fa-solid fa-xmark"></i></button>@endif
+        @if($filters['min_amount'] ?? false)<button type="button" class="chip" data-clear="min_amount">Min: {{ $filters['min_amount'] }} <i class="fa-solid fa-xmark"></i></button>@endif
+        @if($filters['max_amount'] ?? false)<button type="button" class="chip" data-clear="max_amount">Max: {{ $filters['max_amount'] }} <i class="fa-solid fa-xmark"></i></button>@endif
+      </div>
+    </form>
+
     @if($wasteItems->isEmpty())
       <div class="empty-state">
         <p class="title">No bids yet</p>
@@ -24,7 +70,7 @@
           @php
             $accepted = $item->bids->firstWhere('status','accepted');
             $primary = $item->photos->first();
-            $img = $primary->image_url ?? $primary->image_path ?? asset('images/default-material.png');
+            $img = $primary ? ($primary->image_url ?? $primary->image_path) : asset('images/default-material.png');
             $count = $item->bids->count();
           @endphp
           <div class="bid-item-card" data-item-id="{{ $item->id }}">
@@ -116,6 +162,30 @@
 
 @push('scripts')
 <script>
+  // Auto-submit on filter changes with debounce
+  let debounceTimer;
+  const form = document.querySelector('.b-filters');
+  
+  function submitForm() {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      form.submit();
+    }, 500);
+  }
+  
+  // Auto-submit for all filter inputs
+  document.querySelectorAll('.b-filters input, .b-filters select').forEach(input => {
+    input.addEventListener('input', submitForm);
+    input.addEventListener('change', submitForm);
+  });
+  
+  // Filter chip clearing
+  document.addEventListener('click', e => {
+    const chip = e.target.closest('[data-clear]');
+    if(!chip) return;
+    const field = chip.getAttribute('data-clear');
+    if(form){ const input = form.querySelector(`[name="${field}"]`); if(input){ input.value=''; form.submit(); } }
+  });
   (function(){
     const modal = document.getElementById('acceptBidModal');
     let activeBidRow = null;

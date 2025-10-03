@@ -22,6 +22,9 @@ Route::get('/maker/dashboard', function () {
     return view('maker.dashboard');
 })->name('maker.dashboard');
 
+// Maker bids list (bids the current maker has placed)
+Route::middleware(['jwt.auth'])->get('/maker/bids', [\App\Http\Controllers\MakerBidController::class, 'index'])->name('maker.bids');
+
 // Admin routes (role protection removed per request)
 Route::prefix('admin')->middleware(['jwt.auth'])->group(function () {
     Route::get('/admin/dashboard', function () {

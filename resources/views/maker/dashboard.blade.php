@@ -76,7 +76,7 @@
             <span class="qa-title">My Products</span>
             <span class="qa-sub">Products ready for sale</span>
           </a>
-          <a href="#" class="qa-card qa-bids" aria-label="View my bids">
+          <a href="{{ route('maker.bids') }}" class="qa-card qa-bids" aria-label="View my bids">
             <span class="qa-icon"><i class="fa-solid fa-gavel"></i></span>
             <span class="qa-title">My Bids</span>
             <span class="qa-sub">Offers on waste items</span>
