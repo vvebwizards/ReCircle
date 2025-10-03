@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    let filesState = []; // array of File objects
+    const filesState = []; // array of File objects
 
     function syncFileInput() {
         // Create a new DataTransfer to update the underlying input's FileList
@@ -209,7 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
         form.querySelectorAll('input, select').forEach(el => {
             el.addEventListener('blur', () => {
                 // run a lightweight validation for that field only
-                const name = el.getAttribute('name');
+
                 // run full for simplicity (fields interdependent minimal)
                 validate();
             });

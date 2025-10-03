@@ -43,6 +43,11 @@ class WasteItem extends Model
         return $this->hasMany(WasteItemImage::class)->orderBy('order');
     }
 
+    public function bids(): HasMany
+    {
+        return $this->hasMany(Bid::class, 'waste_item_id');
+    }
+
     public function getPrimaryImageAttribute(): ?string
     {
         // relation now 'photos' to avoid collision with images attribute cast
