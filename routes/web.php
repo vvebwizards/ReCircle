@@ -27,7 +27,7 @@ Route::middleware(['jwt.auth'])->get('/maker/bids', [\App\Http\Controllers\Maker
 
 // Admin routes (role protection removed per request)
 Route::prefix('admin')->middleware(['jwt.auth'])->group(function () {
-    Route::get('/admin/dashboard', function () {
+    Route::get('/dashboard', function () {
         return view('admin.dashboard');
     })->name('admin.dashboard');
 
@@ -47,13 +47,12 @@ Route::get('/settings/security', function () {
     return view('settings.security');
 })->name('settings.security');
 
-// Auth routes
 require __DIR__.'/auth.php';
 
-// Material routes
 require __DIR__.'/materials.php';
-// Waste item routes (generator-facing)
-// Generator waste item routes (role protection removed per request)
+
+require __DIR__.'/products.php';
+
 Route::middleware(['jwt.auth'])->group(function () {
     require __DIR__.'/waste_items.php';
 });

@@ -48,39 +48,52 @@
         <div>
           <div class="stat-value" id="stat-materials">0</div>
           <div class="stat-label">My Materials</div>
-        
+        </div>
+      </div>
+
+      <div class="dash-card stat">
+        <div class="stat-icon" style="--accent: var(--color-purple);"><i class="fa-solid fa-cube"></i></div>
+        <div>
+          <div class="stat-value" id="stat-products">0</div>
+          <div class="stat-label">My Products</div>
         </div>
       </div>
 
       <div class="dash-card wide">
         <h3 class="dash-card-title"><i class="fa-solid fa-bolt"></i> Quick Actions</h3>
         <div class="qa-grid">
-   
-     <a href="{{ route('materials.create') }}" class="qa-card qa-new" aria-label="Add new material">
+          
+          
+          <a href="{{ route('materials.create') }}" class="qa-card qa-new" aria-label="Add new material">
             <span class="qa-icon"><i class="fa-solid fa-plus"></i></span>
             <span class="qa-title">Add Material</span>
             <span class="qa-sub">Link to received waste items</span>
           </a>
-            <a href="{{ route('maker.materials.index') }}" class="qa-card qa-list-material" aria-label="Add new material">
+          
+          <a href="{{ route('maker.materials.index') }}" class="qa-card qa-list-material" aria-label="View my materials">
             <div class="stat-icon" style="--accent: #d71616;"><i class="fa-solid fa-list"></i></div>
             <span class="qa-title">My Materials</span>
             <span class="qa-sub">View and manage your materials</span>
           </a>
-          <a href="{{ Route::has('marketplace.index') ? route('marketplace.index') : '#' }}" class="qa-card qa-marketplace" aria-label="Browse marketplace">
-            <span class="qa-icon"><i class="fa-solid fa-store"></i></span>
-            <span class="qa-title">Marketplace</span>
-            <span class="qa-sub">Browse available waste & materials</span>
+
+          <a href="{{ route('maker.products.create') }}" class="qa-card qa-product" aria-label="Create new product">
+            <span class="qa-icon"><i class="fa-solid fa-hammer"></i></span>
+            <span class="qa-title">Create Product</span>
+            <span class="qa-sub">Transform materials into products</span>
           </a>
-          <a href="#" class="qa-card qa-market" aria-label="View my products">
+
+          <a href="{{ route('maker.products') }}" class="qa-card qa-market" aria-label="View my products">
             <span class="qa-icon"><i class="fa-solid fa-store"></i></span>
             <span class="qa-title">My Products</span>
             <span class="qa-sub">Products ready for sale</span>
           </a>
+
           <a href="{{ route('maker.bids') }}" class="qa-card qa-bids" aria-label="View my bids">
             <span class="qa-icon"><i class="fa-solid fa-gavel"></i></span>
             <span class="qa-title">My Bids</span>
             <span class="qa-sub">Offers on waste items</span>
           </a>
+          
           <a href="#" class="qa-card qa-report" aria-label="View impact report">
             <span class="qa-icon"><i class="fa-solid fa-chart-line"></i></span>
             <span class="qa-title">Impact Report</span>
