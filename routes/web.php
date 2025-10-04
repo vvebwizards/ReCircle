@@ -38,6 +38,7 @@ Route::prefix('admin')->middleware(['jwt.auth'])->group(function () {
     // New blocking routes
     Route::post('/users/{user}/block', [UserManagementController::class, 'blockUser'])->name('admin.users.block');
     Route::post('/users/{user}/unblock', [UserManagementController::class, 'unblockUser'])->name('admin.users.unblock');
+    Route::get('/audit-logs', [App\Http\Controllers\AuditLogController::class, 'index'])->name('admin.audit-logs.index');
 
     // Admin listings routes (limited CRUD: no create/store)
     require __DIR__.'/admin_listings.php';
