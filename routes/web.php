@@ -63,3 +63,6 @@ require __DIR__.'/marketplace.php';
 
 // Bid routes
 require __DIR__.'/bids.php';
+
+// routes/web.php
+require __DIR__.'/forum.php';
