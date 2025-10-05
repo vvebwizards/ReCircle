@@ -1,4 +1,5 @@
 <?php
+
 // database/migrations/xxxx_xx_xx_xxxxxx_create_forum_votes_table.php
 
 use Illuminate\Database\Migrations\Migration;
@@ -15,7 +16,7 @@ return new class extends Migration
             $table->morphs('votable'); // Can vote on discussions or replies
             $table->enum('type', ['up', 'down']);
             $table->timestamps();
-            
+
             $table->unique(['user_id', 'votable_id', 'votable_type']);
             $table->index(['votable_id', 'votable_type']);
         });

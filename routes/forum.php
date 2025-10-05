@@ -1,4 +1,5 @@
 <?php
+
 // routes/forum.php
 
 use App\Http\Controllers\DiscussionController;

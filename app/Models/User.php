@@ -118,4 +118,52 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->belongsTo(User::class, 'blocked_by');
     }
+
+    public function badges()
+    {
+        return $this->belongsToMany(Badge::class, 'user_badges')
+            ->withPivot('earned_at', 'message')
+            ->withTimestamps()
+            ->orderBy('user_badges.earned_at', 'desc');
+    }
+
+    public function stats()
+    {
+        return $this->hasOne(UserStat::class);
+    }
+
+    // Helper methods for badges
+    public function hasBadge($badgeId): bool
+    {
+        return $this->badges->contains('id', $badgeId);
+    }
+
+    public function getPointsAttribute()
+    {
+        return $this->stats?->total_points ?? 0;
+    }
+
+    public function getLevelAttribute()
+    {
+        return $this->stats?->level ?? 1;
+    }
+
+    // Get user's rank based on points
+    public function getRankAttribute()
+    {
+        if (! $this->stats) {
+            return 'Newcomer';
+        }
+
+        $points = $this->stats->total_points;
+
+        return match (true) {
+            $points >= 5000 => 'Eco Champion',
+            $points >= 2500 => 'Sustainability Expert',
+            $points >= 1000 => 'Circular Economy Advocate',
+            $points >= 500 => 'Waste Warrior',
+            $points >= 100 => 'Eco Enthusiast',
+            default => 'Newcomer',
+        };
+    }
 }

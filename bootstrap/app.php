@@ -15,11 +15,13 @@ return Application::configure(basePath: dirname(__DIR__))
             'jwt.auth' => \App\Http\Middleware\JwtAuthenticate::class,
             'role' => \App\Http\Middleware\EnsureUserRoale::class,
             'check.blocked.user' => \App\Http\Middleware\CheckBlockedUser::class,
+            'track.activity' => \App\Http\Middleware\TrackUserActivity::class,
         ]);
 
         // Add global middleware
         $middleware->web(append: [
             \App\Http\Middleware\CheckBlockedUser::class,
+            \App\Http\Middleware\TrackUserActivity::class,
         ]);
 
         $middleware->api(append: [

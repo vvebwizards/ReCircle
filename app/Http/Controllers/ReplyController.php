@@ -1,16 +1,20 @@
 <?php
+
 // app/Http/Controllers/ReplyController.php
 
 namespace App\Http\Controllers;
 
 use App\Models\ForumDiscussion;
 use App\Models\ForumReply;
+use App\Services\BadgeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class ReplyController extends Controller
 {
+    public function __construct(private BadgeService $badgeService) {}
+
     public function store(Request $request, ForumDiscussion $discussion): RedirectResponse
     {
         $validated = $request->validate([
@@ -18,15 +22,19 @@ class ReplyController extends Controller
             'parent_id' => 'nullable|exists:forum_replies,id',
         ]);
 
-        DB::transaction(function () use ($validated, $discussion, $request) {
+        DB::transaction(function () use ($validated, $discussion) {
             $reply = ForumReply::create([
                 'content' => $validated['content'],
                 'user_id' => auth()->id(),
                 'discussion_id' => $discussion->id,
                 'parent_id' => $validated['parent_id'] ?? null,
-                'depth' => $validated['parent_id'] ? 
+                'depth' => $validated['parent_id'] ?
                     (ForumReply::find($validated['parent_id'])->depth + 1) : 0,
             ]);
+
+            // Update user stats and check for badges
+            $this->badgeService->updateUserStats(auth()->user(), 'reply_created');
+            $this->badgeService->checkAndAwardBadges(auth()->user(), 'reply_created');
 
             // Update discussion reply count and last reply
             $discussion->updateReplyCount();
@@ -34,7 +42,7 @@ class ReplyController extends Controller
 
         return redirect()->route('forum.discussion', [
             'category' => $discussion->category,
-            'discussion' => $discussion
+            'discussion' => $discussion,
         ])->with('success', 'Reply added successfully!');
     }
 
@@ -45,13 +53,19 @@ class ReplyController extends Controller
             abort(403);
         }
 
-        // Remove answer from other replies in this discussion
-        ForumReply::where('discussion_id', $reply->discussion_id)
-            ->where('id', '!=', $reply->id)
-            ->update(['is_answer' => false]);
+        DB::transaction(function () use ($reply) {
+            // Remove answer from other replies in this discussion
+            ForumReply::where('discussion_id', $reply->discussion_id)
+                ->where('id', '!=', $reply->id)
+                ->update(['is_answer' => false]);
 
-        // Mark this reply as answer
-        $reply->update(['is_answer' => true]);
+            // Mark this reply as answer
+            $reply->update(['is_answer' => true]);
+
+            // Update user stats and check for badges for the reply author
+            $this->badgeService->updateUserStats($reply->user, 'solution_marked');
+            $this->badgeService->checkAndAwardBadges($reply->user, 'solution_marked');
+        });
 
         return back()->with('success', 'Reply marked as solution!');
     }

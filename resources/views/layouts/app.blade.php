@@ -31,7 +31,7 @@
     @endunless
     @stack('head')
 </head>
-<body>
+<body class="bg-gray-900 min-h-screen">
     {{-- Navbar (shared) --}}
     <nav class="navbar">
         <div class="nav-container">

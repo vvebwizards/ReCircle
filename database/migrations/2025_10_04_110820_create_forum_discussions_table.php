@@ -1,4 +1,5 @@
 <?php
+
 // database/migrations/xxxx_xx_xx_xxxxxx_create_forum_discussions_table.php
 
 use Illuminate\Database\Migrations\Migration;
@@ -23,7 +24,7 @@ return new class extends Migration
             $table->timestamp('last_reply_at')->nullable();
             $table->foreignId('last_reply_by')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();
-            
+
             $table->index(['category_id', 'is_pinned', 'created_at']);
             $table->index(['user_id', 'created_at']);
             $table->index('last_reply_at');
