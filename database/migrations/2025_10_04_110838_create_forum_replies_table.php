@@ -1,4 +1,5 @@
 <?php
+
 // database/migrations/xxxx_xx_xx_xxxxxx_create_forum_replies_table.php
 
 use Illuminate\Database\Migrations\Migration;
@@ -19,7 +20,7 @@ return new class extends Migration
             $table->integer('like_count')->default(0);
             $table->boolean('is_answer')->default(false); // Mark as solution
             $table->timestamps();
-            
+
             $table->index(['discussion_id', 'created_at']);
             $table->index(['user_id', 'created_at']);
             $table->index('parent_id');

@@ -1,11 +1,11 @@
 <?php
+
 // app/Http/Controllers/ForumController.php
 
 namespace App\Http\Controllers;
 
 use App\Models\ForumCategory;
 use App\Models\ForumDiscussion;
-use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class ForumController extends Controller
@@ -14,7 +14,7 @@ class ForumController extends Controller
     {
         $categories = ForumCategory::active()
             ->withCount('discussions')
-            ->with(['latestDiscussion.user']) // This should now work
+            ->with(['latestDiscussion.user'])
             ->orderBy('order')
             ->get();
 

@@ -1,4 +1,5 @@
 <?php
+
 // database/seeders/ForumCategoriesTableSeeder.php
 
 namespace Database\Seeders;

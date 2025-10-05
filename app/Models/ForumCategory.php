@@ -1,4 +1,5 @@
 <?php
+
 // app/Models/ForumCategory.php
 
 namespace App\Models;
