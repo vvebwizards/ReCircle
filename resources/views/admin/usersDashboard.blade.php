@@ -49,13 +49,13 @@
                         <td>
                             <form method="POST" action="{{ route('admin.users.updateRole', $user) }}" class="role-change-form">
                                 @csrf
-                                <select name="role" class="role-select" data-user="{{ $user->name }}" data-current="{{ $user->role }}" data-prev="{{ $user->role }}">
-                                    @foreach (['generator', 'maker', 'buyer', 'courier'] as $role)
-                                        <option value="{{ $role }}" {{ $user->role === $role ? 'selected' : '' }}>
-                                            {{ ucfirst($role) }}
-                                        </option>
-                                    @endforeach
-                                </select>
+<select name="role" class="role-select" data-user="{{ $user->name }}" data-current="{{ $user->role->value }}" data-prev="{{ $user->role->value }}">
+    @foreach (['generator', 'maker', 'buyer', 'courier','admin'] as $role)
+        <option value="{{ $role }}" {{ $user->role->value === $role ? 'selected' : '' }}>
+            {{ ucfirst($role) }}
+        </option>
+    @endforeach
+</select>
                                 <input type="hidden" name="confirm" value="1">
                             </form>
                         </td>

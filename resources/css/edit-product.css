@@ -1,0 +1,241 @@
+.static-field {
+    padding: 0.75rem;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+}
+
+.static-field strong {
+    color: #495057;
+}
+
+.static-field small {
+    color: #6c757d;
+}
+
+.current-images-container {
+    margin: 1rem 0;
+    padding: 1rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background: #fafafa;
+}
+
+.current-images-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.current-image-wrapper {
+    position: relative;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 0.5rem;
+    background: white;
+    transition: all 0.3s ease;
+}
+
+.current-image-wrapper:hover {
+    border-color: #007bff;
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.2);
+}
+
+.current-image {
+    width: 100%;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.image-actions {
+    margin-top: 0.5rem;
+    display: flex;
+    justify-content: center;
+}
+
+.remove-image-checkbox {
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    transition: background-color 0.2s;
+}
+
+.remove-image-checkbox:hover {
+    background: #f8f9fa;
+}
+
+.remove-image-checkbox input[type="checkbox"]:checked + span::before {
+    content: "✓ ";
+    color: #dc3545;
+}
+
+.image-preview-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.image-preview-wrapper {
+    position: relative;
+    border: 2px dashed #007bff;
+    border-radius: 4px;
+    padding: 0.5rem;
+    background: #f8f9fa;
+}
+
+.image-preview {
+    width: 100%;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.remove-image {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 20px;
+    height: 20px;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.remove-image:hover {
+    background: #c82333;
+}
+
+.form-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.inline-form {
+    display: inline;
+}
+
+.btn-primary, .btn-secondary, .btn-success, .btn-danger {
+    padding: 0.5rem 1rem;
+    color: white;
+    text-decoration: none;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.2s;
+}
+
+.btn-primary { 
+    background: #007bff; 
+}
+.btn-primary:hover { 
+    background: #0056b3; 
+}
+
+.btn-secondary { 
+    background: #6c757d; 
+}
+.btn-secondary:hover { 
+    background: #545b62; 
+}
+
+.btn-success { 
+    background: #28a745; 
+}
+.btn-success:hover { 
+    background: #1e7e34; 
+}
+
+.btn-danger { 
+    background: #dc3545; 
+}
+.btn-danger:hover { 
+    background: #c82333; 
+}
+
+.btn-secondary {
+    display: inline-block;
+}
+
+.product-summary-panel {
+    margin-top: 1.5rem;
+}
+
+.summary-item {
+    margin-bottom: 0.5rem;
+    padding: 0.5rem;
+    background: #f8f9fa;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.status-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.status-draft { 
+    background: #6c757d; 
+    color: white; 
+}
+.status-published { 
+    background: #28a745; 
+    color: white; 
+}
+.status-sold_out { 
+    background: #ffc107; 
+    color: black; 
+}
+
+.product-status-info {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+.product-status-info h4 {
+    margin-bottom: 0.5rem;
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+.product-status-info ul {
+    margin: 0;
+    padding-left: 1rem;
+}
+
+.product-status-info li {
+    margin-bottom: 0.25rem;
+    font-size: 0.85rem;
+}
+
+
+.current-image-wrapper input[type="checkbox"]:checked {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.current-image-wrapper input[type="checkbox"]:checked ~ .current-image {
+    opacity: 0.5;
+    filter: grayscale(100%);
+}

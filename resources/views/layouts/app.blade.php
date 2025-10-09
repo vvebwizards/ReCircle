@@ -66,56 +66,26 @@
     
     @stack('head')
 </head>
-<body>
-    <div style="background: red; color: white; padding: 10px; text-align: center; font-size: 20px;">
-        TEMPLATE UPDATE TEST - IF YOU SEE THIS, THE TEMPLATE IS LOADING
-    </div>
+<body class="bg-gray-900 min-h-screen">
     {{-- Navbar (shared) --}}
     <nav class="navbar">
         <div class="nav-container">
             <div class="nav-logo">
                 <h2><a href="{{ route('home') }}" class="nav-link" style="text-decoration:none;">ReCircle</a></h2>
             </div>
-            
-            @auth
-                {{-- Authenticated Navigation --}}
-                <ul class="nav-menu">
-                    <li class="nav-item"><a href="{{ route('home') }}" class="nav-link">Home</a></li>
-                    <li class="nav-item"><a href="{{ route('home') }}#how-it-works" class="nav-link">How It Works</a></li>
-                    <li class="nav-item"><a href="{{ route('home') }}#roles" class="nav-link">Roles</a></li>
-                    <li class="nav-item"><a href="{{ route('home') }}#impact" class="nav-link">Impact</a></li>
-                    <li class="nav-item user-menu">
-                        <div class="user-dropdown">
-                            <a href="#" class="dropdown-item">
-                                <i class="fa-solid fa-user"></i>
-                                <span>Profile</span>
-                            </a>
-                            <a href="#" class="dropdown-item">
-                                <i class="fa-solid fa-cog"></i>
-                                <span>Settings</span>
-                            </a>
-                            <a href="#" class="dropdown-item">
-                                <i class="fa-solid fa-chart-line"></i>
-                                <span>Analytics</span>
-                            </a>
-                            <div class="dropdown-divider"></div>
-                            <a href="#" class="dropdown-item logout-item" onclick="handleLogout()">
-                                <i class="fa-solid fa-sign-out-alt"></i>
-                                <span>Logout</span>
-                            </a>
-                        </div>
-                    </li>
-                </ul>
-            @else
-                {{-- Guest Navigation --}}
-                <ul class="nav-menu">
-                    <li class="nav-item"><a href="{{ route('home') }}#home" class="nav-link">Home</a></li>
-                    <li class="nav-item"><a href="{{ route('home') }}#how-it-works" class="nav-link">How It Works</a></li>
-                    <li class="nav-item"><a href="{{ route('home') }}#roles" class="nav-link">Roles</a></li>
-                    <li class="nav-item"><a href="{{ route('home') }}#impact" class="nav-link">Impact</a></li>
-                    <li class="nav-item"><a href="{{ route('auth') }}" class="nav-cta" aria-label="Sign in">Sign In</a></li>
-                </ul>
-            @endauth
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="{{ route('home') }}#home" class="nav-link">Home</a></li>
+                <li class="nav-item"><a href="{{ route('home') }}#how-it-works" class="nav-link">How It Works</a></li>
+                <li class="nav-item"><a href="{{ route('home') }}#roles" class="nav-link">Roles</a></li>
+                <li class="nav-item"><a href="{{ route('home') }}#impact" class="nav-link">Impact</a></li>
+<li class="nav-item">
+    <a href="{{ route('forum.index') }}" class="nav-link">
+        <i class="fa-solid fa-comments mr-1"></i>
+        Community Forum
+    </a>
+</li>
+                <li class="nav-item"><a href="{{ route('auth') }}" class="nav-cta" aria-label="Sign in">Sign In</a></li>
+            </ul>
             <div class="hamburger" aria-label="Toggle navigation" aria-expanded="false" role="button" tabindex="0">
                 <span class="bar"></span>
                 <span class="bar"></span>
@@ -180,5 +150,37 @@
         // Provide a helper for JS modules to get CSRF
         window.csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     </script>
+    {{-- Flash Messages --}}
+@if(session('success'))
+    <div class="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+        <div class="flex items-center">
+            <i class="fa-solid fa-check-circle mr-2"></i>
+            {{ session('success') }}
+        </div>
+    </div>
+@endif
+
+@if(session('error'))
+    <div class="fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+        <div class="flex items-center">
+            <i class="fa-solid fa-exclamation-circle mr-2"></i>
+            {{ session('error') }}
+        </div>
+    </div>
+@endif
+
+<script>
+    // Auto-hide flash messages
+    document.addEventListener('DOMContentLoaded', function() {
+        const flashMessages = document.querySelectorAll('.fixed');
+        flashMessages.forEach(message => {
+            setTimeout(() => {
+                message.style.transition = 'opacity 0.5s';
+                message.style.opacity = '0';
+                setTimeout(() => message.remove(), 500);
+            }, 3000);
+        });
+    });
+</script>
 </body>
 </html>
