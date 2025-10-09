@@ -42,7 +42,7 @@ Route::middleware(['jwt.auth'])->get('/maker/bids', [\App\Http\Controllers\Maker
 
 // Admin routes (role protection removed per request)
 Route::prefix('admin')->middleware(['jwt.auth'])->group(function () {
-    Route::get('/admin/dashboard', function () {
+    Route::get('/dashboard', function () {
         return view('admin.dashboard');
     })->name('admin.dashboard');
 
@@ -53,6 +53,7 @@ Route::prefix('admin')->middleware(['jwt.auth'])->group(function () {
     // New blocking routes
     Route::post('/users/{user}/block', [UserManagementController::class, 'blockUser'])->name('admin.users.block');
     Route::post('/users/{user}/unblock', [UserManagementController::class, 'unblockUser'])->name('admin.users.unblock');
+    Route::get('/audit-logs', [App\Http\Controllers\AuditLogController::class, 'index'])->name('admin.audit-logs.index');
 
     // Admin listings routes (limited CRUD: no create/store)
     require __DIR__.'/admin_listings.php';
@@ -62,13 +63,12 @@ Route::get('/settings/security', function () {
     return view('settings.security');
 })->name('settings.security');
 
-// Auth routes
 require __DIR__.'/auth.php';
 
-// Material routes
 require __DIR__.'/materials.php';
-// Waste item routes (generator-facing)
-// Generator waste item routes (role protection removed per request)
+
+require __DIR__.'/products.php';
+
 Route::middleware(['jwt.auth'])->group(function () {
     require __DIR__.'/waste_items.php';
 });
@@ -78,3 +78,8 @@ require __DIR__.'/marketplace.php';
 
 // Bid routes
 require __DIR__.'/bids.php';
+
+// routes/web.php
+require __DIR__.'/forum.php';
+
+require __DIR__.'/badges.php';

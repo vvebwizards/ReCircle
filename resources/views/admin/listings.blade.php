@@ -80,14 +80,12 @@
 
 @push('admin-modals')
 <div class="modal-overlay" id="al-modal-overlay" aria-hidden="true">
-  <!-- View Modal (generator style parity with skeleton & error states) -->
   <div class="modal hidden" id="al-view-modal" role="dialog" aria-modal="true" aria-labelledby="al-view-title">
     <div class="modal-header minimal">
       <h3 class="modal-title" id="al-view-title"><i class="fa-solid fa-eye"></i> <span>Listing</span></h3>
       <button class="modal-close" data-close aria-label="Close view"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="modal-body" id="al-view-body">
-      <!-- Loading skeleton -->
       <div id="al-view-loading" class="modal-skeleton">
         <div class="sk-header-line" style="width:55%;height:14px;"></div>
         <div class="sk-pills" style="display:flex;gap:.4rem;margin:.6rem 0 1rem;">
@@ -100,12 +98,10 @@
           <div class="sk-box" style="height:140px;"></div>
         </div>
       </div>
-      <!-- Error -->
       <div id="al-view-error" class="hidden" style="text-align:center;padding:2rem 1rem;">
         <p style="margin:0 0 .75rem;font-size:.8rem;color:var(--wi-gray-700);"><i class="fa-solid fa-triangle-exclamation" style="color:#dc2626;margin-right:.4rem;"></i>Failed to load listing.</p>
         <button type="button" class="btn btn-secondary" data-close>Close</button>
       </div>
-      <!-- Content -->
       <div id="al-view-content" class="hidden al-view-wrap">
         <div class="al-view-head">
           <h2 id="al-vh-title" class="al-view-title">—</h2>
@@ -139,7 +135,6 @@
     </div>
   </div>
 
-  <!-- Edit Modal (modernized) -->
   <div class="modal hidden" id="al-edit-modal" role="dialog" aria-modal="true" aria-labelledby="al-edit-title-h">
     <div class="modal-header minimal"><h3 class="modal-title" id="al-edit-title-h"><i class="fa-solid fa-pen-to-square"></i> <span>Edit Listing</span></h3><button class="modal-close" data-close aria-label="Close edit"><i class="fa-solid fa-xmark"></i></button></div>
     <div class="modal-body al-edit-body">
@@ -198,7 +193,6 @@
     </div>
   </div>
 
-  <!-- Delete Modal -->
   <div class="modal hidden confirm-box" id="al-delete-modal" role="alertdialog" aria-modal="true" aria-labelledby="al-delete-title">
     <div class="modal-header"><h3 class="modal-title" id="al-delete-title"><i class="fa-solid fa-triangle-exclamation" style="color:#dc2626;"></i> <span>Delete Listing</span></h3><button class="modal-close" data-close aria-label="Close delete"><i class="fa-solid fa-xmark"></i></button></div>
     <div class="modal-body">
@@ -210,7 +204,6 @@
     </div>
   </div>
 
-  <!-- Photos Lightbox Modal (shared styling with generator) -->
   <div class="modal hidden" id="al-photos-modal" role="dialog" aria-modal="true" aria-labelledby="al-photos-title" style="max-width:900px;">
     <div class="modal-header minimal">
       <h3 class="modal-title" id="al-photos-title"><i class="fa-solid fa-images"></i> <span>Listing Photos</span></h3>
