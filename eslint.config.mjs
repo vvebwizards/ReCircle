@@ -30,11 +30,12 @@ export default [
         ...globals.browser,
         ...globals.node,
         appRoutes: 'readonly',
+        QRCode: 'readonly',
       },
     },
     rules: {
   'no-empty': ['error', { allowEmptyCatch: true }],
-      'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrors: 'none' }],
       'no-console': 'off',
       eqeqeq: ['error', 'smart'],
       'prefer-const': 'warn',
