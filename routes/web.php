@@ -9,14 +9,29 @@ Route::get('/', function () {
 
 Route::get('/dashboard', function () {
     return view('dashboard');
-})->name('dashboard');
+})->middleware('jwt.auth')->name('dashboard');
+
+// API endpoint for getting current user data
+Route::get('/api/user', function () {
+    try {
+        $user = auth()->user();
+        if ($user) {
+            return response()->json([
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'avatar' => $user->avatar,
+            ]);
+        }
+
+        return response()->json(['error' => 'Not authenticated'], 401);
+    } catch (\Exception $e) {
+        return response()->json(['error' => 'Server error: '.$e->getMessage()], 500);
+    }
+})->middleware('jwt.auth');
 
 // Dashboard bids (generator) - only accessible when authenticated via JWT
 Route::middleware(['jwt.auth'])->get('/dashboard/bids', [\App\Http\Controllers\DashboardBidController::class, 'index'])->name('dashboard.bids');
-
-Route::get('/dashboard/bids', [\App\Http\Controllers\DashboardBidController::class, 'index'])
-    ->middleware(['jwt.auth'])
-    ->name('dashboard.bids');
 
 Route::get('/maker/dashboard', function () {
     return view('maker.dashboard');

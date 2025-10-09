@@ -7,18 +7,69 @@
     <link rel="icon" href="{{ Vite::asset('resources/images/vite.svg') }}" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     <style>
         /* Onboarding Modal Styles */
+        
+        /* Override modal overlay for onboarding - blur background */
+        #onboarding-modal.modal-overlay {
+            background: rgba(0, 0, 0, 0.2) !important;
+            backdrop-filter: blur(8px) !important;
+            -webkit-backdrop-filter: blur(8px) !important;
+        }
+        
         .onboarding-modal {
-            max-width: 600px;
-            width: 90%;
+            max-width: 700px;
+            width: 98%;
+            position: fixed;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1100;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.25);
+            max-height: calc(100vh - 80px);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            border: 2px solid transparent;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        /* Custom scrollbar styling */
+        .onboarding-modal::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .onboarding-modal::-webkit-scrollbar-track {
+            background: rgba(241, 241, 241, 0.5);
+            border-radius: 4px;
+            margin: 4px 0;
+        }
+        
+        .onboarding-modal::-webkit-scrollbar-thumb {
+            background: #059669;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+        }
+        
+        .onboarding-modal::-webkit-scrollbar-thumb:hover {
+            background: #047857;
+        }
+        
+        .onboarding-modal::-webkit-scrollbar-thumb:active {
+            background: #065f46;
+        }
+        
+        .onboarding-modal:hover {
+            border-color: #059669;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.2), 0 0 0 1px #059669;
         }
         
         .onboarding-progress {
             display: flex;
             align-items: center;
-            gap: 1rem;
-            margin: 1rem 0;
+            gap: 0.5rem;
+            margin: 0.5rem 0;
         }
         
         .progress-bar {
@@ -43,7 +94,10 @@
         .onboarding-step {
             display: none;
             text-align: center;
-            padding: 2rem;
+            padding: 1rem 1.25rem;
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
         }
         
         .onboarding-step.active {
@@ -51,8 +105,8 @@
         }
         
         .step-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
             color: #059669;
         }
         
@@ -62,9 +116,12 @@
         
         .step-actions {
             display: flex;
-            gap: 1rem;
+            gap: 0.5rem;
             justify-content: center;
-            margin-top: 2rem;
+            margin-top: 0.5rem;
+            padding: 0.5rem 0;
+            border-top: 1px solid #e0e0e0;
+            flex-shrink: 0;
         }
         
         .qr-code-container {
@@ -73,12 +130,28 @@
             margin: 1rem 0;
         }
         
+        .qr-code-container #qr-code {
+            display: flex;
+            justify-content: center;
+        }
+        
+        .qr-code-container #qr-code > div {
+            width: 180px !important;
+            height: 180px !important;
+        }
+        
+        .qr-code-container #qr-code img {
+            width: 180px !important;
+            height: 180px !important;
+        }
+        
         .secret-code {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.25rem;
             justify-content: center;
-            margin: 1rem 0;
+            margin: 0.5rem 0;
+            flex-wrap: wrap;
         }
         
         .secret-code code {
@@ -86,11 +159,16 @@
             padding: 0.5rem;
             border-radius: 4px;
             font-family: monospace;
+            font-size: 0.8rem;
+            word-break: break-all;
+            max-width: 280px;
+            border: 1px solid #e0e0e0;
+            min-height: 16px;
         }
         
         .avatar-upload-container {
             text-align: center;
-            margin: 2rem 0;
+            margin: 1.5rem 0;
         }
         
         .avatar-preview {
@@ -125,7 +203,7 @@
         
         .face-setup-container {
             text-align: center;
-            margin: 2rem 0;
+            margin: 1.5rem 0;
         }
         
         .video-container {
@@ -198,6 +276,136 @@
         .btn-text:hover {
             color: #047857 !important;
             background: rgba(5, 150, 105, 0.1) !important;
+        }
+        
+        /* 2FA Sub-steps */
+        .twofa-substeps {
+            margin: 1rem 0;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .twofa-substep {
+            display: none;
+            animation: fadeInSlide 0.3s ease-out;
+        }
+        
+        .twofa-substep.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            flex: 1;
+        }
+        
+
+        
+        .substep-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e0e0e0;
+            flex-shrink: 0;
+        }
+        
+        .substep-header.success {
+            border-bottom-color: #16a34a;
+        }
+        
+        .substep-number {
+            width: 28px;
+            height: 28px;
+            background: #059669;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+        
+        .substep-number.success {
+            background: #16a34a;
+            font-size: 1.2rem;
+        }
+        
+        .substep-header h5 {
+            margin: 0;
+            font-size: 1rem;
+            color: #1a1a1a;
+        }
+        
+        .substep-actions {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-top: 0.75rem;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+        }
+        
+        .verification-input {
+            max-width: 280px;
+            margin: 1rem auto;
+        }
+        
+        .verification-input input {
+            text-align: center;
+            font-size: 1.25rem;
+            letter-spacing: 0.25rem;
+            font-weight: 600;
+        }
+        
+        .verification-help {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 6px;
+            padding: 0.75rem;
+            margin: 0.75rem 0;
+            text-align: center;
+        }
+        
+        .verification-help p {
+            margin: 0;
+            color: #0369a1;
+            font-size: 0.9rem;
+        }
+        
+        .success-info {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .success-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 0.75rem 0;
+            color: #15803d;
+            font-weight: 500;
+        }
+        
+        .success-item i {
+            color: #16a34a;
+            font-size: 1.1rem;
+        }
+        
+        @keyframes fadeInSlide {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         
         /* Social buttons styling */
@@ -426,40 +634,89 @@
                     <h4>Enable Two-Factor Authentication</h4>
                     <p>Secure your account with an authenticator app like Google Authenticator or Authy.</p>
                     
-                    <div class="twofa-setup-container">
-                        <!-- QR Code Section -->
-                        <div class="qr-section" id="qr-section">
-                            <div class="qr-instructions">
-                                <p><strong>Step 1:</strong> Scan this QR code with your authenticator app</p>
-                                <div class="qr-code-container">
-                                    <div id="qr-code"></div>
+                    <!-- Sub-steps within 2FA setup -->
+                    <div class="twofa-substeps">
+                        <!-- Sub-step 1: Scan QR Code -->
+                        <div class="twofa-substep active" id="twofa-scan-step">
+                            <div class="substep-header">
+                                <div class="substep-number">1</div>
+                                <h5>Scan QR Code</h5>
+                            </div>
+                            <p style="margin: 0.5rem 0;">Open your authenticator app and scan this QR code:</p>
+                            
+                            <div class="qr-code-container">
+                                <div id="qr-code"></div>
+                            </div>
+                            
+                            <div class="manual-entry">
+                                <p style="margin: 0.5rem 0; font-size: 0.9rem;"><strong>Can't scan?</strong> Enter this code manually:</p>
+                                <div class="secret-code">
+                                    <code id="secret-key"></code>
+                                    <button type="button" class="btn btn-text" id="copy-secret">
+                                        <i class="fa-solid fa-copy"></i> Copy
+                                    </button>
                                 </div>
-                                <div class="manual-entry">
-                                    <p><strong>Or enter manually:</strong></p>
-                                    <div class="secret-code">
-                                        <code id="secret-key"></code>
-                                        <button type="button" class="btn btn-text" id="copy-secret">
-                                            <i class="fa-solid fa-copy"></i> Copy
-                                        </button>
-                                    </div>
-                                </div>
+                            </div>
+                            
+                            <div class="substep-actions">
+                                <button type="button" class="btn btn-primary" id="proceed-to-verify">
+                                    <i class="fa-solid fa-arrow-right"></i> I've Scanned It
+                                </button>
                             </div>
                         </div>
 
-                        <!-- Verification Section -->
-                        <div class="verification-section">
-                            <p><strong>Step 2:</strong> Enter the 6-digit code from your app</p>
-                            <div class="form-group">
+                        <!-- Sub-step 2: Enter Verification Code -->
+                        <div class="twofa-substep" id="twofa-verify-step">
+                            <div class="substep-header">
+                                <div class="substep-number">2</div>
+                                <h5>Verify Your Setup</h5>
+                            </div>
+                            <p>Enter the 6-digit code from your authenticator app to confirm the setup:</p>
+                            
+                            <div class="form-group verification-input">
                                 <label for="twofa-code-onboard">Verification Code</label>
                                 <input type="text" id="twofa-code-onboard" maxlength="6" placeholder="123456" autocomplete="one-time-code" pattern="[0-9]{6}">
                                 <small class="field-error" aria-live="assertive"></small>
                             </div>
+                            
+                            <div class="verification-help">
+                                <p><i class="fa-solid fa-info-circle"></i> Enter the current 6-digit code shown in your authenticator app</p>
+                            </div>
+                            
+                            <div class="substep-actions">
+                                <button type="button" class="btn btn-text" id="back-to-scan">
+                                    <i class="fa-solid fa-arrow-left"></i> Back to QR Code
+                                </button>
+                                <button type="button" class="btn btn-primary" id="verify-2fa" disabled>
+                                    <i class="fa-solid fa-check"></i> Verify & Enable
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Success State -->
+                        <div class="twofa-substep" id="twofa-success-step">
+                            <div class="substep-header success">
+                                <div class="substep-number success">✓</div>
+                                <h5>2FA Enabled Successfully!</h5>
+                            </div>
+                            <p>Your account is now secured with two-factor authentication.</p>
+                            
+                            <div class="success-info">
+                                <div class="success-item">
+                                    <i class="fa-solid fa-shield-check"></i>
+                                    <span>Enhanced Security Active</span>
+                                </div>
+                                <div class="success-item">
+                                    <i class="fa-solid fa-mobile-screen"></i>
+                                    <span>Authenticator App Configured</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
-                    <div class="step-actions">
-                        <button type="button" class="btn btn-secondary" id="skip-2fa">Skip</button>
-                        <button type="button" class="btn btn-primary" id="verify-2fa" disabled>Verify & Enable</button>
+                    <div class="step-actions" id="main-2fa-actions">
+                        <button type="button" class="btn btn-secondary" id="skip-2fa">Skip This Step</button>
+                        <button type="button" class="btn btn-primary" id="continue-to-avatar" style="display: none;">Continue to Avatar</button>
                     </div>
                 </div>
 

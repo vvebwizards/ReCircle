@@ -14,6 +14,7 @@ export default defineConfig({
                 'resources/js/app.js',
                 'resources/js/main.js',
                 'resources/js/auth.js',
+                'resources/js/dashboard.js',
                 'resources/js/twofa.js',
                 'resources/js/twofactor-settings.js',
                 'resources/js/forgot-password.js',

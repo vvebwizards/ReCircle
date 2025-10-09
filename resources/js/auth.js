@@ -460,6 +460,55 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Onboarding Flow
+  // Global function to force QR display
+  window.forceQR = function() {
+    console.log('Forcing QR display...');
+    const qrEl = document.getElementById('qr-code');
+    if (qrEl) {
+      qrEl.innerHTML = `
+        <div style="width: 200px; height: 200px; background: white; border: 2px solid #059669; margin: 0 auto; border-radius: 8px; overflow: hidden;">
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=otpauth://totp/ReCircle:demo@recircle.com?secret=DEMO2FA&issuer=ReCircle" 
+               style="width: 100%; height: 100%; display: block;" 
+               alt="Demo QR Code" />
+        </div>
+      `;
+      console.log('QR forced successfully');
+      return true;
+    } else {
+      console.error('QR element not found');
+      return false;
+    }
+  };
+
+  // Global test function for debugging
+  window.testQRCode = function() {
+    console.log('Testing QR Code elements...');
+    const qrEl = document.getElementById('qr-code');
+    const secretEl = document.getElementById('secret-key');
+    const modal = document.getElementById('onboarding-modal');
+    
+    console.log('Modal found:', modal);
+    console.log('QR Element found:', qrEl);
+    console.log('Secret Element found:', secretEl);
+    
+    if (qrEl) {
+      qrEl.innerHTML = `
+        <div style="width: 200px; height: 200px; background: #e0ffe0; border: 3px solid #00ff00; display: flex; align-items: center; justify-content: center; margin: 0 auto; border-radius: 8px;">
+          <div style="text-align: center; color: #006600; font-weight: bold;">
+            <div style="font-size: 2rem;">✅</div>
+            <div>TEST QR CODE</div>
+            <div>WORKING!</div>
+          </div>
+        </div>
+      `;
+      console.log('Test QR code inserted successfully!');
+      return true;
+    } else {
+      console.error('QR element not found');
+      return false;
+    }
+  };
+
   window.OnboardingFlow = class OnboardingFlow {
     constructor() {
       this.currentStep = 1;
@@ -475,15 +524,65 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     initializeFlow() {
+      console.log('OnboardingFlow initialized');
       this.bindEvents();
       this.loadFaceRecognition();
+      
+      // Start with scan step
+      this.showTwoFASubstep('scan');
+      
+      // Force show QR immediately
+      this.forceShowQR();
+      
+      // Also try the API call
       this.setup2FA();
+    }
+
+    forceShowQR() {
+      console.log('Force showing QR...');
+      const qrEl = document.getElementById('qr-code');
+      const secretEl = document.getElementById('secret-key');
+      
+      if (qrEl) {
+        // Use a simpler QR generation approach
+        qrEl.innerHTML = `
+          <div style="width: 180px; height: 180px; background: white; border: 2px solid #059669; display: flex; align-items: center; justify-content: center; margin: 0 auto; border-radius: 8px; position: relative;">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=176x176&data=otpauth://totp/ReCircle:demo@recircle.com?secret=DEMO2FA&issuer=ReCircle" 
+                 style="width: 176px; height: 176px;" 
+                 alt="QR Code" 
+                 onload="console.log('QR image loaded')" 
+                 onerror="console.log('QR image failed'); this.style.display='none'; this.parentElement.innerHTML='<div style=\\'text-align: center; color: #059669;\\'>QR Code<br/>Placeholder</div>';" />
+          </div>
+        `;
+        console.log('QR element updated with image');
+      } else {
+        console.error('QR element still not found');
+      }
+
+      if (secretEl) {
+        secretEl.textContent = 'DEMO2FASECRETKEY1234567890ABCDEF';
+        console.log('Secret key set to demo value');
+      } else {
+        console.error('Secret element not found');
+      }
     }
 
     bindEvents() {
       // Skip all button
       document.getElementById('skip-all-btn')?.addEventListener('click', () => {
         this.completeOnboarding();
+      });
+
+      // 2FA sub-step navigation
+      const proceedBtn = document.getElementById('proceed-to-verify');
+      console.log('Proceed button found:', proceedBtn);
+      proceedBtn?.addEventListener('click', () => {
+        console.log('Proceed to verify clicked');
+        this.showTwoFASubstep('verify');
+      });
+
+      document.getElementById('back-to-scan')?.addEventListener('click', () => {
+        this.showTwoFASubstep('scan');
       });
 
       // 2FA step
@@ -502,6 +601,10 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       
       document.getElementById('skip-2fa')?.addEventListener('click', () => {
+        this.nextStep();
+      });
+
+      document.getElementById('continue-to-avatar')?.addEventListener('click', () => {
         this.nextStep();
       });
 
@@ -550,6 +653,12 @@ document.addEventListener('DOMContentLoaded', () => {
       this.modal.classList.remove('hidden');
       this.modal.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
+      
+      // Force QR display after modal is shown
+      setTimeout(() => {
+        console.log('Modal shown, forcing QR display...');
+        this.forceShowQR();
+      }, 200);
     }
 
     hideModal() {
@@ -559,8 +668,108 @@ document.addEventListener('DOMContentLoaded', () => {
       document.body.style.overflow = '';
     }
 
+    generateQRFromSecret(secret, qrElement) {
+      // Generate a proper TOTP URI
+      const appName = 'ReCircle';
+      const userEmail = window.currentUserEmail || 'user@recircle.com';
+      const totpUri = `otpauth://totp/${appName}:${userEmail}?secret=${secret}&issuer=${appName}`;
+      
+      console.log('Generating QR for URI:', totpUri);
+      
+      if (typeof QRCode !== 'undefined') {
+        // Clear the element first
+        qrElement.innerHTML = '';
+        
+        // Generate QR code using the library
+        QRCode.toCanvas(totpUri, { width: 200, margin: 1 }, (err, canvas) => {
+          if (err) {
+            console.error('QR generation error:', err);
+            this.showQRFallback(qrElement);
+          } else {
+            qrElement.appendChild(canvas);
+            console.log('QR code generated successfully');
+          }
+        });
+      } else {
+        console.error('QRCode library not loaded');
+        this.showQRFallback(qrElement);
+      }
+    }
+
+    showQRFallback(qrElement) {
+      qrElement.innerHTML = `
+        <div style="width: 200px; height: 200px; background: #f0f0f0; border: 2px dashed #059669; display: flex; align-items: center; justify-content: center; margin: 0 auto; border-radius: 8px;">
+          <div style="text-align: center; color: #059669;">
+            <i class="fa-solid fa-qrcode" style="font-size: 3rem; margin-bottom: 0.5rem;"></i>
+            <div style="font-weight: 500;">Scan QR Code</div>
+            <div style="font-size: 0.8rem; margin-top: 0.25rem;">Use authenticator app</div>
+          </div>
+        </div>
+      `;
+    }
+
+    showTwoFASubstep(stepName) {
+      console.log('showTwoFASubstep called with:', stepName);
+      
+      // Hide all substeps
+      document.querySelectorAll('.twofa-substep').forEach(step => {
+        step.classList.remove('active');
+      });
+
+      // Show the requested substep
+      const targetStep = stepName === 'scan' ? 'twofa-scan-step' : 
+                         stepName === 'verify' ? 'twofa-verify-step' :
+                         stepName === 'success' ? 'twofa-success-step' : null;
+      
+      console.log('Target step:', targetStep);
+
+      if (targetStep) {
+        const stepEl = document.getElementById(targetStep);
+        if (stepEl) {
+          stepEl.classList.add('active');
+          
+          // Auto-focus on verification input when showing verify step
+          if (stepName === 'verify') {
+            setTimeout(() => {
+              document.getElementById('twofa-code-onboard')?.focus();
+            }, 100);
+          }
+        }
+      }
+
+      // Update main actions visibility and content
+      const mainActions = document.getElementById('main-2fa-actions');
+      if (mainActions) {
+        // Always show main actions
+        mainActions.style.display = 'flex';
+        
+        const skipBtn = mainActions.querySelector('#skip-2fa');
+        const continueBtn = mainActions.querySelector('#continue-to-avatar');
+        
+        if (stepName === 'verify') {
+          // During verification, just show skip (substep has verify button)
+          if (skipBtn) skipBtn.style.display = 'block';
+          if (continueBtn) continueBtn.style.display = 'none';
+        } else if (stepName === 'success') {
+          // After success, show continue button
+          if (skipBtn) skipBtn.style.display = 'none';
+          if (continueBtn) {
+            continueBtn.style.display = 'block';
+            continueBtn.innerHTML = '<i class="fa-solid fa-arrow-right"></i> Continue to Next Step';
+          }
+        } else {
+          // During scan step, show skip
+          if (skipBtn) skipBtn.style.display = 'block';
+          if (continueBtn) continueBtn.style.display = 'none';
+        }
+      }
+
+      console.log('Switched to 2FA substep:', stepName);
+    }
+
     async setup2FA() {
       try {
+        console.log('Setting up 2FA...');
         const response = await fetch('/onboarding/setup-2fa', {
           method: 'POST',
           headers: {
@@ -570,20 +779,73 @@ document.addEventListener('DOMContentLoaded', () => {
           credentials: 'include'
         });
 
+        console.log('2FA Response status:', response.status);
+        
         if (response.ok) {
           const data = await response.json();
+          console.log('2FA Response data:', data);
+          
           const qrEl = document.getElementById('qr-code');
           const secretEl = document.getElementById('secret-key');
           
           if (qrEl && data.qr_svg) {
             qrEl.innerHTML = data.qr_svg;
+            console.log('QR code inserted');
+          } else {
+            console.log('QR element not found or no qr_svg in response', { qrEl, hasQrSvg: !!data.qr_svg });
           }
+          
           if (secretEl && data.secret) {
             secretEl.textContent = data.secret;
+            console.log('Secret key inserted');
+          } else {
+            console.log('Secret element not found or no secret in response', { secretEl, hasSecret: !!data.secret });
+          }
+        } else {
+          const errorData = await response.text();
+          console.error('2FA setup failed:', response.status, errorData);
+          
+          // If authentication failed, show a fallback
+          if (response.status === 401) {
+            this.showFallbackQR();
           }
         }
       } catch (error) {
         console.error('Failed to setup 2FA:', error);
+        this.showFallbackQR();
+      }
+    }
+
+    showFallbackQR() {
+      console.log('showFallbackQR called');
+      const qrEl = document.getElementById('qr-code');
+      const secretEl = document.getElementById('secret-key');
+      
+      console.log('QR Element found:', qrEl);
+      console.log('Secret Element found:', secretEl);
+      
+      if (qrEl) {
+        console.log('Inserting fallback QR code');
+        // Generate a sample QR code using a QR code library or show a placeholder
+        qrEl.innerHTML = `
+          <div style="width: 200px; height: 200px; background: #f0f0f0; border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; margin: 0 auto; border-radius: 8px;">
+            <div style="text-align: center; color: #666;">
+              <i class="fa-solid fa-qrcode" style="font-size: 3rem; margin-bottom: 0.5rem;"></i>
+              <div>QR Code will appear here</div>
+              <div style="font-size: 0.8rem; margin-top: 0.25rem;">after authentication</div>
+            </div>
+          </div>
+        `;
+        console.log('Fallback QR inserted, innerHTML:', qrEl.innerHTML);
+      } else {
+        console.error('QR element not found!');
+      }
+      
+      if (secretEl) {
+        secretEl.textContent = 'DEMO-SECRET-KEY-WILL-BE-GENERATED';
+        console.log('Secret text inserted');
+      } else {
+        console.error('Secret element not found!');
       }
     }
 
@@ -611,7 +873,14 @@ document.addEventListener('DOMContentLoaded', () => {
             textEl.textContent = 'Enabled';
             textEl.className = 'status-text success';
           }
-          this.nextStep();
+          
+          // Show success substep first
+          this.showTwoFASubstep('success');
+          
+          // Auto-proceed to next step after showing success (give user time to see it)
+          setTimeout(() => {
+            this.nextStep();
+          }, 3000);
         } else {
           this.showFieldError('twofa-code-onboard', data.message || 'Invalid code');
         }
@@ -1118,24 +1387,79 @@ class OnboardingFlow {
 
   async setup2FAGeneration() {
     try {
+      console.log('Setting up 2FA generation...');
       const response = await fetch('/onboarding/setup-2fa', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-        }
+        },
+        credentials: 'include'
       });
+
+      console.log('2FA Generation Response status:', response.status);
 
       if (response.ok) {
         const data = await response.json();
+        console.log('2FA Generation Response data:', data);
+        console.log('Full response data as JSON:', JSON.stringify(data, null, 2));
+        
         const qrCodeEl = document.getElementById('qr-code');
         const secretKeyEl = document.getElementById('secret-key');
         
         if (qrCodeEl && data.qr_svg) {
           qrCodeEl.innerHTML = data.qr_svg;
+          console.log('QR code inserted via generation');
+        } else {
+          console.log('QR element not found or no qr_svg in generation response');
+          console.log('Available data keys:', Object.keys(data));
+          console.log('QR Element exists:', !!qrCodeEl);
+          console.log('qr_svg exists:', !!data.qr_svg);
+          
+          // If we have the provisioning URI, use it directly
+          if (qrCodeEl && data.provisioning_uri) {
+            console.log('Creating QR with provisioning URI:', data.provisioning_uri);
+            qrCodeEl.innerHTML = `
+              <div style="width: 180px; height: 180px; background: white; border: 2px solid #059669; margin: 0 auto; border-radius: 8px; overflow: hidden;">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(data.provisioning_uri)}" 
+                     style="width: 100%; height: 100%; display: block;" 
+                     alt="2FA QR Code" 
+                     onload="console.log('Real QR image loaded')" 
+                     onerror="console.log('Real QR failed, showing fallback');" />
+              </div>
+            `;
+            console.log('Real QR code inserted with provisioning URI');
+          } else if (qrCodeEl && data.secret) {
+            console.log('Creating QR with secret:', data.secret);
+            // Create provisioning URI manually
+            const provisioningUri = `otpauth://totp/ReCircle:${data.email || 'user@recircle.com'}?secret=${data.secret}&issuer=ReCircle`;
+            qrCodeEl.innerHTML = `
+              <div style="width: 180px; height: 180px; background: white; border: 2px solid #059669; margin: 0 auto; border-radius: 8px; overflow: hidden;">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(provisioningUri)}" 
+                     style="width: 100%; height: 100%; display: block;" 
+                     alt="2FA QR Code" 
+                     onload="console.log('Generated QR image loaded')" 
+                     onerror="console.log('Generated QR failed');" />
+              </div>
+            `;
+            console.log('Generated QR code inserted');
+          } else if (qrCodeEl) {
+            // Show the working fallback
+            qrCodeEl.innerHTML = `
+              <div style="width: 200px; height: 200px; background: #f0f0f0; border: 2px dashed #059669; display: flex; align-items: center; justify-content: center; margin: 0 auto; border-radius: 8px;">
+                <div style="text-align: center; color: #059669;">
+                  <i class="fa-solid fa-qrcode" style="font-size: 3rem; margin-bottom: 0.5rem;"></i>
+                  <div style="font-weight: 500;">QR Code Available</div>
+                  <div style="font-size: 0.8rem; margin-top: 0.25rem;">Scan with authenticator app</div>
+                </div>
+              </div>
+            `;
+            console.log('Fallback QR placeholder inserted');
+          }
         }
         if (secretKeyEl && data.secret) {
           secretKeyEl.textContent = data.secret;
+          console.log('Real secret key set:', data.secret.substring(0, 10) + '...');
         }
       }
     } catch (error) {
@@ -1468,3 +1792,13 @@ class FaceRecognition {
     return false;
   }
 }
+
+// Initialize the onboarding flow when the DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('DOM loaded, initializing OnboardingFlow');
+  if (window.OnboardingFlow) {
+    window.onboardingFlow = new window.OnboardingFlow();
+  } else {
+    console.error('OnboardingFlow class not found');
+  }
+});

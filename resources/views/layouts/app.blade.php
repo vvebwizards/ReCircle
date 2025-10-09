@@ -29,22 +29,93 @@
     @unless (app()->environment('testing'))
         @vite(['resources/js/app.js','resources/js/main.js'])
     @endunless
+    
+    @auth
+    <script>
+        function handleLogout() {
+            // Clear JWT token from localStorage
+            localStorage.removeItem('auth_token');
+            
+            // Redirect to home page
+            window.location.href = '{{ route("home") }}';
+        }
+    </script>
+    @endauth
+
+    @auth
+    <script>
+        console.log('TESTING: NEW CODE IS LOADED!!!');
+        // Make current user data available to JavaScript with fresh data from database
+        @php
+            $freshUser = \App\Models\User::find(auth()->id());
+            // Explicitly create the user object with avatar field
+            $userData = [
+                'id' => $freshUser->id,
+                'name' => $freshUser->name,
+                'email' => $freshUser->email,
+                'avatar' => $freshUser->avatar,
+                'role' => $freshUser->role,
+            ];
+        @endphp
+        window.__currentUser = @json($userData);
+        console.log('NEW DEBUG: Fresh user data loaded:', window.__currentUser);
+        console.log('NEW DEBUG: Avatar field specifically:', window.__currentUser.avatar);
+        console.log('NEW DEBUG: User has avatar?', !!(window.__currentUser && window.__currentUser.avatar));
+    </script>
+    @endauth
+    
     @stack('head')
 </head>
 <body>
+    <div style="background: red; color: white; padding: 10px; text-align: center; font-size: 20px;">
+        TEMPLATE UPDATE TEST - IF YOU SEE THIS, THE TEMPLATE IS LOADING
+    </div>
     {{-- Navbar (shared) --}}
     <nav class="navbar">
         <div class="nav-container">
             <div class="nav-logo">
                 <h2><a href="{{ route('home') }}" class="nav-link" style="text-decoration:none;">ReCircle</a></h2>
             </div>
-            <ul class="nav-menu">
-                <li class="nav-item"><a href="{{ route('home') }}#home" class="nav-link">Home</a></li>
-                <li class="nav-item"><a href="{{ route('home') }}#how-it-works" class="nav-link">How It Works</a></li>
-                <li class="nav-item"><a href="{{ route('home') }}#roles" class="nav-link">Roles</a></li>
-                <li class="nav-item"><a href="{{ route('home') }}#impact" class="nav-link">Impact</a></li>
-                <li class="nav-item"><a href="{{ route('auth') }}" class="nav-cta" aria-label="Sign in">Sign In</a></li>
-            </ul>
+            
+            @auth
+                {{-- Authenticated Navigation --}}
+                <ul class="nav-menu">
+                    <li class="nav-item"><a href="{{ route('home') }}" class="nav-link">Home</a></li>
+                    <li class="nav-item"><a href="{{ route('home') }}#how-it-works" class="nav-link">How It Works</a></li>
+                    <li class="nav-item"><a href="{{ route('home') }}#roles" class="nav-link">Roles</a></li>
+                    <li class="nav-item"><a href="{{ route('home') }}#impact" class="nav-link">Impact</a></li>
+                    <li class="nav-item user-menu">
+                        <div class="user-dropdown">
+                            <a href="#" class="dropdown-item">
+                                <i class="fa-solid fa-user"></i>
+                                <span>Profile</span>
+                            </a>
+                            <a href="#" class="dropdown-item">
+                                <i class="fa-solid fa-cog"></i>
+                                <span>Settings</span>
+                            </a>
+                            <a href="#" class="dropdown-item">
+                                <i class="fa-solid fa-chart-line"></i>
+                                <span>Analytics</span>
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a href="#" class="dropdown-item logout-item" onclick="handleLogout()">
+                                <i class="fa-solid fa-sign-out-alt"></i>
+                                <span>Logout</span>
+                            </a>
+                        </div>
+                    </li>
+                </ul>
+            @else
+                {{-- Guest Navigation --}}
+                <ul class="nav-menu">
+                    <li class="nav-item"><a href="{{ route('home') }}#home" class="nav-link">Home</a></li>
+                    <li class="nav-item"><a href="{{ route('home') }}#how-it-works" class="nav-link">How It Works</a></li>
+                    <li class="nav-item"><a href="{{ route('home') }}#roles" class="nav-link">Roles</a></li>
+                    <li class="nav-item"><a href="{{ route('home') }}#impact" class="nav-link">Impact</a></li>
+                    <li class="nav-item"><a href="{{ route('auth') }}" class="nav-cta" aria-label="Sign in">Sign In</a></li>
+                </ul>
+            @endauth
             <div class="hamburger" aria-label="Toggle navigation" aria-expanded="false" role="button" tabindex="0">
                 <span class="bar"></span>
                 <span class="bar"></span>
