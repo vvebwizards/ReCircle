@@ -174,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const json = await res.json();
       const data = json.data || json; // paginate vs flat
       renderBidList(data);
-    } catch(e){
+    } catch(_e){
       bidExistingList.innerHTML = '<div class="error-text">Failed to load bids.</div>';
     }
   }
@@ -239,7 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
         throw new Error('Forbidden');
       }
       if(!res.ok) throw new Error('Request failed');
-      const created = await res.json();
+      const _created = await res.json();
       // Refresh list
       loadExistingBids(id);
       bidFeedback.hidden = false;

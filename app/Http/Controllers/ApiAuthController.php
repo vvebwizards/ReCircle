@@ -80,6 +80,14 @@ class ApiAuthController extends Controller
 
         $issued = $this->jwt->issue($user);
 
+        // Check if user needs onboarding
+        if (! $user->onboarding_completed) {
+            return $this->tokenResponse($issued['token'], $issued['expires_at'], [
+                'show_onboarding' => true,
+                'user_id' => $user->id,
+            ]);
+        }
+
         return $this->tokenResponse($issued['token'], $issued['expires_at']);
     }
 
@@ -145,16 +153,23 @@ class ApiAuthController extends Controller
         return $this->forgetToken();
     }
 
-    private function tokenResponse(string $jwt, string $expiresAt): JsonResponse
+    private function tokenResponse(string $jwt, string $expiresAt, array $additionalData = []): JsonResponse
     {
         $minutes = (int) config('jwt.ttl');
 
         $secure = app()->environment('production');
 
-        return response()->json([
+        $responseData = [
             'token_type' => 'Bearer',
             'expires_at' => $expiresAt,
-        ])->withCookie(cookie(
+        ];
+
+        // Merge additional data if provided
+        if (! empty($additionalData)) {
+            $responseData = array_merge($responseData, $additionalData);
+        }
+
+        return response()->json($responseData)->withCookie(cookie(
             name: config('jwt.cookie'),
             value: $jwt,
             minutes: $minutes,

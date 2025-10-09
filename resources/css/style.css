@@ -152,6 +152,117 @@ body {
 }
 .nav-cta:focus { outline: 3px solid rgba(236,201,75,.45); outline-offset: 2px; }
 
+/* User Avatar and Dropdown */
+.user-menu {
+  position: relative;
+}
+
+.user-avatar-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 12px;
+  transition: background-color 0.2s ease;
+}
+
+.user-avatar-wrapper:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  object-fit: cover;
+}
+
+.user-avatar-initials {
+  background: var(--color-sunflower);
+  color: var(--color-deep-green);
+  font-weight: 700;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-name {
+  color: var(--color-off-white);
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.dropdown-icon {
+  color: var(--color-off-white);
+  font-size: 0.8rem;
+  transition: transform 0.2s ease;
+}
+
+.user-avatar-wrapper:hover .dropdown-icon {
+  transform: rotate(180deg);
+}
+
+.user-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  padding: 0.5rem;
+  min-width: 200px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.2s ease;
+  z-index: 1001;
+}
+
+.user-menu:hover .user-dropdown {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  color: var(--color-charcoal);
+  text-decoration: none;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.dropdown-item:hover {
+  background-color: var(--color-warm-sand);
+}
+
+.dropdown-item i {
+  width: 16px;
+  color: var(--color-deep-green);
+}
+
+.dropdown-divider {
+  height: 1px;
+  background-color: rgba(0, 0, 0, 0.1);
+  margin: 0.5rem 0;
+}
+
+.logout-item:hover {
+  background-color: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+}
+
+.logout-item:hover i {
+  color: #dc3545;
+}
+
 /* Hero Section */
 .hero {
   min-height: 100vh;
@@ -1553,6 +1664,28 @@ body {
 .contact-item:hover .contact-icon { transform: translateX(-6px); color:#1e3d1a; }
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) { .circle, .circular-graphic, .recycle-icon, .step-item, .role-item, .stat-number, .btn, section { animation:none !important; transition:none !important; transform:none !important; } }
+
+/* Mobile User Avatar Styles */
+@media (max-width: 768px) {
+  .user-name {
+    display: none;
+  }
+  
+  .user-avatar-wrapper {
+    padding: 0.25rem;
+  }
+  
+  .user-dropdown {
+    right: -10px;
+    min-width: 180px;
+  }
+  
+  .dropdown-item {
+    padding: 0.6rem 0.75rem;
+    font-size: 0.85rem;
+  }
+}
+
 /* Responsive */
 @media (max-width: 768px){ .hamburger{display:flex;} .nav-menu{ position:fixed; left:-100%; top:70px; flex-direction:column; background-color: var(--color-deep-green); width:100%; text-align:center; transition:.3s; box-shadow:0 10px 27px rgba(0,0,0,.05); padding:2rem 0; } .nav-menu.active{ left:0; } .hero-container{ grid-template-columns:1fr; text-align:center; gap:2rem; } .hero-title{ font-size:2.5rem; } .circular-graphic{ width:300px; height:300px; } .circle-1{ width:250px; height:250px; top:25px; left:25px; } .circle-2{ width:150px; height:150px; top:75px; left:75px; } .circle-3{ width:80px; height:80px; top:110px; left:110px; } .contact-content{ grid-template-columns:1fr; gap:2rem; } .impact-content{ grid-template-columns:1fr; gap:2rem; } .hero-buttons{ justify-content:center; } .step-item{ flex-direction:column; text-align:center; gap:1rem; } .journey-steps{ gap:1.5rem; } .btn{ padding:.8rem 1.5rem; font-size:.9rem; } }
 @media (max-width: 480px){ .container{ padding:0 15px; } .hero-title{ font-size:2rem; } .hero-subtitle{ font-size:1rem; } .section-header h2{ font-size:2rem; } .contact-form{ padding:1.5rem; } .circular-graphic{ width:250px; height:250px; } .circle-1{ width:200px; height:200px; top:25px; left:25px; } .circle-2{ width:120px; height:120px; top:65px; left:65px; } .circle-3{ width:60px; height:60px; top:95px; left:95px; } .recycle-icon{ font-size:2.5rem; } .step-item{ padding:1.5rem; } .step-number{ width:50px; height:50px; font-size:1.2rem; } }

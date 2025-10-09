@@ -29,6 +29,41 @@
     @unless (app()->environment('testing'))
         @vite(['resources/js/app.js','resources/js/main.js'])
     @endunless
+    
+    @auth
+    <script>
+        function handleLogout() {
+            // Clear JWT token from localStorage
+            localStorage.removeItem('auth_token');
+            
+            // Redirect to home page
+            window.location.href = '{{ route("home") }}';
+        }
+    </script>
+    @endauth
+
+    @auth
+    <script>
+        console.log('TESTING: NEW CODE IS LOADED!!!');
+        // Make current user data available to JavaScript with fresh data from database
+        @php
+            $freshUser = \App\Models\User::find(auth()->id());
+            // Explicitly create the user object with avatar field
+            $userData = [
+                'id' => $freshUser->id,
+                'name' => $freshUser->name,
+                'email' => $freshUser->email,
+                'avatar' => $freshUser->avatar,
+                'role' => $freshUser->role,
+            ];
+        @endphp
+        window.__currentUser = @json($userData);
+        console.log('NEW DEBUG: Fresh user data loaded:', window.__currentUser);
+        console.log('NEW DEBUG: Avatar field specifically:', window.__currentUser.avatar);
+        console.log('NEW DEBUG: User has avatar?', !!(window.__currentUser && window.__currentUser.avatar));
+    </script>
+    @endauth
+    
     @stack('head')
 </head>
 <body class="bg-gray-900 min-h-screen">
