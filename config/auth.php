@@ -112,4 +112,18 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Failed Login Attempts & Facial Recognition Settings
+    |--------------------------------------------------------------------------
+    |
+    | These options control the behavior of failed login tracking and
+    | facial recognition fallback functionality.
+    |
+    */
+
+    'max_failed_attempts' => env('AUTH_MAX_FAILED_ATTEMPTS', 3),
+    'lockout_duration_minutes' => env('AUTH_LOCKOUT_DURATION_MINUTES', 30),
+    'facial_recognition_threshold' => env('AUTH_FACIAL_RECOGNITION_THRESHOLD', 0.6),
+
 ];
