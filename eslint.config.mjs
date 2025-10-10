@@ -31,6 +31,9 @@ export default [
         ...globals.node,
         appRoutes: 'readonly',
         QRCode: 'readonly',
+        faceapi: 'readonly',
+        showPreFacialAlertModal: 'readonly',
+        showAccountLockedMessage: 'readonly',
       },
     },
     rules: {
