@@ -177,6 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify({ email: email.value.trim(), password: password.value })
       });
       const data = await res.json().catch(() => ({}));
+      console.log('Login response:', { status: res.status, ok: res.ok, data });
       if (!res.ok) {
         if (res.status === 403 && data?.requires_twofa) {
           try {
@@ -185,6 +186,25 @@ document.addEventListener('DOMContentLoaded', () => {
           } catch {}
           const to2fa = (window.appRoutes && window.appRoutes.twofa) || '/twofa';
           window.location.replace(to2fa);
+          return;
+        }
+        if (res.status === 423 && data?.requires_facial_fallback) {
+          // Store email for facial verification
+          window.pendingFacialEmail = email.value.trim();
+          // Show pre-facial alert modal first
+          showPreFacialAlertModal(data);
+          // Reset button state since we're handling this case
+          btn.textContent = original;
+          btn.disabled = false;
+          return;
+        }
+        if ((res.status === 429 && data?.account_locked) || (res.status === 423 && data?.locked_until)) {
+          // Account locked due to failed attempts without facial recognition
+          console.log('Account locked detected:', { status: res.status, data });
+          showAccountLockedMessage(data);
+          // Reset button state since we're handling this case
+          btn.textContent = original;
+          btn.disabled = false;
           return;
         }
         if (res.status === 422 && data.errors?.email) {
@@ -227,7 +247,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const to = (window.appRoutes && window.appRoutes.dashboard) || '/dashboard';
       window.location.replace(to);
     } catch (err) {
-      alert(err?.message || 'Login failed.');
+      // Suppress alert for successful handling of special cases
+      console.log('Login flow completed:', err?.message || 'Login process finished');
     } finally {
       btn.textContent = original;
       btn.disabled = false;
@@ -379,7 +400,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Clear form values
       signupForm.reset();
     } catch (err) {
-      alert(err?.message || 'Something went wrong.');
+      console.error(err?.message || 'Something went wrong.');
     } finally {
       btn.textContent = original;
       btn.disabled = false;
@@ -452,7 +473,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       resendForm.reset();
     } catch (err) {
-      alert(err?.message || 'Something went wrong.');
+      console.error(err?.message || 'Something went wrong.');
     } finally {
       btn.textContent = original;
       btn.disabled = false;
@@ -1136,7 +1157,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async loadModels() {
-      /* eslint-disable no-undef */
       if (typeof faceapi === 'undefined') {
         console.log('Face-api.js not loaded');
         return;
@@ -1151,7 +1171,6 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (error) {
         console.error('Failed to load face recognition models:', error);
       }
-      /* eslint-enable no-undef */
     }
 
     async startVideo() {
@@ -1171,12 +1190,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!this.isModelLoaded || !this.video) return false;
 
       try {
-        /* eslint-disable no-undef */
         const detection = await faceapi
           .detectSingleFace(this.video, new faceapi.TinyFaceDetectorOptions())
           .withFaceLandmarks()
           .withFaceDescriptor();
-        /* eslint-enable no-undef */
 
         if (detection) {
           const response = await fetch('/api/face/enroll', {
@@ -1270,7 +1287,7 @@ document.addEventListener('DOMContentLoaded', () => {
           window.location.replace(to);
         }
       } catch (err) {
-        alert(err?.message || 'Login failed.');
+        console.error(err?.message || 'Login failed.');
       } finally {
         btn.textContent = original;
         btn.disabled = false;
@@ -1710,7 +1727,7 @@ class OnboardingFlow {
 
   showError(message) {
     console.error(message);
-    alert(message); // You can replace with a better notification system
+    // Alert removed to prevent browser popup interference
   }
 
   showSuccess(message) {
@@ -1735,12 +1752,10 @@ class FaceRecognition {
     }
 
     try {
-      /* eslint-disable no-undef */
       const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model';
       await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
       await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
       await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
-      /* eslint-enable no-undef */
       this.isModelLoaded = true;
     } catch (_error) {
       console.error('Failed to load face recognition models:', _error);
@@ -1764,12 +1779,10 @@ class FaceRecognition {
     if (!this.isModelLoaded || !this.video) return false;
 
     try {
-      /* eslint-disable no-undef */
       const detection = await faceapi
         .detectSingleFace(this.video, new faceapi.TinyFaceDetectorOptions())
         .withFaceLandmarks()
         .withFaceDescriptor();
-      /* eslint-enable no-undef */
 
       if (detection) {
         const response = await fetch('/api/face/enroll', {
@@ -1801,4 +1814,669 @@ document.addEventListener('DOMContentLoaded', () => {
   } else {
     console.error('OnboardingFlow class not found');
   }
+
+  // ================================
+  // Facial Recognition Fallback
+  // ================================
+  
+  // Global variables for facial fallback
+  window.facialFallbackActive = false;
+  window.facialFallbackVideo = null;
+  window.facialFallbackStream = null;
+
+  function showPreFacialAlertModal(data) {
+    const modal = document.getElementById('pre-facial-alert-modal');
+    if (!modal) return;
+    
+    // Show modal with animation
+    modal.classList.remove('hidden');
+    modal.removeAttribute('aria-hidden');
+    
+    // Add entrance animation
+    setTimeout(() => {
+      const modalContent = modal.querySelector('.modal');
+      if (modalContent) {
+        modalContent.style.transform = 'scale(0.9) translateY(20px)';
+        modalContent.style.opacity = '0';
+        modalContent.style.transition = 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+        
+        requestAnimationFrame(() => {
+          modalContent.style.transform = 'scale(1) translateY(0)';
+          modalContent.style.opacity = '1';
+        });
+      }
+    }, 10);
+    
+    // Set up event listeners
+    setupPreFacialListeners(data);
+  }
+
+  function setupPreFacialListeners(data) {
+    const proceedBtn = document.getElementById('proceed-to-facial-verification');
+    const cancelBtn = document.getElementById('cancel-pre-facial');
+    
+    // Remove existing listeners
+    proceedBtn?.removeEventListener('click', handleProceedToFacial);
+    cancelBtn?.removeEventListener('click', closePreFacialModal);
+    
+    // Add event listeners
+    proceedBtn?.addEventListener('click', () => handleProceedToFacial(data));
+    cancelBtn?.addEventListener('click', closePreFacialModal);
+  }
+
+  function handleProceedToFacial(data) {
+    // Close pre-modal with animation
+    const preModal = document.getElementById('pre-facial-alert-modal');
+    if (preModal) {
+      const modalContent = preModal.querySelector('.modal');
+      if (modalContent) {
+        modalContent.style.transition = 'all 0.3s ease-out';
+        modalContent.style.transform = 'scale(0.95) translateY(-20px)';
+        modalContent.style.opacity = '0';
+        
+        setTimeout(() => {
+          preModal.classList.add('hidden');
+          preModal.setAttribute('aria-hidden', 'true');
+          
+          // Show facial verification modal after a brief delay
+          setTimeout(() => {
+            showFacialFallbackModal(data);
+          }, 200);
+        }, 300);
+      }
+    }
+  }
+
+  function closePreFacialModal() {
+    const modal = document.getElementById('pre-facial-alert-modal');
+    if (modal) {
+      const modalContent = modal.querySelector('.modal');
+      if (modalContent) {
+        modalContent.style.transition = 'all 0.3s ease-out';
+        modalContent.style.transform = 'scale(0.95)';
+        modalContent.style.opacity = '0';
+        
+        setTimeout(() => {
+          modal.classList.add('hidden');
+          modal.setAttribute('aria-hidden', 'true');
+        }, 300);
+      }
+    }
+    
+    // Clean up
+    window.pendingFacialEmail = null;
+  }
+  
+  function showFacialFallbackModal(data) {
+    const modal = document.getElementById('facial-fallback-modal');
+    if (!modal) return;
+    
+    // Update attempt count
+    const attemptCountEl = document.getElementById('attempt-count');
+    if (attemptCountEl && data.failed_attempts && data.max_attempts) {
+      attemptCountEl.textContent = `${data.failed_attempts}/${data.max_attempts}`;
+    }
+    
+    // Show modal with animation
+    modal.classList.remove('hidden');
+    modal.removeAttribute('aria-hidden');
+    
+    // Add entrance animation
+    setTimeout(() => {
+      const modalContent = modal.querySelector('.modal');
+      if (modalContent) {
+        modalContent.style.transform = 'scale(0.95)';
+        modalContent.style.opacity = '0';
+        modalContent.style.transition = 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
+        
+        requestAnimationFrame(() => {
+          modalContent.style.transform = 'scale(1)';
+          modalContent.style.opacity = '1';
+        });
+      }
+    }, 10);
+    
+    // Set up event listeners
+    setupFacialFallbackListeners();
+  }
+  
+  function setupFacialFallbackListeners() {
+    const startBtn = document.getElementById('start-fallback-camera');
+    const verifyBtn = document.getElementById('verify-fallback-face');
+    const cancelBtn = document.getElementById('cancel-facial-fallback');
+    const retryBtn = document.getElementById('retry-password-login');
+    
+    // Remove existing listeners to prevent duplicates
+    startBtn?.removeEventListener('click', startFallbackCamera);
+    verifyBtn?.removeEventListener('click', verifyFallbackIdentity);
+    cancelBtn?.removeEventListener('click', closeFacialFallbackModal);
+    retryBtn?.removeEventListener('click', retryPasswordLogin);
+    
+    // Add event listeners
+    startBtn?.addEventListener('click', startFallbackCamera);
+    verifyBtn?.addEventListener('click', verifyFallbackIdentity);
+    cancelBtn?.addEventListener('click', closeFacialFallbackModal);
+    retryBtn?.addEventListener('click', retryPasswordLogin);
+  }
+  
+  async function startFallbackCamera() {
+    try {
+      const videoContainer = document.getElementById('fallback-video-container');
+      const video = document.getElementById('fallback-video');
+      const statusEl = document.getElementById('fallback-status');
+      const startBtn = document.getElementById('start-fallback-camera');
+      const verifyBtn = document.getElementById('verify-fallback-face');
+      
+      if (!video || !videoContainer) return;
+      
+      // Request camera access
+      window.facialFallbackStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { width: 320, height: 240 } 
+      });
+      
+      video.srcObject = window.facialFallbackStream;
+      window.facialFallbackVideo = video;
+      
+      // Switch from initial centered view to camera active view
+      const initialContent = document.getElementById('initial-content');
+      const cameraActiveContent = document.getElementById('camera-active-content');
+      
+      if (initialContent) initialContent.classList.add('hidden');
+      if (cameraActiveContent) cameraActiveContent.classList.remove('hidden');
+      
+      // Show video container
+      videoContainer.style.display = 'block';
+      
+      // Show verify button in camera active state
+      const verifyActiveBtn = document.getElementById('verify-fallback-face-active');
+      if (verifyActiveBtn) {
+        verifyActiveBtn.classList.remove('hidden');
+        // Add event listener if not already added
+        verifyActiveBtn.removeEventListener('click', verifyFallbackIdentity);
+        verifyActiveBtn.addEventListener('click', verifyFallbackIdentity);
+      }
+      
+      // Update original status for backward compatibility
+      if (statusEl) {
+        statusEl.innerHTML = `
+          <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div class="flex items-center justify-center mb-3">
+              <div class="bg-green-100 rounded-full p-2 mr-3">
+                <i class="fa-solid fa-video text-green-600"></i>
+              </div>
+              <h4 class="text-green-800 font-medium">Camera Active</h4>
+            </div>
+            <div class="text-center">
+              <div class="inline-flex items-center bg-white bg-opacity-60 rounded-md px-3 py-2 mb-3">
+                <div class="flex items-center">
+                  <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2"></div>
+                  <span class="text-green-700 text-sm font-medium">Live Camera Feed</span>
+                </div>
+              </div>
+              <p class="text-green-700 text-sm mb-2">
+                Great! Your camera is working properly.
+              </p>
+              <p class="text-gray-600 text-xs">
+                Position your face clearly in the center and click "Verify My Identity" when ready
+              </p>
+            </div>
+          </div>
+        `;
+      }
+      
+      startBtn?.classList.add('hidden');
+      verifyBtn?.classList.remove('hidden');
+      
+      // Load face-api.js models if needed
+      await loadFaceApiModels();
+      
+    } catch (error) {
+      console.error('Error starting camera:', error);
+      const statusEl = document.getElementById('fallback-status');
+      if (statusEl) {
+        statusEl.innerHTML = `
+          <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div class="flex items-center justify-center mb-3">
+              <div class="bg-red-100 rounded-full p-2 mr-3">
+                <i class="fa-solid fa-video-slash text-red-600"></i>
+              </div>
+              <h4 class="text-red-800 font-medium">Camera Access Failed</h4>
+            </div>
+            <div class="text-center">
+              <p class="text-red-700 text-sm mb-3">
+                Unable to access your camera for verification.
+              </p>
+              <div class="bg-white bg-opacity-60 rounded-md p-3 mb-3">
+                <p class="text-xs text-red-600 font-mono">${error.message}</p>
+              </div>
+              <div class="text-left bg-red-25 rounded-md p-3">
+                <p class="text-xs text-red-600 mb-1"><strong>Troubleshooting:</strong></p>
+                <ul class="text-xs text-red-600 space-y-1">
+                  <li>• Check camera permissions in your browser</li>
+                  <li>• Ensure no other app is using the camera</li>
+                  <li>• Try refreshing the page and try again</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+    }
+  }
+  
+  async function verifyFallbackIdentity() {
+    try {
+      const video = window.facialFallbackVideo;
+      const statusEl = document.getElementById('fallback-status');
+      const verifyBtn = document.getElementById('verify-fallback-face');
+      
+      if (!video || !window.pendingFacialEmail) return;
+      
+      // Update button state
+      const _originalText = verifyBtn.textContent;
+      verifyBtn.textContent = 'Verifying...';
+      verifyBtn.disabled = true;
+      
+      // Update status with processing animation
+      if (statusEl) {
+        statusEl.innerHTML = `
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div class="flex items-center justify-center mb-3">
+              <div class="bg-blue-100 rounded-full p-2 mr-3">
+                <i class="fa-solid fa-brain text-blue-600 animate-pulse"></i>
+              </div>
+              <h4 class="text-blue-800 font-medium">Analyzing Facial Features</h4>
+            </div>
+            <div class="text-center">
+              <div class="flex items-center justify-center mb-3">
+                <div class="relative">
+                  <div class="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                </div>
+              </div>
+              <p class="text-blue-700 text-sm mb-2">
+                Processing your facial biometrics securely...
+              </p>
+              <div class="bg-white bg-opacity-60 rounded-md p-2">
+                <span class="text-xs text-blue-600">This may take a few seconds</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      
+      // Get face descriptor from video
+      const descriptor = await getFaceDescriptor(video);
+      
+      if (!descriptor) {
+        throw new Error('No face detected. Please ensure your face is visible and try again.');
+      }
+      
+      // Send verification request
+      const res = await fetch('/api/auth/facial-fallback', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          email: window.pendingFacialEmail,
+          descriptor: Array.from(descriptor)
+        })
+      });
+      
+      const data = await res.json().catch(() => ({}));
+      
+      if (res.ok) {
+        // Success - handle like regular login
+        handleFacialFallbackSuccess(data);
+      } else {
+        // Failed verification
+        handleFacialFallbackFailure(data);
+      }
+      
+    } catch (error) {
+      console.error('Facial verification error:', error);
+      const statusEl = document.getElementById('fallback-status');
+      if (statusEl) {
+        statusEl.innerHTML = `
+          <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div class="flex items-center justify-center mb-3">
+              <div class="bg-red-100 rounded-full p-2 mr-3">
+                <i class="fa-solid fa-exclamation-triangle text-red-600"></i>
+              </div>
+              <h4 class="text-red-800 font-medium">Verification Error</h4>
+            </div>
+            <div class="text-center">
+              <p class="text-red-700 text-sm mb-3">
+                We encountered an issue during verification.
+              </p>
+              <div class="bg-white bg-opacity-60 rounded-md p-3 mb-3">
+                <p class="text-xs text-red-600">${error.message}</p>
+              </div>
+              <p class="text-gray-600 text-xs">
+                Please ensure your face is clearly visible and try again, or use the "Try Password Again" option.
+              </p>
+            </div>
+          </div>
+        `;
+      }
+    } finally {
+      const verifyBtn = document.getElementById('verify-fallback-face');
+      if (verifyBtn) {
+        verifyBtn.textContent = verifyBtn.textContent.replace('Verifying...', 'Verify Identity');
+        verifyBtn.disabled = false;
+      }
+    }
+  }
+  
+  async function getFaceDescriptor(video) {
+    if (typeof faceapi === 'undefined') {
+      throw new Error('Face API not loaded');
+    }
+    
+    const detection = await faceapi
+      .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+      .withFaceLandmarks()
+      .withFaceDescriptor();
+    
+    return detection?.descriptor || null;
+  }
+  
+  async function loadFaceApiModels() {
+    if (typeof faceapi === 'undefined') {
+      throw new Error('Face API not loaded');
+    }
+    
+    // Check if models are already loaded
+    if (faceapi.nets.tinyFaceDetector.isLoaded) {
+      return;
+    }
+    
+    const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model';
+    await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+  }
+  
+  function handleFacialFallbackSuccess(data) {
+    const resultDiv = document.getElementById('facial-fallback-result');
+    const contentDiv = document.getElementById('facial-fallback-content');
+    
+    if (resultDiv && contentDiv) {
+      contentDiv.classList.add('hidden');
+      resultDiv.classList.remove('hidden');
+      resultDiv.innerHTML = `
+        <div class="text-center py-8">
+          <div class="relative inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
+            <div class="absolute inset-0 bg-green-500 rounded-full animate-ping opacity-20"></div>
+            <i class="fa-solid fa-check text-green-600 text-3xl relative z-10"></i>
+          </div>
+          
+          <h3 class="text-xl font-semibold text-green-800 mb-2">
+            Identity Verified Successfully!
+          </h3>
+          
+          <p class="text-green-600 mb-4">
+            Your facial biometrics have been matched. Welcome back!
+          </p>
+          
+          <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+            <div class="flex items-center justify-center text-sm text-green-700">
+              <i class="fa-solid fa-shield-check mr-2"></i>
+              Account security verified • Login attempts reset
+            </div>
+          </div>
+          
+          <div class="flex items-center justify-center">
+            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600 mr-2"></div>
+            <span class="text-sm text-gray-600">Signing you in securely...</span>
+          </div>
+        </div>
+      `;
+    }
+    
+    // Clean up
+    stopFacialFallbackCamera();
+    
+    // Redirect after short delay
+    setTimeout(() => {
+      if (data.show_onboarding) {
+        window.currentUserId = data.user_id;
+        closeFacialFallbackModal();
+        setTimeout(() => {
+          const onboarding = new OnboardingFlow();
+          onboarding.showModal();
+        }, 500);
+      } else {
+        const to = (window.appRoutes && window.appRoutes.dashboard) || '/dashboard';
+        window.location.replace(to);
+      }
+    }, 1500);
+  }
+  
+  function handleFacialFallbackFailure(data) {
+    const resultDiv = document.getElementById('facial-fallback-result');
+    const contentDiv = document.getElementById('facial-fallback-content');
+    const retryBtn = document.getElementById('retry-password-login');
+    
+    if (resultDiv && contentDiv) {
+      contentDiv.classList.add('hidden');
+      resultDiv.classList.remove('hidden');
+      
+      const isLocked = data.account_locked;
+      const lockTime = data.locked_until ? new Date(data.locked_until).toLocaleString() : null;
+      
+      resultDiv.innerHTML = `
+        <div class="text-center py-8">
+          <div class="relative inline-flex items-center justify-center w-20 h-20 bg-red-100 rounded-full mb-4">
+            <i class="fa-solid fa-${isLocked ? 'lock' : 'times'} text-red-600 text-3xl"></i>
+          </div>
+          
+          <h3 class="text-xl font-semibold text-red-800 mb-2">
+            ${isLocked ? 'Account Temporarily Locked' : 'Verification Failed'}
+          </h3>
+          
+          <p class="text-red-600 mb-4">
+            ${isLocked 
+              ? 'Your account has been locked for security purposes due to multiple failed verification attempts.' 
+              : 'The facial recognition system could not verify your identity.'}
+          </p>
+          
+          ${isLocked ? `
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+              <div class="text-sm text-red-700">
+                <div class="flex items-center justify-center mb-2">
+                  <i class="fa-solid fa-clock mr-2"></i>
+                  <strong>Lockout Details</strong>
+                </div>
+                ${lockTime ? `<p class="mb-1">Locked until: <span class="font-mono">${lockTime}</span></p>` : ''}
+                <p class="text-xs mt-2 text-red-600">
+                  This is a temporary security measure to protect your account from unauthorized access.
+                </p>
+              </div>
+            </div>
+          ` : `
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+              <div class="text-sm text-amber-700">
+                <p class="mb-2"><strong>Possible reasons:</strong></p>
+                <ul class="text-left text-xs space-y-1">
+                  <li>• Poor lighting conditions</li>
+                  <li>• Face partially obscured</li>
+                  <li>• Camera angle or distance issues</li>
+                  <li>• Significant changes in appearance</li>
+                </ul>
+              </div>
+            </div>
+          `}
+          
+          ${data.message ? `
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
+              <p class="text-xs text-gray-600">${data.message}</p>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+    
+    // Show retry button if not locked
+    if (!data.account_locked && retryBtn) {
+      retryBtn.classList.remove('hidden');
+    }
+    
+    // Clean up camera
+    stopFacialFallbackCamera();
+  }
+  
+  function closeFacialFallbackModal() {
+    const modal = document.getElementById('facial-fallback-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+    
+    // Clean up
+    stopFacialFallbackCamera();
+    window.pendingFacialEmail = null;
+    
+    // Reset modal state
+    resetFacialFallbackModal();
+  }
+  
+  function stopFacialFallbackCamera() {
+    if (window.facialFallbackStream) {
+      window.facialFallbackStream.getTracks().forEach(track => track.stop());
+      window.facialFallbackStream = null;
+    }
+    
+    if (window.facialFallbackVideo) {
+      window.facialFallbackVideo.srcObject = null;
+      window.facialFallbackVideo = null;
+    }
+  }
+  
+  function resetFacialFallbackModal() {
+    const videoContainer = document.getElementById('fallback-video-container');
+    const resultDiv = document.getElementById('facial-fallback-result');
+    const contentDiv = document.getElementById('facial-fallback-content');
+    const initialContent = document.getElementById('initial-content');
+    const cameraActiveContent = document.getElementById('camera-active-content');
+    const startBtn = document.getElementById('start-fallback-camera');
+    const verifyBtn = document.getElementById('verify-fallback-face');
+    const retryBtn = document.getElementById('retry-password-login');
+    const statusEl = document.getElementById('fallback-status');
+    
+    // Reset to initial centered view
+    if (initialContent) initialContent.classList.remove('hidden');
+    if (cameraActiveContent) cameraActiveContent.classList.add('hidden');
+    
+    if (videoContainer) videoContainer.style.display = 'none';
+    if (resultDiv) resultDiv.classList.add('hidden');
+    if (contentDiv) contentDiv.classList.remove('hidden');
+    if (startBtn) startBtn.classList.remove('hidden');
+    if (verifyBtn) verifyBtn.classList.add('hidden');
+    if (retryBtn) retryBtn.classList.add('hidden');
+    
+    if (statusEl) {
+      statusEl.innerHTML = '<p class="text-gray-600">Click "Start Camera" to begin verification</p>';
+    }
+  }
+  
+  function retryPasswordLogin() {
+    closeFacialFallbackModal();
+    // Focus on password field for retry
+    const passwordField = document.getElementById('signin-password');
+    if (passwordField) {
+      passwordField.focus();
+      passwordField.select();
+    }
+  }
+  
+  function showAccountLockedMessage(data) {
+    console.log('showAccountLockedMessage called with:', data);
+    const lockedUntil = data.locked_until ? new Date(data.locked_until).toLocaleString() : 'Unknown';
+    const lockDuration = Math.round((new Date(data.locked_until) - new Date()) / (1000 * 60)); // minutes
+    
+    // Create a custom modal for account locked message
+    const existingModal = document.getElementById('account-locked-modal');
+    if (existingModal) {
+      existingModal.remove();
+    }
+    
+    const modalHTML = `
+      <div id="account-locked-modal" class="modal-overlay" style="z-index: 9999;">
+        <div class="modal" style="max-width: 480px; border-radius: 16px;">
+          <div class="modal-header" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: white; border-radius: 16px 16px 0 0; padding: 1.5rem;">
+            <div class="flex items-center justify-center">
+              <div class="inline-flex items-center justify-center w-12 h-12 bg-white bg-opacity-20 rounded-full mr-3 border-2 border-white border-opacity-30">
+                <i class="fa-solid fa-lock text-white" style="font-size: 1.25rem;"></i>
+              </div>
+              <h3 class="text-white text-xl font-semibold mb-0" style="color: white !important;">
+                Account Temporarily Locked
+              </h3>
+            </div>
+          </div>
+          
+          <div class="modal-body" style="padding: 2rem;">
+            <div class="text-center mb-6">
+              <p class="text-gray-700 mb-4">
+                Your account has been temporarily locked due to multiple failed login attempts for security purposes.
+              </p>
+              
+              <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                <div class="text-sm">
+                  <div class="flex items-center justify-center mb-2">
+                    <i class="fa-solid fa-clock text-red-600 mr-2"></i>
+                    <strong class="text-red-800">Lockout Information</strong>
+                  </div>
+                  <p class="text-red-700 mb-1">Locked until: <span class="font-mono">${lockedUntil}</span></p>
+                  <p class="text-red-600 text-xs">
+                    Approximately ${lockDuration > 0 ? lockDuration : 0} minutes remaining
+                  </p>
+                </div>
+              </div>
+              
+              ${data.suggestion ? `
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <div class="flex items-start">
+                    <i class="fa-solid fa-lightbulb text-blue-600 mr-2 mt-0.5"></i>
+                    <div class="text-left">
+                      <p class="text-sm text-blue-800 font-medium mb-1">Suggestion</p>
+                      <p class="text-xs text-blue-700">${data.suggestion}</p>
+                    </div>
+                  </div>
+                </div>
+              ` : ''}
+              
+              <div class="text-xs text-gray-500 space-y-1">
+                <p><strong>What you can do:</strong></p>
+                <p>• Wait for the lockout period to expire</p>
+                <p>• Contact support if you need immediate assistance</p>
+                <p>• Set up facial recognition for future security recovery</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="modal-footer" style="background-color: #f8fafc; border-radius: 0 0 16px 16px; padding: 1.5rem; text-align: center;">
+            <button type="button" class="px-6 py-2 text-sm font-medium text-white rounded-lg transition-all duration-200" 
+                    onclick="document.getElementById('account-locked-modal').remove()"
+                    style="background: linear-gradient(135deg, #059669 0%, #047857 100%); border: none;">
+              <i class="fa-solid fa-check mr-2"></i>
+              I Understand
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+  }
+
+  // Make functions globally available
+  window.showPreFacialAlertModal = showPreFacialAlertModal;
+  window.showFacialFallbackModal = showFacialFallbackModal;
+  window.closeFacialFallbackModal = closeFacialFallbackModal;
+  window.showAccountLockedMessage = showAccountLockedMessage;
 });

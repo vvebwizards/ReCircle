@@ -24,8 +24,11 @@ class FaceAuthController extends Controller
 
         UserFaceDescriptor::updateOrCreate(
             ['user_id' => $request->userId],
-            ['descriptor' => $request->descriptor]
+            ['descriptor' => $request->descriptor, 'is_active' => true]
         );
+
+        // Mark user as having facial recognition registered
+        User::where('id', $request->userId)->update(['is_facial_registered' => true]);
 
         return response()->json(['success' => true]);
     }

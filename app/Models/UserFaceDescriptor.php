@@ -13,6 +13,34 @@ class UserFaceDescriptor extends Model
         'last_used' => 'datetime',
     ];
 
+    protected static function booted()
+    {
+        // Automatically set is_facial_registered when face descriptor is created/updated
+        static::created(function ($faceDescriptor) {
+            if ($faceDescriptor->is_active) {
+                $faceDescriptor->user()->update(['is_facial_registered' => true]);
+            }
+        });
+
+        static::updated(function ($faceDescriptor) {
+            // Update the flag based on whether user has any active descriptors
+            $hasActiveFace = static::where('user_id', $faceDescriptor->user_id)
+                ->where('is_active', true)
+                ->exists();
+
+            $faceDescriptor->user()->update(['is_facial_registered' => $hasActiveFace]);
+        });
+
+        static::deleted(function ($faceDescriptor) {
+            // Check if user still has other active descriptors
+            $hasActiveFace = static::where('user_id', $faceDescriptor->user_id)
+                ->where('is_active', true)
+                ->exists();
+
+            $faceDescriptor->user()->update(['is_facial_registered' => $hasActiveFace]);
+        });
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

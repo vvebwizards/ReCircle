@@ -73,6 +73,9 @@ Route::prefix('api/auth')->group(function () {
 
     // Email code send (does not require JWT yet; validates credentials)
     Route::post('2fa/email/send', [ApiAuthController::class, 'sendEmailCode']);
+
+    // Facial recognition fallback after failed login attempts
+    Route::post('facial-fallback', [ApiAuthController::class, 'facialFallback']);
 });
 
 // Facial Recognition Authentication Routes

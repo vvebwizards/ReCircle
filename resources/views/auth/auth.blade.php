@@ -229,14 +229,27 @@
         }
         
         .face-status {
-            padding: 1rem;
-            background: #f8f9fa;
-            border-radius: 8px;
-            margin: 1rem 0;
-            color: #666;
+            margin-top: 1rem;
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
         }
-        
-        .completion-summary {
+
+        /* Cancel button hover effect */
+        .cancel-facial-btn:hover {
+            background: #3b82f6 !important;
+            color: white !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4) !important;
+        }
+
+        /* Pre-facial cancel button hover effect */
+        .cancel-pre-facial-btn:hover {
+            background: #3b82f6 !important;
+            color: white !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4) !important;
+        }        .completion-summary {
             text-align: left;
             margin: 2rem 0;
             padding: 1.5rem;
@@ -811,6 +824,234 @@
                             <i class="fa-solid fa-rocket"></i> Start Using ReCircle
                         </button>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pre-Facial Verification Alert Modal -->
+    <div id="pre-facial-alert-modal" class="modal-overlay hidden" aria-hidden="true" style="z-index: 9998;">
+        <div class="modal" role="dialog" aria-labelledby="pre-facial-title" style="max-width: 450px; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden;">
+            <!-- Header with gradient -->
+            <div style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); padding: 1.5rem; text-align: center;">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-white bg-opacity-20 rounded-full mb-3 border-2 border-white border-opacity-30">
+                    <i class="fa-solid fa-triangle-exclamation text-white" style="font-size: 2.5rem; line-height: 1; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));"></i>
+                </div>
+                <h3 id="pre-facial-title" class="text-white text-xl font-semibold mb-2">
+                    Security Alert
+                </h3>
+                <p class="text-red-100 text-sm">
+                    Multiple failed login attempts detected
+                </p>
+            </div>
+
+            <!-- Body -->
+            <div class="modal-body" style="padding: 2rem; background: white;">
+                <div class="text-center">
+                    <div class="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+                        <div class="flex items-center justify-center mb-3">
+                            <div class="bg-red-100 rounded-full p-2 mr-3">
+                                <i class="fa-solid fa-exclamation-triangle text-red-600"></i>
+                            </div>
+                            <h4 class="text-red-800 font-semibold">Account Protection Activated</h4>
+                        </div>
+                        <p class="text-red-700 text-sm leading-relaxed">
+                            Too many failed attempts. Please verify your identity using facial recognition to protect your account from unauthorized access.
+                        </p>
+                    </div>
+
+                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+                        <div class="flex items-start">
+                            <i class="fa-solid fa-info-circle text-blue-600 mr-3 mt-1"></i>
+                            <div class="text-left">
+                                <h5 class="text-blue-800 font-medium text-sm mb-1">What happens next?</h5>
+                                <ul class="text-blue-700 text-xs space-y-1">
+                                    <li>• We'll open your camera for identity verification</li>
+                                    <li>• Your face will be compared with your stored profile</li>
+                                    <li>• Upon success, you'll be logged in securely</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-center text-xs text-gray-500 mb-4">
+                        <i class="fa-solid fa-lock mr-1"></i>
+                        Your biometric data is encrypted and never stored
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div style="background: linear-gradient(to right, #f8fafc, #f1f5f9); padding: 1.5rem; border-top: 1px solid #e2e8f0;">
+                <div class="flex space-x-3">
+                    <button type="button" class="flex-1 px-4 py-3 text-white font-medium rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5" 
+                            style="background: linear-gradient(135deg, #047857 0%, #065f46 100%); border: none;"
+                            id="proceed-to-facial-verification">
+                        <i class="fa-solid fa-shield-check mr-2"></i>
+                        Verify Identity
+                    </button>
+                    <button type="button" class="px-6 py-3 border-2 text-sm font-medium rounded-xl transition-all duration-200 cancel-pre-facial-btn" 
+                            style="border: 2px solid #3b82f6; color: #3b82f6; background: transparent; border-radius: 50px;"
+                            id="cancel-pre-facial">
+                        <i class="fa-solid fa-times mr-2"></i>
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Facial Verification Fallback Modal -->
+    <div id="facial-fallback-modal" class="modal-overlay hidden" aria-hidden="true">
+        <div class="modal" role="dialog" aria-labelledby="facial-fallback-title" style="max-width: 700px; width: 95vw; max-height: 90vh; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden; display: flex; flex-direction: column;">
+            <!-- Header with gradient -->
+            <div style="background: linear-gradient(135deg, #059669 0%, #047857 100%); padding: 1.25rem; text-align: center; flex-shrink: 0;">
+                <div class="inline-flex items-center justify-center w-14 h-14 bg-white bg-opacity-20 rounded-full mb-2 border-2 border-white border-opacity-30">
+                    <i class="fa-solid fa-video text-white" style="font-size: 1.75rem; line-height: 1; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));"></i>
+                </div>
+                <h3 id="facial-fallback-title" class="text-white text-lg font-semibold mb-1">
+                    Security Verification Required
+                </h3>
+                <p class="text-green-100 text-xs">
+                    Multiple failed attempts detected. Please verify your identity for account security.
+                </p>
+            </div>
+            
+            <!-- Body -->
+            <div class="modal-body" style="padding: 1.5rem; background: white; flex: 1;">
+                <div id="facial-fallback-content" class="w-full h-full">
+                    <!-- Initial centered content container -->
+                    <div id="initial-content" class="h-full flex items-center justify-center">
+                        <div class="text-center max-w-sm mx-auto">
+                            <div id="fallback-status" class="mb-6">
+                                <p class="text-gray-600 mb-4">Click "Start Camera" to begin verification</p>
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <div class="space-y-4">
+                                <button type="button" class="w-full px-6 py-3 text-white font-medium rounded-lg transition-all duration-200" 
+                                        id="start-fallback-camera" 
+                                        style="background: linear-gradient(135deg, #059669 0%, #047857 100%); border: none;">
+                                    <i class="fa-solid fa-video mr-2"></i>
+                                    Start Camera
+                                </button>
+                                
+                                <button type="button" class="w-full px-6 py-3 text-white font-medium rounded-lg transition-all duration-200 hidden" 
+                                        id="verify-fallback-face"
+                                        style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none;">
+                                    <i class="fa-solid fa-shield-check mr-2"></i>
+                                    Verify My Identity
+                                </button>
+                                
+                                <div class="flex items-center justify-center text-xs text-gray-500 mt-4">
+                                    <i class="fa-solid fa-lock mr-1"></i>
+                                    Data encrypted & secure
+                                </div>
+                                
+                                <div class="mt-4">
+                                    <button type="button" class="px-4 py-2 border-2 text-sm font-medium rounded-lg transition-all duration-200 cancel-facial-btn" 
+                                            id="cancel-facial-fallback"
+                                            style="border: 2px solid #3b82f6; color: #3b82f6; background: transparent;">
+                                        <i class="fa-solid fa-times mr-1"></i>
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- Camera active content - Side by side layout -->
+                    <div id="camera-active-content" class="hidden h-full">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full items-center">
+                            <!-- Camera Container -->
+                            <div class="text-center">
+                                <div class="video-container-wrapper" id="fallback-video-container" style="display: none;">
+                                    <div class="relative bg-green-50 border border-green-200 rounded-xl p-3 inline-block">
+                                        <div class="relative" style="width: 280px; height: 200px;">
+                                            <video id="fallback-video" width="280" height="200" autoplay muted 
+                                                   class="rounded-lg border-2 border-green-300 shadow-md" 
+                                                   style="object-fit: cover; background: #1f2937;"></video>
+                                            <canvas id="fallback-overlay" width="280" height="200" 
+                                                    class="absolute top-0 left-0 rounded-lg pointer-events-none"></canvas>
+                                            
+                                            <!-- Face detection overlay -->
+                                            <div class="absolute inset-0 border-2 border-green-400 rounded-lg opacity-60 animate-pulse hidden" id="face-detection-frame"></div>
+                                        </div>
+                                        
+                                        <div class="text-center mt-3">
+                                            <div class="inline-flex items-center bg-blue-50 text-blue-700 px-3 py-1 rounded text-sm">
+                                                <i class="fa-solid fa-camera text-blue-500 mr-2"></i>
+                                                Position your face clearly
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Status Messages & Controls -->
+                            <div class="space-y-4">
+                                <div id="camera-status">
+                                    <div class="bg-green-50 border border-green-200 rounded-xl p-4">
+                                        <div class="flex items-center mb-3">
+                                            <div class="bg-green-100 rounded-full p-2 mr-3">
+                                                <i class="fa-solid fa-video text-green-600"></i>
+                                            </div>
+                                            <h4 class="text-green-800 font-medium">Camera Active</h4>
+                                        </div>
+                                        <div class="text-xs text-green-600 mb-2">● Live Camera Feed</div>
+                                        <p class="text-green-700 text-sm mb-2">
+                                            Great! Your camera is working properly.
+                                        </p>
+                                        <p class="text-green-600 text-xs">
+                                            Position your face clearly in the center and click "Verify My Identity" when ready
+                                        </p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Action Buttons for camera active state -->
+                                <div class="space-y-3">
+                                    <button type="button" class="w-full px-6 py-3 text-white font-medium rounded-lg transition-all duration-200" 
+                                            id="verify-fallback-face-active"
+                                            style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none;">
+                                        <i class="fa-solid fa-shield-check mr-2"></i>
+                                        Verify My Identity
+                                    </button>
+                                    
+                                    <div class="flex items-center justify-center text-xs text-gray-500">
+                                        <i class="fa-solid fa-lock mr-1"></i>
+                                        Your biometric data is encrypted and secure
+                                    </div>
+                                    
+                                    <div class="text-center">
+                                        <button type="button" class="px-4 py-2 border-2 text-sm font-medium rounded-lg transition-all duration-200 cancel-facial-btn" 
+                                                style="border: 2px solid #3b82f6; color: #3b82f6; background: transparent;">
+                                            <i class="fa-solid fa-times mr-1"></i>
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+                
+                <div id="facial-fallback-result" class="hidden">
+                    <!-- Success or failure result will be inserted here -->
+                </div>
+            </div>
+            
+            
+            <!-- Footer -->
+            <div style="background: linear-gradient(to right, #f8fafc, #f1f5f9); padding: 0.75rem; border-top: 1px solid #e2e8f0; flex-shrink: 0;">
+                <div class="flex justify-center">
+                    <button type="button" class="px-4 py-1.5 border-2 text-xs font-medium rounded-lg transition-all duration-200 hidden" 
+                            id="retry-password-login"
+                            style="border: 2px solid #059669; color: #059669; background: transparent;">
+                        <i class="fa-solid fa-key mr-1"></i>
+                        Try Password Again
+                    </button>
                 </div>
             </div>
         </div>

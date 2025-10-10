@@ -30,6 +30,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'blocked_at',
         'block_reason',
         'blocked_by',
+        'failed_login_attempts',
+        'locked_until',
+        'is_facial_registered',
     ];
 
     /**
@@ -58,6 +61,8 @@ class User extends Authenticatable implements MustVerifyEmail
             'two_factor_confirmed_at' => 'datetime',
             'role' => UserRole::class,
             'blocked_at' => 'datetime',
+            'locked_until' => 'datetime',
+            'is_facial_registered' => 'bool',
         ];
     }
 
@@ -65,6 +70,44 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isBlocked(): bool
     {
         return ! is_null($this->blocked_at);
+    }
+
+    // Check if user is temporarily locked due to failed login attempts
+    public function isLockedOut(): bool
+    {
+        return $this->locked_until && $this->locked_until->isFuture();
+    }
+
+    // Increment failed login attempts
+    public function incrementFailedLoginAttempts(): void
+    {
+        $this->increment('failed_login_attempts');
+        $this->save();
+    }
+
+    // Reset failed login attempts
+    public function resetFailedLoginAttempts(): void
+    {
+        $this->update([
+            'failed_login_attempts' => 0,
+            'locked_until' => null,
+        ]);
+    }
+
+    // Lock user for specified duration (in minutes)
+    public function lockForDuration(int $minutes): void
+    {
+        $this->update([
+            'locked_until' => now()->addMinutes($minutes),
+        ]);
+    }
+
+    // Check if facial recognition fallback should be triggered
+    public function shouldTriggerFacialFallback(): bool
+    {
+        $maxAttempts = config('auth.max_failed_attempts', 3);
+
+        return $this->failed_login_attempts >= $maxAttempts && $this->is_facial_registered;
     }
 
     // Scope for blocked users
