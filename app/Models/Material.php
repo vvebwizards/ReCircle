@@ -2,18 +2,19 @@
 
 namespace App\Models;
 
+use App\Services\MLImpactService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Services\MLImpactService;
 
 class Material extends Model
 {
     use SoftDeletes;
 
     public const CATEGORIES = ['wood', 'metal', 'plastic', 'textile', 'electronic', 'glass', 'paper'];
+
     public const UNITS = ['kg', 'pcs', 'm2', 'l'];
 
     protected $fillable = [
@@ -37,24 +38,27 @@ class Material extends Model
         'landfill_kg_avoided' => 'decimal:2',
         'energy_saved_kwh' => 'decimal:2',
     ];
+
     public function isUsedInProducts(): bool
     {
         return $this->products()->exists();
     }
-     public function calculateAndUpdateImpact(): bool
+
+    public function calculateAndUpdateImpact(): bool
     {
-        
-        if (!$this->isUsedInProducts()) {
+
+        if (! $this->isUsedInProducts()) {
             $this->update([
                 'co2_kg_saved' => null,
                 'landfill_kg_avoided' => null,
                 'energy_saved_kwh' => null,
             ]);
+
             return false;
         }
 
-        $mlService = new MLImpactService();
-        
+        $mlService = new MLImpactService;
+
         $prediction = $mlService->predictImpact(
             $this->quantity,
             $this->recyclability_score,
@@ -80,7 +84,6 @@ class Material extends Model
             $material->calculateAndUpdateImpact();
         }
     }
-
 
     public function maker(): BelongsTo
     {

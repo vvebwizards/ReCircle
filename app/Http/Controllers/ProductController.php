@@ -24,8 +24,8 @@ class ProductController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'LIKE', "%{$search}%")
-                  ->orWhere('description', 'LIKE', "%{$search}%")
-                  ->orWhere('sku', 'LIKE', "%{$search}%");
+                    ->orWhere('description', 'LIKE', "%{$search}%")
+                    ->orWhere('sku', 'LIKE', "%{$search}%");
             });
         }
 
@@ -91,7 +91,7 @@ class ProductController extends Controller
 
         DB::transaction(function () use ($validated, &$product, $request) {
 
-            $sku = 'PROD-' . strtoupper(uniqid());
+            $sku = 'PROD-'.strtoupper(uniqid());
 
             $product = Product::create([
                 'maker_id' => Auth::id(),
@@ -121,9 +121,9 @@ class ProductController extends Controller
 
             $order = 0;
             foreach ($request->file('images') as $image) {
-                $imageName = time() . '_' . uniqid() . '_' . $order . '.' . $image->getClientOriginalExtension();
+                $imageName = time().'_'.uniqid().'_'.$order.'.'.$image->getClientOriginalExtension();
                 $image->move(public_path('images/products'), $imageName);
-                $imagePath = 'images/products/' . $imageName;
+                $imagePath = 'images/products/'.$imageName;
 
                 ProductImage::create([
                     'product_id' => $product->id,
@@ -144,7 +144,7 @@ class ProductController extends Controller
 
     public function edit(int $id): View
     {
-        $product = Product::with(['materials', 'images' => fn($q) => $q->orderBy('order')])
+        $product = Product::with(['materials', 'images' => fn ($q) => $q->orderBy('order')])
             ->where('maker_id', Auth::id())
             ->findOrFail($id);
 
@@ -202,7 +202,7 @@ class ProductController extends Controller
 
             $newMaterialIds = collect($validated['materials'])->pluck('id')->toArray();
             foreach ($currentMaterials as $matId => $qtyUsed) {
-                if (!in_array($matId, $newMaterialIds)) {
+                if (! in_array($matId, $newMaterialIds)) {
                     $material = Material::find($matId);
                     $material->quantity += $qtyUsed;
                     $material->save();
@@ -248,9 +248,9 @@ class ProductController extends Controller
                 $order = $existingCount;
 
                 foreach ($request->file('images') as $image) {
-                    $imageName = time() . '_' . uniqid() . '_' . $order . '.' . $image->getClientOriginalExtension();
+                    $imageName = time().'_'.uniqid().'_'.$order.'.'.$image->getClientOriginalExtension();
                     $image->move(public_path('images/products'), $imageName);
-                    $imagePath = 'images/products/' . $imageName;
+                    $imagePath = 'images/products/'.$imageName;
 
                     ProductImage::create([
                         'product_id' => $product->id,
@@ -338,7 +338,7 @@ class ProductController extends Controller
 
     public function show(int $id): View
     {
-        $product = Product::with(['materials.images', 'images' => fn($q) => $q->orderBy('order')])
+        $product = Product::with(['materials.images', 'images' => fn ($q) => $q->orderBy('order')])
             ->where('maker_id', Auth::id())
             ->findOrFail($id);
 

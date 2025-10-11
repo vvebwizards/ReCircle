@@ -298,7 +298,6 @@ class MaterialController extends Controller
             ->limit(4)
             ->get();
 
-        
         $availableStock = $material->quantity;
 
         return view('maker.material-details', compact(

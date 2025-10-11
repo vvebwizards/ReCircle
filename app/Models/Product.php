@@ -44,7 +44,6 @@ class Product extends Model
         'tags' => 'array',
     ];
 
-
     public function maker(): BelongsTo
     {
         return $this->belongsTo(User::class, 'maker_id');
@@ -66,7 +65,6 @@ class Product extends Model
     {
         return $this->hasMany(Order::class, 'product_id');
     }
-
 
     public function generateMaterialPassport()
     {
@@ -93,6 +91,7 @@ class Product extends Model
         ];
 
         $this->update(['material_passport' => $passport]);
+
         return $passport;
     }
 }
