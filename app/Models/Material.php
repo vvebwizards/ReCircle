@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Services\MLImpactService;
 
 class Material extends Model
 {
@@ -36,6 +37,49 @@ class Material extends Model
         'landfill_kg_avoided' => 'decimal:2',
         'energy_saved_kwh' => 'decimal:2',
     ];
+    public function isUsedInProducts(): bool
+    {
+        return $this->products()->exists();
+    }
+     public function calculateAndUpdateImpact(): bool
+    {
+        
+        if (!$this->isUsedInProducts()) {
+            $this->update([
+                'co2_kg_saved' => null,
+                'landfill_kg_avoided' => null,
+                'energy_saved_kwh' => null,
+            ]);
+            return false;
+        }
+
+        $mlService = new MLImpactService();
+        
+        $prediction = $mlService->predictImpact(
+            $this->quantity,
+            $this->recyclability_score,
+            $this->category
+        );
+
+        if ($prediction) {
+            return $this->update([
+                'co2_kg_saved' => $prediction['predicted_co2_saved'],
+                'landfill_kg_avoided' => $prediction['predicted_landfill_avoided'],
+            ]);
+        }
+
+        return false;
+    }
+
+    /**
+     * Recalculate impact for all materials used in a specific product
+     */
+    public static function recalculateImpactsForProduct(Product $product): void
+    {
+        foreach ($product->materials as $material) {
+            $material->calculateAndUpdateImpact();
+        }
+    }
 
 
     public function maker(): BelongsTo

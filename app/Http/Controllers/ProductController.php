@@ -103,7 +103,6 @@ class ProductController extends Controller
                 'status' => ProductStatus::DRAFT,
             ]);
 
-            // Attach materials & reduce quantity
             foreach ($validated['materials'] as $mat) {
                 $material = Material::findOrFail($mat['id']);
 
@@ -120,7 +119,6 @@ class ProductController extends Controller
                 ]);
             }
 
-            // Save images
             $order = 0;
             foreach ($request->file('images') as $image) {
                 $imageName = time() . '_' . uniqid() . '_' . $order . '.' . $image->getClientOriginalExtension();
@@ -134,6 +132,8 @@ class ProductController extends Controller
                 ]);
                 $order++;
             }
+
+            Material::recalculateImpactsForProduct($product);
 
             $product->generateMaterialPassport();
         });
@@ -198,10 +198,8 @@ class ProductController extends Controller
                 'status' => $validated['status'],
             ]);
 
-            // Sync materials
             $currentMaterials = $product->materials()->pluck('quantity_used', 'id')->toArray();
 
-            // Return quantities to materials no longer used
             $newMaterialIds = collect($validated['materials'])->pluck('id')->toArray();
             foreach ($currentMaterials as $matId => $qtyUsed) {
                 if (!in_array($matId, $newMaterialIds)) {
@@ -211,7 +209,6 @@ class ProductController extends Controller
                 }
             }
 
-            // Sync pivot and update quantities
             $syncData = [];
             foreach ($validated['materials'] as $mat) {
                 $material = Material::findOrFail($mat['id']);
@@ -232,7 +229,6 @@ class ProductController extends Controller
 
             $product->materials()->sync($syncData);
 
-            // Handle images
             if ($request->has('remove_images')) {
                 foreach ($request->remove_images as $imageId) {
                     $image = ProductImage::where('product_id', $product->id)
@@ -266,7 +262,7 @@ class ProductController extends Controller
             }
 
             $this->reorderImages($product->id);
-
+            Material::recalculateImpactsForProduct($product);
             $product->generateMaterialPassport();
         });
 
@@ -285,7 +281,6 @@ class ProductController extends Controller
             $image->delete();
         }
 
-        // Return quantities to materials
         foreach ($product->materials as $material) {
             $material->quantity += $material->pivot->quantity_used;
             $material->save();

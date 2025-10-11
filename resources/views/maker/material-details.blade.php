@@ -122,8 +122,9 @@
                 </div>
                 @endif
 
+                <!-- Combined Specifications and Environmental Impact Card -->
                 <div class="detail-card">
-                    <h3><i class="fa-solid fa-list"></i> Material Specifications</h3>
+                    <h3><i class="fa-solid fa-list"></i> Material Details</h3>
                     <div class="detail-content">
                         <div class="spec-grid">
                             <div class="spec-item">
@@ -151,10 +152,38 @@
                                 <span>{{ $material->updated_at->format('M j, Y') }}</span>
                             </div>
                         </div>
+
+                        @if($material->co2_kg_saved !== null || $material->landfill_kg_avoided !== null)
+                        <div class="impact-section" style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #e5e7eb;">
+                            <h4 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                                <i class="fa-solid fa-leaf" style="color: #10b981;"></i>
+                                Environmental Impact
+                            </h4>
+                            <div class="impact-grid">
+                                @if($material->co2_kg_saved !== null)
+                                <div class="impact-item">
+                                    <div class="impact-info">
+                                        <i class="fa-solid fa-cloud"></i>
+                                        <strong>CO₂ Saved</strong>
+                                        <span class="impact-value">{{ number_format($material->co2_kg_saved, 2) }} kg</span>
+                                    </div>
+                                </div>
+                                @endif
+                                
+                                @if($material->landfill_kg_avoided !== null)
+                                <div class="impact-item">
+                                    <div class="impact-info">
+                                        <i class="fa-solid fa-mountain"></i>
+                                        <strong>Landfill Avoided</strong>
+                                        <span class="impact-value">{{ number_format($material->landfill_kg_avoided, 2) }} kg</span>
+                                    </div>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+                        @endif
                     </div>
                 </div>
-
-                
             </div>
         </div>
 
@@ -260,7 +289,6 @@ function updateMainImage() {
     });
 }
 
-// Delete functionality
 document.addEventListener('DOMContentLoaded', function() {
     const deleteBtn = document.querySelector('.delete-material-btn');
     if (deleteBtn) {

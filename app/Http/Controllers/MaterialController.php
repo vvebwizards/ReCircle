@@ -337,24 +337,4 @@ class MaterialController extends Controller
             'images' => $images,
         ]);
     }
-    private function fetchMaterialImpact($material)
-    {
-       
-        if ($material->processSteps()->exists()) {
-            $response = Http::post('http://127.0.0.1:8000/predict_impact', [
-                'quantity' => $material->quantity,
-                'recyclability_score' => $material->recyclability_score,
-                'category' => $material->category,
-            ]);
-
-            if ($response->successful()) {
-                $data = $response->json();
-                $material->predicted_co2_saved = $data['predicted_co2_saved'] ?? null;
-                $material->predicted_landfill_avoided = $data['predicted_landfill_avoided'] ?? null;
-            }
-        }
-
-        return $material;
-    }
-
 }
