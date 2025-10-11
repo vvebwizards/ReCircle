@@ -15,216 +15,222 @@
             </div>
             
             <div class="header-actions">
-                <a href="{{ route('maker.products.edit', $product->id) }}" class="btn-primary">
-                    Edit Product
-                </a>
                 @if($product->status !== \App\Enums\ProductStatus::PUBLISHED && $product->stock > 0)
                 <form action="{{ route('maker.products.publish', $product->id) }}" method="POST" class="inline-form">
                     @csrf
-                    <button type="submit" class="btn-success">Publish Now</button>
+                    <button type="submit" class="btn-success">
+                        <i class="fa-solid fa-upload"></i> Publish Now
+                    </button>
                 </form>
                 @endif
+                <a href="{{ route('maker.products.edit', $product->id) }}" class="btn-primary">
+                    <i class="fa-solid fa-edit"></i> Edit Product
+                </a>
+                <form action="{{ route('maker.products.destroy', $product->id) }}" method="POST" class="inline-form delete-form">
+                    @csrf
+                    @method('DELETE')
+                    <button type="button" class="btn-danger delete-product-btn" data-product-name="{{ $product->name }}">
+                        <i class="fa-solid fa-trash"></i> Delete
+                    </button>
+                </form>
             </div>
         </div>
 
         @if($product->status === \App\Enums\ProductStatus::DRAFT)
         <div class="status-alert draft">
+            <i class="fa-solid fa-pencil"></i>
             <strong>Draft:</strong> This product is not visible to customers.
         </div>
         @elseif($product->status === \App\Enums\ProductStatus::SOLD_OUT)
         <div class="status-alert sold-out">
+            <i class="fa-solid fa-tag"></i>
             <strong>Sold Out:</strong> This product is visible but out of stock.
         </div>
         @endif
 
-        <div class="product-content">
-            <div class="product-gallery">
-                @if($product->images && $product->images->count() > 0)
-                    <div class="main-image-container">
-                        <img src="{{ asset($product->images->first()->image_path) }}" 
-                             alt="{{ $product->name }}" 
-                             id="mainImage"
-                             class="main-image">
+        <div class="details-grid">
+            <div class="left-column">
+                <div class="image-section">
+                    @if($product->images && $product->images->count() > 0)
+                        <div class="main-image-container">
+                            <img src="{{ asset($product->images->first()->image_path) }}" 
+                                 alt="{{ $product->name }}" 
+                                 id="mainImage"
+                                 class="main-image">
+                            
+                            @if($product->images->count() > 1)
+                                <button type="button" 
+                                        class="image-nav-btn prev-btn"
+                                        onclick="prevProductImage({{ $product->id }}, {{ $product->images->count() }})">
+                                    <i class="fa-solid fa-chevron-left"></i>
+                                </button>
+                                <button type="button" 
+                                        class="image-nav-btn next-btn"
+                                        onclick="nextProductImage({{ $product->id }}, {{ $product->images->count() }})">
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                </button>
+                                <div class="image-counter" id="imagePosition">
+                                    1/{{ $product->images->count() }}
+                                </div>
+                            @endif
+                        </div>
                         
                         @if($product->images->count() > 1)
-                            <button type="button" 
-                                    class="image-nav-btn prev-btn"
-                                    onclick="prevProductImage({{ $product->id }}, {{ $product->images->count() }})">
-                                <i class="fa-solid fa-chevron-left"></i>
-                            </button>
-                            <button type="button" 
-                                    class="image-nav-btn next-btn"
-                                    onclick="nextProductImage({{ $product->id }}, {{ $product->images->count() }})">
-                                <i class="fa-solid fa-chevron-right"></i>
-                            </button>
-                            <div class="image-counter" id="imagePosition">
-                                1/{{ $product->images->count() }}
+                        <div class="image-thumbnails">
+                            @foreach($product->images as $index => $image)
+                            <div class="thumbnail {{ $loop->first ? 'active' : '' }}"
+                                 data-image-index="{{ $index }}"
+                                 onclick="changeMainImage('{{ asset($image->image_path) }}', {{ $index }}, this)">
+                                <img src="{{ asset($image->image_path) }}" alt="{{ $product->name }}">
                             </div>
-                        @endif
-                    </div>
-                    
-                    @if($product->images->count() > 1)
-                    <div class="image-thumbnails">
-                        @foreach($product->images as $index => $image)
-                        <div class="thumbnail {{ $loop->first ? 'active' : '' }}"
-                             data-image-index="{{ $index }}"
-                             onclick="changeMainImage('{{ asset($image->image_path) }}', {{ $index }}, this)">
-                            <img src="{{ asset($image->image_path) }}" alt="{{ $product->name }}">
+                            @endforeach
                         </div>
-                        @endforeach
+                        @endif
+                    @else
+                    <div class="no-image">
+                        <div class="no-image-placeholder">
+                            <i class="fas fa-camera"></i>
+                            <p>No images available</p>
+                        </div>
                     </div>
                     @endif
-                @else
-                <div class="no-image">
-                    <div class="no-image-placeholder">
-                        <i class="fas fa-camera"></i>
-                        <p>No images available</p>
+                </div>
+
+            </div>
+
+            <div class="right-column">
+                <div class="product-header-card">
+                    <div class="product-meta">
+                        <span class="sku">SKU: {{ $product->sku }}</span>
+                        <span class="status-badge status-{{ strtolower($product->status->name) }}">
+                            <i class="fa-solid fa-circle"></i> {{ $product->status->name }}
+                        </span>
+                    </div>
+                    <h1 class="product-title">{{ $product->name }}</h1>
+                    <div class="price-section">
+                        <span class="price">€{{ number_format($product->price, 2) }}</span>
+                        <span class="stock {{ $product->stock == 0 ? 'out-of-stock' : 'in-stock' }}">
+                            <i class="fa-solid {{ $product->stock == 0 ? 'fa-times' : 'fa-check' }}"></i>
+                            {{ $product->stock }} in stock
+                        </span>
+                    </div>
+                </div>
+
+                <div class="detail-card">
+                    <h3><i class="fa-solid fa-file-lines"></i> Description</h3>
+                    <div class="detail-content">
+                        <p>{{ $product->description }}</p>
+                    </div>
+                </div>
+
+                <div class="detail-card">
+                    <h3><i class="fa-solid fa-cubes"></i> Materials Used</h3>
+                    <div class="detail-content">
+                        @if($product->materials && $product->materials->count() > 0)
+                            @foreach($product->materials as $material)
+                            <div class="material-item">
+                                <div class="material-header">
+                                    <div class="material-info">
+                                        <strong>{{ $material->name }}</strong>
+                                        <div class="material-meta">from
+                                            <span class="material-category"> {{ $material->category }} </span>
+                                            @if($material->wasteItem)
+                                            <span class="material-source"> {{ $material->wasteItem->name }}</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <span class="material-quantity">
+                                        {{ $material->pivot->quantity_used }} {{ strtoupper($material->pivot->unit) }}
+                                    </span>
+                                </div>
+                            </div>
+                            @if(!$loop->last)
+                            <hr class="material-divider">
+                            @endif
+                            @endforeach
+                        @else
+                        <div class="empty-state">
+                            <i class="fa-solid fa-cube"></i>
+                            <p>No materials information available</p>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="detail-card">
+                    <h3><i class="fa-solid fa-list"></i> Product Specifications</h3>
+                    <div class="detail-content">
+                        <div class="spec-grid">
+                            <div class="spec-item">
+                                <strong>SKU:</strong>
+                                <span>{{ $product->sku }}</span>
+                            </div>
+                            @if($product->weight)
+                            <div class="spec-item">
+                                <strong>Weight:</strong>
+                                <span>{{ $product->weight }} kg</span>
+                            </div>
+                            @endif
+                            @if($product->warranty_months)
+                            <div class="spec-item">
+                                <strong>Warranty:</strong>
+                                <span>{{ $product->warranty_months }} months</span>
+                            </div>
+                            @endif
+                            <div class="spec-item">
+                                <strong>Created:</strong>
+                                <span>{{ $product->created_at->format('M j, Y') }}</span>
+                            </div>
+                            <div class="spec-item">
+                                <strong>Last Updated:</strong>
+                                <span>{{ $product->updated_at->format('M j, Y') }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @if($product->workOrder)
+                <div class="detail-card">
+                    <h3><i class="fa-solid fa-clipboard-list"></i> Work Order</h3>
+                    <div class="detail-content">
+                        <div class="spec-grid">
+                            <div class="spec-item">
+                                <strong>Work Order #:</strong>
+                                <span>{{ $product->workOrder->id }}</span>
+                            </div>
+                            <div class="spec-item">
+                                <strong>Status:</strong>
+                                <span class="status-badge">{{ $product->workOrder->status }}</span>
+                            </div>
+                            <div class="spec-item">
+                                <strong>Completed:</strong>
+                                <span>{{ $product->workOrder->updated_at->format('M j, Y') }}</span>
+                            </div>
+                            @if($product->workOrder->match && $product->workOrder->match->listing)
+                            <div class="spec-item">
+                                <strong>Source Listing:</strong>
+                                <span>{{ $product->workOrder->match->listing->wasteItem->name }}</span>
+                            </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+                @endif
+
+                @if($product->care_instructions)
+                <div class="detail-card">
+                    <h3><i class="fa-solid fa-heart"></i> Care Instructions</h3>
+                    <div class="detail-content">
+                        <p>{{ $product->care_instructions }}</p>
                     </div>
                 </div>
                 @endif
             </div>
-
-            <div class="product-info">
-                <div class="product-meta">
-                    <span class="sku">SKU: {{ $product->sku }}</span>
-                    <span class="status-badge status-{{ strtolower($product->status->name) }}">
-                        {{ $product->status->name }}
-                    </span>
-                </div>
-
-                <h1 class="product-title">{{ $product->name }}</h1>
-                
-                <div class="price-section">
-                    <span class="price">€{{ number_format($product->price, 2) }}</span>
-                    <span class="stock {{ $product->stock == 0 ? 'out-of-stock' : 'in-stock' }}">
-                        {{ $product->stock }} in stock
-                    </span>
-                </div>
-
-                <div class="product-description">
-                    <h3>Description</h3>
-                    <p>{{ $product->description }}</p>
-                </div>
-
-                <div class="quick-stats">
-                    <div class="stat-item">
-                        <div class="stat-value">{{ $product->stock }}</div>
-                        <div class="stat-label">Available</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">€{{ number_format($product->price, 2) }}</div>
-                        <div class="stat-label">Price</div>
-                    </div>
-                    @if($product->weight)
-                    <div class="stat-item">
-                        <div class="stat-value">{{ $product->weight }}kg</div>
-                        <div class="stat-label">Weight</div>
-                    </div>
-                    @endif
-                </div>
-
-                <div class="quick-actions">
-                    <form action="{{ route('maker.products.update-stock', $product->id) }}" method="POST" class="stock-form">
-                        @csrf
-                        @method('PATCH')
-                        <div class="form-group">
-                            <label for="quick_stock">Update Stock</label>
-                            <div class="stock-input-group">
-                                <input type="number" name="stock" id="quick_stock" value="{{ $product->stock }}" min="0" class="stock-input">
-                                <button type="submit" class="btn-outline">Update</button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        <div class="product-details-grid">
-            <div class="detail-card">
-                <h3>Material Information</h3>
-                <div class="detail-content">
-                    @if($product->material)
-                    <div class="detail-item">
-                        <strong>Material:</strong> {{ $product->material->name }}
-                    </div>
-                    <div class="detail-item">
-                        <strong>Category:</strong> {{ $product->material->category }}
-                    </div>
-                    <div class="detail-item">
-                        <strong>Quantity Used:</strong> {{ $product->material->quantity }} {{ strtoupper($product->material->unit) }}
-                    </div>
-                    @if($product->material->wasteItem)
-                    <div class="detail-item">
-                        <strong>Source:</strong> {{ $product->material->wasteItem->name }}
-                    </div>
-                    @endif
-                    @else
-                    <div class="detail-item">
-                        No material information available
-                    </div>
-                    @endif
-                </div>
-            </div>
-
-            <div class="detail-card">
-                <h3>Product Specifications</h3>
-                <div class="detail-content">
-                    <div class="detail-item">
-                        <strong>SKU:</strong> {{ $product->sku }}
-                    </div>
-                    @if($product->weight)
-                    <div class="detail-item">
-                        <strong>Weight:</strong> {{ $product->weight }} kg
-                    </div>
-                    @endif
-                    @if($product->warranty_months)
-                    <div class="detail-item">
-                        <strong>Warranty:</strong> {{ $product->warranty_months }} months
-                    </div>
-                    @endif
-                    <div class="detail-item">
-                        <strong>Created:</strong> {{ $product->created_at->format('M j, Y') }}
-                    </div>
-                    <div class="detail-item">
-                        <strong>Last Updated:</strong> {{ $product->updated_at->format('M j, Y') }}
-                    </div>
-                </div>
-            </div>
-
-            @if($product->workOrder)
-            <div class="detail-card">
-                <h3>Work Order</h3>
-                <div class="detail-content">
-                    <div class="detail-item">
-                        <strong>Work Order #:</strong> {{ $product->workOrder->id }}
-                    </div>
-                    <div class="detail-item">
-                        <strong>Status:</strong> {{ $product->workOrder->status }}
-                    </div>
-                    <div class="detail-item">
-                        <strong>Completed:</strong> {{ $product->workOrder->updated_at->format('M j, Y') }}
-                    </div>
-                    @if($product->workOrder->match && $product->workOrder->match->listing)
-                    <div class="detail-item">
-                        <strong>Source Listing:</strong> {{ $product->workOrder->match->listing->wasteItem->name }}
-                    </div>
-                    @endif
-                </div>
-            </div>
-            @endif
-
-            
-            @if($product->care_instructions)
-            <div class="detail-card full-width">
-                <h3>Care Instructions</h3>
-                <div class="detail-content">
-                    <p>{{ $product->care_instructions }}</p>
-                </div>
-            </div>
-            @endif
         </div>
     </div>
 </div>
+
+@include('components.confirm-modal')
 @endsection
 
 @push('scripts')
@@ -280,41 +286,54 @@ function updateMainImage() {
     });
 }
 
-document.addEventListener('keydown', function(e) {
-    if (productImages.length <= 1) return;
-    
-    if (e.key === 'ArrowLeft') {
-        prevProductImage({{ $product->id }}, {{ $product->images->count() }});
-    } else if (e.key === 'ArrowRight') {
-        nextProductImage({{ $product->id }}, {{ $product->images->count() }});
+document.addEventListener('DOMContentLoaded', function() {
+    const deleteBtn = document.querySelector('.delete-product-btn');
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const productName = this.dataset.productName;
+            const form = this.closest('.delete-form');
+            
+            const popup = document.getElementById('genericConfirmPopup');
+            const messageEl = popup.querySelector('.popup-message');
+            const confirmBtn = popup.querySelector('.btn-confirm');
+            const cancelBtn = popup.querySelector('.btn-cancel');
+
+            messageEl.textContent = `Are you sure you want to delete "${productName}"? This action cannot be undone.`;
+            popup.classList.remove('hidden');
+
+            const newConfirmBtn = confirmBtn.cloneNode(true);
+            const newCancelBtn = cancelBtn.cloneNode(true);
+            
+            confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+            cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+
+            newConfirmBtn.addEventListener('click', () => {
+                if (form) form.submit();
+                popup.classList.add('hidden');
+            });
+
+            newCancelBtn.addEventListener('click', () => {
+                popup.classList.add('hidden');
+            });
+        });
     }
 });
 
-let touchStartX = 0;
-let touchEndX = 0;
-
-document.addEventListener('touchstart', e => {
-    touchStartX = e.changedTouches[0].screenX;
-});
-
-document.addEventListener('touchend', e => {
-    touchEndX = e.changedTouches[0].screenX;
-    handleSwipe();
-});
-
-function handleSwipe() {
-    if (productImages.length <= 1) return;
+document.addEventListener('DOMContentLoaded', function() {
+    const popup = document.getElementById('genericConfirmPopup');
     
-    const swipeThreshold = 50;
-    const diff = touchStartX - touchEndX;
-    
-    if (Math.abs(diff) > swipeThreshold) {
-        if (diff > 0) {
-            nextProductImage({{ $product->id }}, {{ $product->images->count() }});
-        } else {
-            prevProductImage({{ $product->id }}, {{ $product->images->count() }});
+    popup.addEventListener('click', function(e) {
+        if (e.target === popup) {
+            popup.classList.add('hidden');
         }
-    }
-}
+    });
+    
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && !popup.classList.contains('hidden')) {
+            popup.classList.add('hidden');
+        }
+    });
+});
 </script>
 @endpush

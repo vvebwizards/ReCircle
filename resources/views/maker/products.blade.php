@@ -167,7 +167,7 @@
                     <div class="product-content">
                         <div class="product-header">
                             <h3 class="product-name">{{ $product->name }}</h3>
-                            <span class="price-tag">{{ $product->formatted_price }}</span>
+                            <span class="price-tag">{{ $product->price }} £</span>
                         </div>
                         
                         @if($product->material)

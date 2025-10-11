@@ -118,7 +118,7 @@ class MaterialController extends Controller
             }
         }
 
-        return redirect()->route('materials.create')->with('success', 'Material created with '.$order.' images!');
+        return redirect()->route('maker.materials.index')->with('success', 'Material created with '.$order.' images!');
     }
 
     public function index(Request $request): View
@@ -286,7 +286,6 @@ class MaterialController extends Controller
                 $query->orderBy('order', 'asc');
             },
             'wasteItem',
-            'processSteps.workOrder',
         ])->where('maker_id', Auth::id())
             ->findOrFail($id);
 
@@ -299,13 +298,12 @@ class MaterialController extends Controller
             ->limit(4)
             ->get();
 
-        $usageCount = $material->processSteps()->count();
+        
         $availableStock = $material->quantity;
 
         return view('maker.material-details', compact(
             'material',
             'relatedMaterials',
-            'usageCount',
             'availableStock'
         ));
     }
