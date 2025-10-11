@@ -11,7 +11,7 @@ class MLImpactService
 
     public function __construct()
     {
-         $this->apiUrl = env('ML_IMPACT_API_URL', 'http://127.0.0.1:8085/predict_impact');
+        $this->apiUrl = env('ML_IMPACT_API_URL', 'http://127.0.0.1:8085/predict_impact');
     }
 
     public function predictImpact(float $quantity, int $recyclabilityScore, string $category): ?array
@@ -33,12 +33,14 @@ class MLImpactService
                 'status' => $response->status(),
                 'body' => $response->body(),
             ]);
+
             return null;
 
         } catch (\Exception $e) {
             Log::error('ML API connection failed', [
                 'message' => $e->getMessage(),
             ]);
+
             return null;
         }
     }
