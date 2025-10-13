@@ -57,7 +57,7 @@ Route::prefix('admin')->middleware(['jwt.auth'])->group(function () {
 
     // Admin listings routes (limited CRUD: no create/store)
     require __DIR__.'/admin_listings.php';
-    
+
     // Admin notifications routes (consolidated, ordered to avoid /{id} swallowing others)
     Route::prefix('notifications')->group(function () {
         // List

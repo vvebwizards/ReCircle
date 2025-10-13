@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
 
 class AdminNotificationController extends Controller
 {
@@ -27,7 +27,7 @@ class AdminNotificationController extends Controller
         $from = $request->input('from');
         $to = $request->input('to');
 
-    $query = $user->notifications();
+        $query = $user->notifications();
 
         // Status filter
         if ($status === 'unread') {
@@ -47,17 +47,25 @@ class AdminNotificationController extends Controller
         if ($q !== '') {
             $query->where(function ($inner) use ($q) {
                 $inner->where('data->user_email', 'like', "%{$q}%")
-                      ->orWhere('data->user_name', 'like', "%{$q}%")
-                      ->orWhere('id', 'like', "%{$q}%");
+                    ->orWhere('data->user_name', 'like', "%{$q}%")
+                    ->orWhere('id', 'like', "%{$q}%");
             });
         }
 
         // Date range filter
         if ($from) {
-            try { $fromDt = Carbon::parse($from)->startOfDay(); $query->where('created_at', '>=', $fromDt); } catch (\Throwable $e) {}
+            try {
+                $fromDt = Carbon::parse($from)->startOfDay();
+                $query->where('created_at', '>=', $fromDt);
+            } catch (\Throwable $e) {
+            }
         }
         if ($to) {
-            try { $toDt = Carbon::parse($to)->endOfDay(); $query->where('created_at', '<=', $toDt); } catch (\Throwable $e) {}
+            try {
+                $toDt = Carbon::parse($to)->endOfDay();
+                $query->where('created_at', '<=', $toDt);
+            } catch (\Throwable $e) {
+            }
         }
 
         // Sorting - clear default order from relation then apply
@@ -95,9 +103,9 @@ class AdminNotificationController extends Controller
     public function show(Request $request, $id)
     {
         $user = Auth::user();
-        
+
         $notification = $user->notifications()->findOrFail($id);
-        
+
         // Mark as read when viewed
         if (is_null($notification->read_at)) {
             $notification->markAsRead();
@@ -110,6 +118,7 @@ class AdminNotificationController extends Controller
             if (strpos($accept, 'text/html') !== false) {
                 return response($html, 200)->header('Content-Type', 'text/html; charset=UTF-8');
             }
+
             return response()->json(['html' => $html]);
         }
 
@@ -122,7 +131,7 @@ class AdminNotificationController extends Controller
     public function markAsRead(Request $request, $id)
     {
         $user = Auth::user();
-        
+
         $notification = $user->notifications()->findOrFail($id);
         $notification->markAsRead();
 
@@ -139,7 +148,7 @@ class AdminNotificationController extends Controller
     public function markAllAsRead(Request $request)
     {
         $user = Auth::user();
-        
+
         $user->unreadNotifications->markAsRead();
 
         if ($request->expectsJson()) {
@@ -155,7 +164,7 @@ class AdminNotificationController extends Controller
     public function destroy(Request $request, $id)
     {
         $user = Auth::user();
-        
+
         $notification = $user->notifications()->findOrFail($id);
         $notification->delete();
 
