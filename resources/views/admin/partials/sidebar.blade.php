@@ -8,6 +8,11 @@
     <nav class="side-nav" role="navigation">
     <a href="{{ route('admin.dashboard') }}" class="side-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}"><i class="fa-solid fa-gauge"></i><span>Overview</span></a>
     <a href="{{ route('admin.users') }}" class="side-link"><i class="fa-solid fa-users {{ request()->routeIs('admin.users') ? 'active' : '' }}"></i><span>Users</span></a>
+    <a href="{{ route('admin.notifications.index') }}" class="side-link {{ request()->routeIs('admin.notifications.*') ? 'active' : '' }}">
+        <i class="fa-solid fa-bell"></i>
+        <span>Notifications</span>
+        <span id="notification-badge" class="notif-pill" aria-label="Unread notifications" style="display:none"></span>
+    </a>
     <a href="{{ route('admin.audit-logs.index') }}" class="side-link"><i class="fa-solid fa-clipboard-list"></i><span>Audit Logs</span></a>
     <a href="{{ route('admin.listings.index') }}" class="side-link {{ request()->routeIs('admin.listings.*') ? 'active' : '' }}"><i class="fa-solid fa-list"></i><span>Listings</span></a>
     <a href="#" class="side-link"><i class="fa-solid fa-gavel"></i><span>Bids</span></a>
@@ -26,3 +31,32 @@
         </div>
     </div>
 </aside>
+
+<script>
+// Update notification badge
+function updateNotificationBadge() {
+    const tryFetch = (url) => fetch(url, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
+        .then(r => r.ok ? r.json() : Promise.reject(r.status))
+        .catch(() => null);
+
+    tryFetch('/admin/notifications/unread-count')
+        .then(data => data || tryFetch('/admin/notifications/api/unread-count'))
+        .then(data => {
+            if (!data) return;
+            const badge = document.getElementById('notification-badge');
+            if (data.count > 0) {
+                badge.textContent = data.count > 99 ? '99+' : data.count;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+        })
+        .catch(error => console.error('Error fetching notification count:', error));
+}
+
+// Update badge on page load
+document.addEventListener('DOMContentLoaded', updateNotificationBadge);
+
+// Update badge every 30 seconds
+setInterval(updateNotificationBadge, 30000);
+</script>

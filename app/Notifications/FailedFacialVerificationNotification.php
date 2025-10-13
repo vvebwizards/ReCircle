@@ -29,7 +29,9 @@ class FailedFacialVerificationNotification extends Notification implements Shoul
      */
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        // Write to database first so the admin UI always has a record,
+        // even if the mail channel fails in the same synchronous dispatch.
+        return ['database', 'mail'];
     }
 
     /**
@@ -71,7 +73,7 @@ class FailedFacialVerificationNotification extends Notification implements Shoul
             'failed_attempts' => $this->failedAttempts,
             'ip_address' => $this->ipAddress,
             'user_agent' => $this->userAgent,
-            'locked_until' => $this->user->locked_until?->toISOString(),
+            'locked_until' => $this->user->locked_until?->toIso8601String(),
             'message' => "Failed facial verification attempt for user {$this->user->name} ({$this->user->email}). Account temporarily locked.",
         ];
     }

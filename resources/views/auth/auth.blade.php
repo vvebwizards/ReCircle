@@ -782,7 +782,7 @@
                                 <p><i class="fa-solid fa-info-circle"></i> Position your face in the green box</p>
                             </div>
                         </div>
-                        <div id="face-status" class="face-status">Click "Enable" to start camera setup</div>
+                        <div id="face-status" class="face-status">Click "Enable Face Login" to start the camera</div>
                     </div>
                     
                     <div class="step-actions">
@@ -900,6 +900,74 @@
             </div>
         </div>
     </div>
+
+        <!-- Inline patch: ensure correct face-api build and robust enroll even if assets aren’t rebuilt -->
+        <script>
+            (function() {
+                function ensureVladFaceApi(cb) {
+                    var src = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/dist/face-api.min.js';
+                    if (typeof window.faceapi === 'undefined' || !window.faceapi.nets || !window.faceapi.nets.tinyFaceDetector) {
+                        var s = document.createElement('script');
+                        s.src = src; s.async = true; s.crossOrigin = 'anonymous';
+                        s.onload = function() { try { cb && cb(); } catch(e) { console.error(e); } };
+                        document.head.appendChild(s);
+                    } else {
+                        try { cb && cb(); } catch(e) { console.error(e); }
+                    }
+                }
+
+                        function patchFaceRecognition() {
+                            var FR = window.FaceRecognition || (typeof FaceRecognition !== 'undefined' ? FaceRecognition : null);
+                            if (!FR || FR.__patched) return;
+                            // Ensure both globals reference the same constructor
+                            window.FaceRecognition = FR;
+                            try { window['FaceRecognition'] = FR; } catch(_) {}
+
+                            FR.prototype.enrollFace = async function() {
+                        if (!this.isModelLoaded || !this.video) return false;
+                        try {
+                                    var options = new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.4 });
+                            var detection = null;
+                            for (var i = 0; i < 5; i++) {
+                                detection = await faceapi
+                                    .detectSingleFace(this.video, options)
+                                    .withFaceLandmarks()
+                                    .withFaceDescriptor();
+                                if (detection) break;
+                                await new Promise(function(r){ setTimeout(r, 200); });
+                            }
+                            if (detection) {
+                                var csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                                        var res = await fetch('/api/face/enroll', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+                                    credentials: 'include',
+                                    body: JSON.stringify({ userId: window.currentUserId, descriptor: Array.from(detection.descriptor) })
+                                });
+                                        if (res.ok) return true;
+                                        // Fallback: verify server-side flag in case response handling failed
+                                        try {
+                                            var meRes = await fetch('/api/auth/me', { headers: { 'Accept': 'application/json' }, credentials: 'include' });
+                                            if (meRes.ok) {
+                                                var me = await meRes.json().catch(function(){ return {}; });
+                                                if ((me && me.data && me.data.is_facial_registered) || me.is_facial_registered) return true;
+                                            }
+                                        } catch(_) {}
+                                        return false;
+                            }
+                        } catch (e) {
+                            console.error('Face enrollment failed (inline):', e);
+                        }
+                        return false;
+                    };
+                            FR.__patched = true;
+                }
+
+                document.addEventListener('DOMContentLoaded', function() {
+                    ensureVladFaceApi(function(){ patchFaceRecognition(); });
+                });
+            })();
+        </script>
 
     <!-- Facial Verification Fallback Modal -->
     <div id="facial-fallback-modal" class="modal-overlay hidden" aria-hidden="true">
