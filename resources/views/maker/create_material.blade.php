@@ -87,21 +87,24 @@
                 @enderror
             </div>
 
-            <div class="form-group full-width">
-                <label for="waste_item_id">Link Waste Item *</label>
-                <select name="waste_item_id" id="waste_item_id" required>
-                    <option value="">Select a waste item to link</option>
-                    @foreach($wasteItems as $item)
-                       <option value="{{ $item->id }}" {{ old('waste_item_id') == $item->id ? 'selected' : '' }}>
-                            {{ $item->title }} (Received: {{ $item->received_date ?? 'N/A' }})
-                        </option>
-                    @endforeach
-                </select>
-                <span class="helper-text">Select one waste item that was used to create this material.</span>
-                @error('waste_item_id')
-                    <span class="error-text">{{ $message }}</span>
-                @enderror
-            </div>
+<div class="form-group full-width">
+    <label for="waste_item_id">Link Waste Item *</label>
+    <select name="waste_item_id" id="waste_item_id" required>
+        <option value="">Select a waste item to link</option>
+        @forelse($wasteItems as $item)
+           <option value="{{ $item->id }}" {{ old('waste_item_id') == $item->id ? 'selected' : '' }}>
+                {{ $item->title }} 
+                @if($item->estimated_weight)
+                    ({{ $item->estimated_weight }}kg)
+                @endif
+                - {{ $item->created_at->format('M d, Y') }}
+            </option>
+        @empty
+            <option value="" disabled>No waste items available. Get one first from your marketplace.</option>
+        @endforelse
+    </select>
+    
+</div>
 
             <div class="form-group full-width">
                 <label for="image_path">Material Images *</label>

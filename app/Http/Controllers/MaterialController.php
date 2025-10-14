@@ -14,47 +14,10 @@ use Illuminate\View\View;
 
 class MaterialController extends Controller
 {
-    private function ensureTemporaryWasteItemsExist(): void
-    {
-        if (! WasteItem::exists()) {
-            $temporaryItems = [
-                [
-                    'title' => 'Plastic Bottles',
-                    'received_date' => '2024-01-15',
-                    'generator_id' => 1,
-                ],
-                [
-                    'title' => 'Cardboard Boxes',
-                    'received_date' => '2024-01-16',
-                    'generator_id' => 1,
-                ],
-                [
-                    'title' => 'Glass Containers',
-                    'received_date' => '2024-01-17',
-                    'generator_id' => 1,
-                ],
-                [
-                    'title' => 'Aluminum Cans',
-                    'received_date' => '2024-01-18',
-                    'generator_id' => 1,
-                ],
-                [
-                    'title' => 'Electronic Waste',
-                    'received_date' => '2024-01-19',
-                    'generator_id' => 1,
-                ],
-            ];
-
-            foreach ($temporaryItems as $item) {
-                WasteItem::create($item);
-            }
-        }
-    }
-
     public function create(): View
     {
-        $this->ensureTemporaryWasteItemsExist();
-        $wasteItems = WasteItem::all();
+
+        $wasteItems = WasteItem::where('generator_id', Auth::id())->get();
 
         return view('maker.create_material', compact('wasteItems'));
     }
@@ -77,6 +40,15 @@ class MaterialController extends Controller
             'image_path.*.image' => 'Each file must be an image (jpeg, png, jpg, gif).',
             'image_path.*.max' => 'Each image may not be greater than 2MB.',
         ];
+
+        $wasteItem = WasteItem::where('generator_id', Auth::id())
+            ->find($request->waste_item_id);
+
+        if (! $wasteItem) {
+            return back()->withErrors([
+                'waste_item_id' => 'Selected waste item does not exist or does not belong to you.',
+            ])->withInput();
+        }
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
