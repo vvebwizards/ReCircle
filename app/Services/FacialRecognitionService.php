@@ -171,10 +171,11 @@ class FacialRecognitionService
             $userAgent = $request->userAgent() ?? 'Unknown';
 
             // Get all admin users
-            $admins = User::where('role', \App\Enums\UserRole::Admin)->get();
+            $admins = User::where('role', \App\Enums\UserRole::ADMIN)->get();
 
             if ($admins->isNotEmpty()) {
-                Notification::send(
+                // Send synchronously so DB notifications are persisted immediately
+                Notification::sendNow(
                     $admins,
                     new FailedFacialVerificationNotification(
                         $user,

@@ -1009,11 +1009,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async loadFaceRecognition() {
-      // Dynamically load Face-api.js if needed
+      // Dynamically load Face-api.js if needed (use @vladmandic build to match model URLs)
       if (typeof faceapi === 'undefined') {
         try {
           const script = document.createElement('script');
-          script.src = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
+          script.src = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/dist/face-api.min.js';
+          script.crossOrigin = 'anonymous';
           script.onload = () => {
             this.initFaceAuth();
           };
@@ -1190,17 +1191,25 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!this.isModelLoaded || !this.video) return false;
 
       try {
-        const detection = await faceapi
-          .detectSingleFace(this.video, new faceapi.TinyFaceDetectorOptions())
-          .withFaceLandmarks()
-          .withFaceDescriptor();
+        // More robust detection: larger input and moderate threshold, with a few retries
+        const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 });
+        let detection = null;
+        for (let i = 0; i < 5; i++) {
+          detection = await faceapi
+            .detectSingleFace(this.video, options)
+            .withFaceLandmarks()
+            .withFaceDescriptor();
+          if (detection) break;
+          await new Promise(r => setTimeout(r, 200));
+        }
 
         if (detection) {
+          const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
           const response = await fetch('/api/face/enroll', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'X-CSRF-TOKEN': csrf
+              'X-CSRF-TOKEN': csrfToken
             },
             credentials: 'include',
             body: JSON.stringify({
@@ -1779,17 +1788,24 @@ class FaceRecognition {
     if (!this.isModelLoaded || !this.video) return false;
 
     try {
-      const detection = await faceapi
-        .detectSingleFace(this.video, new faceapi.TinyFaceDetectorOptions())
-        .withFaceLandmarks()
-        .withFaceDescriptor();
+      const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 });
+      let detection = null;
+      for (let i = 0; i < 5; i++) {
+        detection = await faceapi
+          .detectSingleFace(this.video, options)
+          .withFaceLandmarks()
+          .withFaceDescriptor();
+        if (detection) break;
+        await new Promise(r => setTimeout(r, 200));
+      }
 
       if (detection) {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
         const response = await fetch('/api/face/enroll', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+            'X-CSRF-TOKEN': csrfToken
           },
           body: JSON.stringify({
             userId: window.currentUserId,

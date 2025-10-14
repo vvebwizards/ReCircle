@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\EnsureUserRole::class,
             'check.blocked.user' => \App\Http\Middleware\CheckBlockedUser::class,
             'track.activity' => \App\Http\Middleware\TrackUserActivity::class,
+            'admin' => \App\Http\Middleware\AdminMiddleware::class,
         ]);
 
         // Add global middleware

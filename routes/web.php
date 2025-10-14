@@ -61,6 +61,22 @@ Route::prefix('admin')->middleware(['jwt.auth'])->group(function () {
     Route::get('/audit-logs', [App\Http\Controllers\AuditLogController::class, 'index'])->name('admin.audit-logs.index');
 
     require __DIR__.'/admin_listings.php';
+
+    // Admin notifications routes (consolidated, ordered to avoid /{id} swallowing others)
+    Route::prefix('notifications')->group(function () {
+        // List
+        Route::get('/', [\App\Http\Controllers\AdminNotificationController::class, 'index'])->name('admin.notifications.index');
+        // JSON count endpoints (declare BEFORE /{id})
+        Route::get('/unread-count', [\App\Http\Controllers\AdminNotificationController::class, 'unreadCount'])->name('admin.notifications.unread-count');
+        // Legacy alias kept for compatibility with older JS
+        Route::get('/api/unread-count', [\App\Http\Controllers\AdminNotificationController::class, 'unreadCount'])->name('admin.notifications.unread-count-legacy');
+        // Actions
+        Route::patch('/{id}/read', [\App\Http\Controllers\AdminNotificationController::class, 'markAsRead'])->name('admin.notifications.mark-as-read');
+        Route::patch('/mark-all-read', [\App\Http\Controllers\AdminNotificationController::class, 'markAllAsRead'])->name('admin.notifications.mark-all-read');
+        // Show and delete (after specific routes)
+        Route::get('/{id}', [\App\Http\Controllers\AdminNotificationController::class, 'show'])->name('admin.notifications.show');
+        Route::delete('/{id}', [\App\Http\Controllers\AdminNotificationController::class, 'destroy'])->name('admin.notifications.destroy');
+    });
 });
 
 Route::get('/settings/security', function () {

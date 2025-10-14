@@ -66,7 +66,7 @@
     
     @stack('head')
 </head>
-<body class="bg-gray-900 min-h-screen">
+<body class="bg-gray-100 min-h-screen">
     {{-- Navbar (shared) --}}
     <nav class="navbar">
         <div class="nav-container">
