@@ -42,4 +42,9 @@ return [
         // 'hosted_domain' => env('GOOGLE_HOSTED_DOMAIN'),
     ],
 
+    'stripe' => [
+        'key' => env('STRIPE_KEY'),
+        'secret' => env('STRIPE_SECRET'),
+    ],
+
 ];

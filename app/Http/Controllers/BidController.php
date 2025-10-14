@@ -79,10 +79,30 @@ class BidController extends Controller
             DB::transaction(function () use ($bid) {
                 // accept target bid
                 $bid->markAccepted();
+
                 // reject other pending bids on same waste item
-                $bid->wasteItem->bids()->where('id', '!=', $bid->id)->where('status', Bid::STATUS_PENDING)->get()->each(function ($other) {
-                    $other->markRejected();
-                });
+                $bid->wasteItem->bids()
+                    ->where('id', '!=', $bid->id)
+                    ->where('status', Bid::STATUS_PENDING)
+                    ->get()
+                    ->each(fn($other) => $other->markRejected());
+
+                // ✅ Automatically add this bid to the Buyer's cart
+                $buyerId = $bid->maker_id;
+                if ($buyerId) {
+                    $cart = \App\Models\Cart::firstOrCreate([
+                        'user_id' => $buyerId,
+                        'status' => 'pending',
+                    ]);
+
+                    \App\Models\CartItem::create([
+                        'cart_id' => $cart->id,
+                        'bid_id' => $bid->id,
+                        'price' => $bid->amount,
+                        'quantity' => 1,
+                        'type' => 'bid',
+                    ]);
+                }
             });
         } else {
             $bid->markRejected();
