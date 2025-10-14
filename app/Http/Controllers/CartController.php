@@ -2,15 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Cart;
-use App\Models\CartItem;
-use App\Models\Product;
+use App\Enums\UserRole;
 use App\Models\Bid;
+use App\Models\Cart;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Stripe\Stripe;
 use Stripe\Checkout\Session as StripeSession;
-use App\Enums\UserRole;
+use Stripe\Stripe;
 
 class CartController extends Controller
 {
@@ -24,11 +23,11 @@ class CartController extends Controller
         );
 
         $cartItems = $cart->items()
-            ->when($user->role === UserRole::BUYER, fn($q) => $q->with('product'))
-            ->when($user->role === UserRole::MAKER, fn($q) => $q->with('bid'))
+            ->when($user->role === UserRole::BUYER, fn ($q) => $q->with('product'))
+            ->when($user->role === UserRole::MAKER, fn ($q) => $q->with('bid'))
             ->get();
 
-        $orders = $cartItems; 
+        $orders = $cartItems;
 
         return view('cart.index', compact('orders', 'cart'));
     }
@@ -39,7 +38,7 @@ class CartController extends Controller
         $user = Auth::user();
         $cart = Cart::firstOrCreate(['user_id' => $user->id, 'status' => 'pending']);
 
-    if ($user->role === UserRole::BUYER) {
+        if ($user->role === UserRole::BUYER) {
             $request->validate([
                 'product_id' => 'required|exists:products,id',
                 'quantity' => 'required|integer|min:1',
@@ -52,8 +51,7 @@ class CartController extends Controller
                 'quantity' => $request->quantity,
                 'price' => $product->price,
             ]);
-    }
-    elseif ($user->role === UserRole::MAKER) {
+        } elseif ($user->role === UserRole::MAKER) {
             $request->validate([
                 'bid_id' => 'required|exists:waste_bids,id',
             ]);
@@ -114,7 +112,7 @@ class CartController extends Controller
                     'price_data' => [
                         'currency' => 'gbp',
                         'product_data' => [
-                            'name' => 'Bid #' . $item->bid->id,
+                            'name' => 'Bid #'.$item->bid->id,
                         ],
                         'unit_amount' => $amountCents,
                     ],
@@ -135,7 +133,7 @@ class CartController extends Controller
             'line_items' => $lineItems,
             'mode' => 'payment',
             // Include the Checkout Session ID in the success URL so we can retrieve it
-            'success_url' => route('cart.success') . '?session_id={CHECKOUT_SESSION_ID}',
+            'success_url' => route('cart.success').'?session_id={CHECKOUT_SESSION_ID}',
             'cancel_url' => route('cart.cancel'),
         ]);
 

@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\UserManagementController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -70,7 +70,6 @@ Route::middleware(['jwt.auth'])->group(function () {
     Route::get('/cart/success', [CartController::class, 'success'])->name('cart.success');
     Route::get('/cart/cancel', [CartController::class, 'cancel'])->name('cart.cancel');
 });
-
 
 require __DIR__.'/auth.php';
 

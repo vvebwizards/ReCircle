@@ -85,7 +85,7 @@ class BidController extends Controller
                     ->where('id', '!=', $bid->id)
                     ->where('status', Bid::STATUS_PENDING)
                     ->get()
-                    ->each(fn($other) => $other->markRejected());
+                    ->each(fn ($other) => $other->markRejected());
 
                 // ✅ Automatically add this bid to the Buyer's cart
                 $buyerId = $bid->maker_id;
