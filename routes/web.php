@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\UserManagementController;
 use Illuminate\Support\Facades\Route;
 
@@ -36,9 +37,13 @@ Route::get('/maker/dashboard', function () {
     return view('maker.dashboard');
 })->name('maker.dashboard');
 
-Route::get('/maker/analytics', [App\Http\Controllers\AnalyticsController::class, 'index'])
+Route::get('/maker/analytics', [AnalyticsController::class, 'index'])
     ->middleware(['jwt.auth'])
     ->name('maker.analytics');
+
+Route::get('/maker/analytics/pdf', [AnalyticsController::class, 'generateAnalyticsPDF'])
+    ->name('analytics.pdf')
+    ->middleware(['jwt.auth']);
 
 Route::middleware(['jwt.auth'])->get('/maker/bids', [\App\Http\Controllers\MakerBidController::class, 'index'])->name('maker.bids');
 

@@ -18,7 +18,7 @@
 }
 
 .header-content h1 {
-    font-size: 2.5rem;
+    font-size: 2.0rem;
     font-weight: 700;
     color: #1f2937;
     margin-bottom: 0.5rem;
@@ -529,4 +529,272 @@
     .conversion-metrics {
         grid-template-columns: 1fr;
     }
+}
+/* Graphique en barres groupées pour Monthly Progress */
+.monthly-bars-chart {
+    display: flex;
+    gap: 20px;
+    height: 200px;
+    margin: 20px 0;
+    position: relative;
+}
+
+.chart-bars {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    flex: 1;
+    gap: 15px;
+    padding: 0 10px;
+}
+
+.month-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    height: 100%;
+}
+
+.bars-container {
+    display: flex;
+    gap: 4px;
+    align-items: end;
+    height: 160px;
+    width: 100%;
+    justify-content: center;
+}
+
+.bar {
+    border-radius: 4px 4px 0 0;
+    position: relative;
+    transition: all 0.3s ease;
+    min-height: 20px;
+    display: flex;
+    align-items: end;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.bar:hover {
+    transform: translateY(-2px);
+    opacity: 0.9;
+}
+
+.product-bar {
+    background: linear-gradient(to top, #10b981, #34d399);
+    width: 20px;
+}
+
+.material-bar {
+    background: linear-gradient(to top, #3b82f6, #60a5fa);
+    width: 20px;
+}
+
+.bar-value {
+    position: absolute;
+    top: -25px;
+    font-size: 11px;
+    font-weight: bold;
+    color: #374151;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.bar:hover .bar-value {
+    opacity: 1;
+}
+
+.month-label {
+    margin-top: 8px;
+    font-size: 11px;
+    color: #6b7280;
+    font-weight: 500;
+    text-align: center;
+}
+
+/* Axe Y */
+.y-axis {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 160px;
+    padding-right: 10px;
+    border-right: 1px solid #e5e7eb;
+    margin-right: 10px;
+}
+
+.y-axis span {
+    font-size: 10px;
+    color: #9ca3af;
+    text-align: right;
+}
+
+/* Légende en bas */
+.chart-legend-bottom {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.legend-item.products i {
+    color: #10b981;
+}
+
+.legend-item.materials i {
+    color: #3b82f6;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .monthly-bars-chart {
+        height: 180px;
+        gap: 10px;
+    }
+    
+    .chart-bars {
+        gap: 8px;
+    }
+    
+    .bars-container {
+        height: 140px;
+    }
+    
+    .product-bar,
+    .material-bar {
+        width: 16px;
+    }
+    
+    .bar-value {
+        font-size: 9px;
+        top: -20px;
+    }
+}
+/* États vides améliorés pour Monthly Progress */
+.no-data {
+    text-align: center;
+    padding: 30px 20px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 2px dashed #e5e7eb;
+}
+
+.no-data-icon {
+    font-size: 48px;
+    color: #d1d5db;
+    margin-bottom: 20px;
+}
+
+.no-data-content h4 {
+    color: #6b7280;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.no-data-content p {
+    color: #9ca3af;
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 20px;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.no-data-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 300px;
+    margin: 0 auto;
+}
+
+.action-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    transition: all 0.3s ease;
+}
+
+.action-item:hover {
+    border-color: #10b981;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.action-item i {
+    color: #10b981;
+    font-size: 16px;
+    width: 20px;
+}
+
+.action-item span {
+    color: #4b5563;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Message d'information pour données structurelles mais pas d'activité mensuelle */
+.empty-message {
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 15px;
+    text-align: center;
+}
+
+.empty-message i {
+    color: #f59e0b;
+    font-size: 18px;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.empty-message p {
+    color: #92400e;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 5px;
+}
+
+.empty-message small {
+    color: #b45309;
+    font-size: 12px;
+}
+
+/* Légende en bas du graphique */
+.chart-legend-bottom {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #e5e7eb;
+}
+
+/* Ajustements pour le graphique quand une seule ligne est affichée */
+.line-chart.single-line {
+    height: 180px;
+}
+
+.line-chart.single-line .chart-grid {
+    justify-content: flex-start;
+    gap: 40px;
 }
