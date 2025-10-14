@@ -11,9 +11,42 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use App\Services\SimpleEtsyPricingService;
 
 class ProductController extends Controller
 {
+    private $pricingService;
+
+    public function __construct()
+    {
+        $this->pricingService = new SimpleEtsyPricingService(); // CHANGE THIS
+    }
+    public function getPricingSuggestions(Request $request)
+{
+    $request->validate([
+        'product_name' => 'required|string|min:2',
+        'category' => 'required|string',
+        'cost_price' => 'nullable|numeric|min:0'
+    ]);
+
+    try {
+        $suggestions = $this->pricingService->getPricingSuggestions(
+            $request->product_name,
+            $request->category,
+            $request->cost_price
+        );
+
+        return response()->json($suggestions);
+
+    } catch (\Exception $e) {
+        \Log::error('Pricing suggestions error: ' . $e->getMessage());
+        
+        return response()->json([
+            'error' => 'Unable to generate pricing suggestions',
+            'message' => $e->getMessage()
+        ], 500);
+    }
+}
     public function index(Request $request): View
     {
         $query = Product::with(['materials', 'images'])

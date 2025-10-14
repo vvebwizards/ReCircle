@@ -41,5 +41,7 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI', env('APP_URL').'/auth/google/callback'),
         // 'hosted_domain' => env('GOOGLE_HOSTED_DOMAIN'),
     ],
-
+    'rapidapi' => [
+        'key' => env('RAPIDAPI_KEY'),
+    ],
 ];

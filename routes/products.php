@@ -32,4 +32,7 @@ Route::middleware('jwt.auth')->group(function () {
     Route::patch('/products/{product}/stock', [ProductController::class, 'updateStock'])
         ->name('maker.products.update-stock');
 
+    Route::post('/products/pricing-suggestions', [ProductController::class, 'getPricingSuggestions'])
+        ->name('maker.products.pricing-suggestions');
+
 });
