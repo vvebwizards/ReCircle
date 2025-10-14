@@ -293,20 +293,20 @@ class ProductController extends Controller
             ->with('success', "Product '{$productName}' deleted successfully!");
     }
 
-    public function publish(int $id): RedirectResponse
-    {
-        $product = Product::where('maker_id', Auth::id())->findOrFail($id);
+public function publish(int $id): RedirectResponse
+{
+    $product = Product::where('maker_id', Auth::id())->findOrFail($id);
 
-        if ($product->stock <= 0) {
-            return redirect()->back()
-                ->with('error', 'Cannot publish product with zero stock. Please update stock first.');
-        }
-
-        $product->update(['status' => ProductStatus::PUBLISHED]);
-
+    if ($product->stock <= 0) {
         return redirect()->back()
-            ->with('success', 'Product published successfully!');
+            ->with('error', 'Cannot publish product with zero stock. Please update stock first.');
     }
+
+    $product->update(['status' => ProductStatus::PUBLISHED]);
+
+    return redirect()->back()
+        ->with('success', 'Product published successfully!');
+}
 
     public function updateStock(Request $request, int $id): RedirectResponse
     {
