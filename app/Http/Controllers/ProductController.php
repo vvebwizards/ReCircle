@@ -6,12 +6,12 @@ use App\Enums\ProductStatus;
 use App\Models\Material;
 use App\Models\Product;
 use App\Models\ProductImage;
+use App\Services\SimpleEtsyPricingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
-use App\Services\SimpleEtsyPricingService;
 
 class ProductController extends Controller
 {
@@ -19,34 +19,36 @@ class ProductController extends Controller
 
     public function __construct()
     {
-        $this->pricingService = new SimpleEtsyPricingService(); // CHANGE THIS
+        $this->pricingService = new SimpleEtsyPricingService; // CHANGE THIS
     }
+
     public function getPricingSuggestions(Request $request)
-{
-    $request->validate([
-        'product_name' => 'required|string|min:2',
-        'category' => 'required|string',
-        'cost_price' => 'nullable|numeric|min:0'
-    ]);
+    {
+        $request->validate([
+            'product_name' => 'required|string|min:2',
+            'category' => 'required|string',
+            'cost_price' => 'nullable|numeric|min:0',
+        ]);
 
-    try {
-        $suggestions = $this->pricingService->getPricingSuggestions(
-            $request->product_name,
-            $request->category,
-            $request->cost_price
-        );
+        try {
+            $suggestions = $this->pricingService->getPricingSuggestions(
+                $request->product_name,
+                $request->category,
+                $request->cost_price
+            );
 
-        return response()->json($suggestions);
+            return response()->json($suggestions);
 
-    } catch (\Exception $e) {
-        \Log::error('Pricing suggestions error: ' . $e->getMessage());
-        
-        return response()->json([
-            'error' => 'Unable to generate pricing suggestions',
-            'message' => $e->getMessage()
-        ], 500);
+        } catch (\Exception $e) {
+            \Log::error('Pricing suggestions error: '.$e->getMessage());
+
+            return response()->json([
+                'error' => 'Unable to generate pricing suggestions',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
     }
-}
+
     public function index(Request $request): View
     {
         $query = Product::with(['materials', 'images'])
@@ -326,20 +328,20 @@ class ProductController extends Controller
             ->with('success', "Product '{$productName}' deleted successfully!");
     }
 
-public function publish(int $id): RedirectResponse
-{
-    $product = Product::where('maker_id', Auth::id())->findOrFail($id);
+    public function publish(int $id): RedirectResponse
+    {
+        $product = Product::where('maker_id', Auth::id())->findOrFail($id);
 
-    if ($product->stock <= 0) {
+        if ($product->stock <= 0) {
+            return redirect()->back()
+                ->with('error', 'Cannot publish product with zero stock. Please update stock first.');
+        }
+
+        $product->update(['status' => ProductStatus::PUBLISHED]);
+
         return redirect()->back()
-            ->with('error', 'Cannot publish product with zero stock. Please update stock first.');
+            ->with('success', 'Product published successfully!');
     }
-
-    $product->update(['status' => ProductStatus::PUBLISHED]);
-
-    return redirect()->back()
-        ->with('success', 'Product published successfully!');
-}
 
     public function updateStock(Request $request, int $id): RedirectResponse
     {

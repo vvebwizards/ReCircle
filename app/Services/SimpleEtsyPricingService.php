@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class SimpleEtsyPricingService
@@ -11,26 +10,28 @@ class SimpleEtsyPricingService
     /**
      * Main function - tries real Etsy API first, falls back to mock data
      */
-    public function getPricingSuggestions(string $productName, string $category, float $costPrice = null)
+    public function getPricingSuggestions(string $productName, string $category, ?float $costPrice = null)
     {
-        Log::info("🎯 PRICING REQUEST", [
-            'product' => $productName, 
+        Log::info('🎯 PRICING REQUEST', [
+            'product' => $productName,
             'category' => $category,
-            'cost' => $costPrice
+            'cost' => $costPrice,
         ]);
-        
+
         // Try real Etsy API first
         $realData = $this->getRealEtsyData($productName, $category);
-        
+
         if ($realData) {
-            Log::info("✅ REAL ETSY DATA FOUND", [
+            Log::info('✅ REAL ETSY DATA FOUND', [
                 'samples' => $realData['sample_size'],
-                'avg_price' => $realData['average_price']
+                'avg_price' => $realData['average_price'],
             ]);
+
             return $this->formatRealData($realData, $costPrice);
         }
-        
-        Log::warning("❌ USING MOCK DATA - Etsy API failed");
+
+        Log::warning('❌ USING MOCK DATA - Etsy API failed');
+
         // Fallback to mock data
         return $this->getMockPricing($productName, $category, $costPrice);
     }
@@ -41,21 +42,22 @@ class SimpleEtsyPricingService
     private function getRealEtsyData(string $productName, string $category)
     {
         $apiKey = config('services.rapidapi.key');
-        
-        Log::info("🔑 API Key check", ['has_key' => !empty($apiKey)]);
-        
-        if (!$apiKey) {
+
+        Log::info('🔑 API Key check', ['has_key' => ! empty($apiKey)]);
+
+        if (! $apiKey) {
             Log::error('❌ RAPIDAPI KEY MISSING - Check your .env file');
+
             return null;
         }
 
         try {
             $searchQuery = $this->buildSearchQuery($productName, $category);
-            Log::info("🔍 ETSY API CALL", [
+            Log::info('🔍 ETSY API CALL', [
                 'search_query' => $searchQuery,
-                'api_key' => substr($apiKey, 0, 10) . '...' // Log partial key for security
+                'api_key' => substr($apiKey, 0, 10).'...', // Log partial key for security
             ]);
-            
+
             $response = Http::withHeaders([
                 'x-rapidapi-host' => 'etsy-api2.p.rapidapi.com',
                 'x-rapidapi-key' => '662f7d84a0mshabe63eca8cf07c6p1b6d73jsnda0fad04faa1',
@@ -65,30 +67,31 @@ class SimpleEtsyPricingService
                 'currency' => 'USD',
                 'language' => 'en-US',
                 'country' => 'US',
-                'orderBy' => 'mostRelevant'
+                'orderBy' => 'mostRelevant',
             ]);
 
-            Log::info("📡 ETSY API RESPONSE", [
+            Log::info('📡 ETSY API RESPONSE', [
                 'status' => $response->status(),
-                'successful' => $response->successful()
+                'successful' => $response->successful(),
             ]);
 
             if ($response->successful()) {
                 $data = $response->json();
-                Log::info("📊 ETSY DATA RECEIVED", [
+                Log::info('📊 ETSY DATA RECEIVED', [
                     'results_count' => count($data['response'] ?? []),
-                    'has_results' => !empty($data['response'])
+                    'has_results' => ! empty($data['response']),
                 ]);
+
                 return $this->processEtsyResponse($data);
             } else {
                 Log::error('❌ ETSY API FAILED', [
                     'status' => $response->status(),
-                    'body' => $response->body()
+                    'body' => $response->body(),
                 ]);
             }
 
         } catch (\Exception $e) {
-            Log::error('💥 ETSY API EXCEPTION: ' . $e->getMessage());
+            Log::error('💥 ETSY API EXCEPTION: '.$e->getMessage());
         }
 
         return null;
@@ -104,13 +107,14 @@ class SimpleEtsyPricingService
             'clothing' => 'upcycled clothing',
             'accessories' => 'upcycled accessories',
             'home_decor' => 'upcycled home decor',
-            'electronics' => 'upcycled electronics'
+            'electronics' => 'upcycled electronics',
         ];
 
         $baseTerm = $categoryTerms[$category] ?? 'upcycled';
         $query = "{$productName}";
-        
-        Log::info("🔍 SEARCH QUERY BUILT", ['query' => $query]);
+
+        Log::info('🔍 SEARCH QUERY BUILT', ['query' => $query]);
+
         return $query;
     }
 
@@ -120,17 +124,18 @@ class SimpleEtsyPricingService
     private function processEtsyResponse(array $data): ?array
     {
         // FIX: Change 'results' to 'response'
-        if (empty($data['response']) || !is_array($data['response'])) {
+        if (empty($data['response']) || ! is_array($data['response'])) {
             Log::warning('📭 NO RESULTS IN ETSY RESPONSE');
+
             return null;
         }
 
-        Log::info("📦 PROCESSING ETSY RESULTS", ['total_listings' => count($data['response'])]);
+        Log::info('📦 PROCESSING ETSY RESULTS', ['total_listings' => count($data['response'])]);
 
         // Extract prices from listings
         $prices = [];
         $validListings = 0;
-        
+
         // FIX: Change $data['results'] to $data['response']
         foreach ($data['response'] as $listing) {
             // Also fix the price access - it's nested in price->salePrice
@@ -143,14 +148,15 @@ class SimpleEtsyPricingService
             }
         }
 
-        Log::info("💰 PRICES EXTRACTED", [
+        Log::info('💰 PRICES EXTRACTED', [
             'valid_listings' => $validListings,
             'prices_found' => count($prices),
-            'price_range' => count($prices) ? min($prices) . ' - ' . max($prices) : 'none'
+            'price_range' => count($prices) ? min($prices).' - '.max($prices) : 'none',
         ]);
 
         if (count($prices) < 3) {
             Log::warning('📉 NOT ENOUGH VALID PRICES', ['count' => count($prices)]);
+
             return null;
         }
 
@@ -158,22 +164,22 @@ class SimpleEtsyPricingService
         $minPrice = min($prices);
         $maxPrice = max($prices);
 
-        Log::info("🎯 PRICING ANALYSIS COMPLETE", [
+        Log::info('🎯 PRICING ANALYSIS COMPLETE', [
             'average' => $avgPrice,
-            'min' => $minPrice, 
+            'min' => $minPrice,
             'max' => $maxPrice,
-            'samples' => count($prices)
+            'samples' => count($prices),
         ]);
 
         return [
             'average_price' => $avgPrice,
             'min_price' => $minPrice,
             'max_price' => $maxPrice,
-            'price_range' => $minPrice . ' - ' . $maxPrice,
+            'price_range' => $minPrice.' - '.$maxPrice,
             'sample_size' => count($prices),
             'currency_code' => 'USD',
             'source' => 'etsy',
-            'is_real_data' => true
+            'is_real_data' => true,
         ];
     }
 
@@ -191,9 +197,9 @@ class SimpleEtsyPricingService
             'competitive_price' => $competitive,
             'premium_price' => $premium,
             'quick_sale_price' => $quickSale,
-            'explanation' => "Based on {$marketData['sample_size']} real upcycled listings from Etsy. " .
+            'explanation' => "Based on {$marketData['sample_size']} real upcycled listings from Etsy. ".
                            "Market prices range from \${$marketData['min_price']} to \${$marketData['max_price']}.",
-            'is_real_data' => true
+            'is_real_data' => true,
         ];
     }
 
@@ -202,8 +208,8 @@ class SimpleEtsyPricingService
      */
     private function getMockPricing(string $productName, string $category, ?float $costPrice)
     {
-        Log::info("🔄 USING MOCK DATA", ['product' => $productName, 'category' => $category]);
-        
+        Log::info('🔄 USING MOCK DATA', ['product' => $productName, 'category' => $category]);
+
         $pricingData = [
             'furniture' => ['min' => 80, 'max' => 450, 'avg' => 220],
             'clothing' => ['min' => 35, 'max' => 150, 'avg' => 75],
@@ -223,18 +229,18 @@ class SimpleEtsyPricingService
                 'average_price' => $prices['avg'],
                 'min_price' => $prices['min'],
                 'max_price' => $prices['max'],
-                'price_range' => $prices['min'] . ' - ' . $prices['max'],
+                'price_range' => $prices['min'].' - '.$prices['max'],
                 'sample_size' => rand(15, 45),
                 'currency_code' => 'USD',
                 'source' => 'market_analysis',
-                'is_real_data' => false
+                'is_real_data' => false,
             ],
             'competitive_price' => $competitive,
             'premium_price' => $premium,
             'quick_sale_price' => $quickSale,
-            'explanation' => "Based on market analysis of similar upcycled products. " .
+            'explanation' => 'Based on market analysis of similar upcycled products. '.
                            "Prices range from \${$prices['min']} to \${$prices['max']} for {$category} items.",
-            'is_real_data' => false
+            'is_real_data' => false,
         ];
     }
 
@@ -245,9 +251,10 @@ class SimpleEtsyPricingService
     {
         if ($costPrice) {
             $minPrice = $costPrice * $marginMultiplier;
+
             return round(max($minPrice, $marketPrice), 2);
         }
-        
+
         return round($marketPrice, 2);
     }
 }
