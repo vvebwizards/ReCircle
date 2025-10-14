@@ -15,6 +15,7 @@ export default defineConfig({
                 'resources/css/product_details.css',
                 'resources/css/edit-product.css',
                 'resources/css/maker_stats.css',
+                'resources/css/buyerMarketplace.css',
                 'resources/js/app.js',
                 'resources/js/main.js',
                 'resources/js/auth.js',

@@ -21,7 +21,6 @@
                 <p>Browse available waste items</p>
             </div>
         </div>
-
         <div class="filters-section modern">
             <form action="{{ route('marketplace.index') }}" method="GET" id="filterForm" class="filter-toolbar" novalidate data-ajax="true">
                 <div class="ft-row">
