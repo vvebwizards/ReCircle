@@ -57,6 +57,7 @@ Route::prefix('admin')->middleware(['jwt.auth'])->group(function () {
     Route::get('/audit-logs', [App\Http\Controllers\AuditLogController::class, 'index'])->name('admin.audit-logs.index');
 
     require __DIR__.'/admin_listings.php';
+    require __DIR__.'/admin_carts.php';
 });
 
 Route::get('/settings/security', function () {

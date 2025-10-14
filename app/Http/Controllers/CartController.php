@@ -50,6 +50,7 @@ class CartController extends Controller
                 'product_id' => $product->id,
                 'quantity' => $request->quantity,
                 'price' => $product->price,
+                'status' => 'pending',
             ]);
         } elseif ($user->role === UserRole::MAKER) {
             $request->validate([
@@ -66,6 +67,7 @@ class CartController extends Controller
                 'bid_id' => $bid->id,
                 'quantity' => 1,
                 'price' => $bid->amount,
+                'status' => 'pending',
             ]);
         }
 
@@ -78,7 +80,9 @@ class CartController extends Controller
         $user = Auth::user();
         $cart = Cart::where('user_id', $user->id)
             ->where('status', 'pending')
-            ->with('items.bid', 'items.product')
+            ->with(['items' => function ($q) {
+                $q->where('status', 'pending')->with('product', 'bid');
+            }])
             ->firstOrFail();
 
         if ($cart->items->isEmpty()) {
@@ -175,18 +179,21 @@ class CartController extends Controller
                 }
 
                 $cart->update($updateData);
+
+                // Mark cart items as paid instead of deleting them
+                $cart->items()->where('status', 'pending')->update(['status' => 'paid']);
             } catch (\Exception $e) {
                 // If retrieving the session fails, we still mark paid but leave amounts null
                 // Optionally log the exception here
                 $cart->update(['status' => 'paid']);
+                $cart->items()->where('status', 'pending')->update(['status' => 'paid']);
             }
         } else {
             // No session id provided: fallback to marking the cart paid (existing behavior)
             $cart->update(['status' => 'paid']);
         }
 
-        // Clear items after checkout
-        $cart->items()->delete();
+        // Do not delete items after checkout — keep them for record and mark them as paid above.
 
         return view('cart.success');
     }
