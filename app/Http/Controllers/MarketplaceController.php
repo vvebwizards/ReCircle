@@ -11,7 +11,7 @@ class MarketplaceController extends Controller
     public function index(Request $request): View|\Illuminate\Http\JsonResponse
     {
         $query = WasteItem::with('photos')
-                ->whereNull('maker_id'); // Only show waste items that aren't assigned to a maker
+            ->whereNull('maker_id'); // Only show waste items that aren't assigned to a maker
 
         if ($request->filled('search')) {
             $query->where('title', 'like', '%'.$request->search.'%');

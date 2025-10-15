@@ -13,8 +13,8 @@ class GeneratorWasteItemController extends Controller
     public function index(Request $request): View|\Illuminate\Http\JsonResponse
     {
         $query = WasteItem::with('photos')
-                ->where('generator_id', Auth::id())
-                ->whereNull('maker_id'); // Only show waste items that aren't assigned to a maker
+            ->where('generator_id', Auth::id())
+            ->whereNull('maker_id'); // Only show waste items that aren't assigned to a maker
 
         if ($request->filled('search')) {
             $query->where('title', 'like', '%'.$request->search.'%');

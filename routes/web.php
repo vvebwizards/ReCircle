@@ -8,9 +8,10 @@ Route::get('/', function () {
     return view('home');
 })->name('home');
 
+// Dashboard route with role-based redirect middleware
 Route::get('/dashboard', function () {
     return view('dashboard');
-})->middleware('jwt.auth')->name('dashboard');
+})->middleware(['jwt.auth', \App\Http\Middleware\RedirectBasedOnRole::class])->name('dashboard');
 
 // API endpoint for getting current user data
 Route::get('/api/user', function () {
@@ -35,7 +36,7 @@ Route::middleware(['jwt.auth'])->get('/dashboard/bids', [\App\Http\Controllers\D
 
 Route::get('/maker/dashboard', function () {
     return view('maker.dashboard');
-})->name('maker.dashboard');
+})->middleware('jwt.auth')->name('maker.dashboard');
 
 Route::get('/maker/analytics', [AnalyticsController::class, 'index'])
     ->middleware(['jwt.auth'])

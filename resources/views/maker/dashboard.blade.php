@@ -94,10 +94,16 @@
             <span class="qa-sub">Offers on waste items</span>
           </a>
 
-          <a href="{{ route('maker.collection') }}" class="qa-card qa-market" aria-label="View my collection">
+          <a href="{{ route('maker.collection') }}" class="qa-card qa-collection" aria-label="View my collection">
             <span class="qa-icon"><i class="fa-solid fa-boxes-stacked"></i></span>
             <span class="qa-title">My Collection</span>
             <span class="qa-sub">Waste items assigned to me</span>
+          </a>
+
+          <a href="{{ route('marketplace.index') }}" class="qa-card qa-market" aria-label="View marketplace">
+            <span class="qa-icon"><i class="fa-solid fa-store"></i></span>
+            <span class="qa-title">Marketplace</span>
+            <span class="qa-sub">Browse available products</span>
           </a>
           
           <a href="#" class="qa-card qa-report" aria-label="View impact report">
