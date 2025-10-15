@@ -46,6 +46,8 @@ Route::get('/maker/analytics/pdf', [AnalyticsController::class, 'generateAnalyti
     ->middleware(['jwt.auth']);
 
 Route::middleware(['jwt.auth'])->get('/maker/bids', [\App\Http\Controllers\MakerBidController::class, 'index'])->name('maker.bids');
+Route::middleware(['jwt.auth'])->get('/maker/collection', [\App\Http\Controllers\MakerCollectionController::class, 'index'])->name('maker.collection');
+Route::middleware(['jwt.auth'])->get('/maker/collection/{wasteItem}/images', [\App\Http\Controllers\MakerCollectionController::class, 'images'])->name('maker.collection.images');
 
 Route::prefix('admin')->middleware(['jwt.auth'])->group(function () {
     Route::get('/dashboard', function () {
