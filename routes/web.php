@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\UserManagementController;
 use Illuminate\Support\Facades\Route;
@@ -64,6 +65,7 @@ Route::prefix('admin')->middleware(['jwt.auth'])->group(function () {
     Route::get('/audit-logs', [App\Http\Controllers\AuditLogController::class, 'index'])->name('admin.audit-logs.index');
 
     require __DIR__.'/admin_listings.php';
+    require __DIR__.'/admin_carts.php';
 
     // Admin notifications routes (consolidated, ordered to avoid /{id} swallowing others)
     Route::prefix('notifications')->group(function () {
@@ -85,6 +87,14 @@ Route::prefix('admin')->middleware(['jwt.auth'])->group(function () {
 Route::get('/settings/security', function () {
     return view('settings.security');
 })->name('settings.security');
+
+Route::middleware(['jwt.auth'])->group(function () {
+    Route::get('/cart', [CartController::class, 'viewCart'])->name('cart.view');
+    Route::post('/cart/add', [CartController::class, 'addToCart'])->name('cart.add');
+    Route::post('/cart/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
+    Route::get('/cart/success', [CartController::class, 'success'])->name('cart.success');
+    Route::get('/cart/cancel', [CartController::class, 'cancel'])->name('cart.cancel');
+});
 
 require __DIR__.'/auth.php';
 

@@ -14,7 +14,8 @@
         "laravel/tinker": "^2.10.1",
         "league/oauth2-google": "^4.0",
         "simplesoftwareio/simple-qrcode": "^0.0.4@beta",
-        "spomky-labs/otphp": "^11.3"
+        "spomky-labs/otphp": "^11.3",
+        "stripe/stripe-php": "^18.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

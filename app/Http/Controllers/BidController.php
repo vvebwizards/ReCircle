@@ -81,6 +81,29 @@ class BidController extends Controller
                 // accept target bid
                 $bid->markAccepted();
 
+                // reject other pending bids on same waste item
+                $bid->wasteItem->bids()
+                    ->where('id', '!=', $bid->id)
+                    ->where('status', Bid::STATUS_PENDING)
+                    ->get()
+                    ->each(fn ($other) => $other->markRejected());
+
+                // ✅ Automatically add this bid to the Buyer's cart
+                $buyerId = $bid->maker_id;
+                if ($buyerId) {
+                    $cart = \App\Models\Cart::firstOrCreate([
+                        'user_id' => $buyerId,
+                        'status' => 'pending',
+                    ]);
+
+                    \App\Models\CartItem::create([
+                        'cart_id' => $cart->id,
+                        'bid_id' => $bid->id,
+                        'price' => $bid->amount,
+                        'quantity' => 1,
+                        'type' => 'bid',
+                    ]);
+                }
                 // set maker on the waste item to the accepted bid's maker
                 $bid->wasteItem()->update(['maker_id' => $bid->maker_id]);
 
