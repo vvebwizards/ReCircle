@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\CartController;
 use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\UserManagementController;
 use Illuminate\Support\Facades\Route;
 

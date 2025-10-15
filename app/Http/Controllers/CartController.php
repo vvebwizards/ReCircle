@@ -8,6 +8,7 @@ use App\Models\Cart;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Stripe\Checkout\Session as StripeSession;
 use Stripe\Stripe;
 
@@ -51,6 +52,7 @@ class CartController extends Controller
                 'quantity' => $request->quantity,
                 'price' => $product->price,
                 'status' => 'pending',
+                'type' => 'product',
             ]);
         } elseif ($user->role === UserRole::MAKER) {
             $request->validate([
@@ -68,6 +70,7 @@ class CartController extends Controller
                 'quantity' => 1,
                 'price' => $bid->amount,
                 'status' => 'pending',
+                'type' => 'bid',
             ]);
         }
 
@@ -178,10 +181,26 @@ class CartController extends Controller
                     $updateData['stripe_payment_intent_id'] = $paymentIntentId;
                 }
 
-                $cart->update($updateData);
+                DB::transaction(function () use ($cart, $updateData, $user) {
+                    // Update cart status and totals
+                    $cart->update($updateData);
 
-                // Mark cart items as paid instead of deleting them
-                $cart->items()->where('status', 'pending')->update(['status' => 'paid']);
+                    // For buyer purchases, decrement product stock for product-type items
+                    if ($user->role === UserRole::BUYER) {
+                        $cart->items()->where('status', 'pending')->with('product')->get()->each(function ($item) {
+                            if ($item->type === 'product' && $item->product) {
+                                $product = $item->product;
+                                $decrement = (int) $item->quantity;
+                                // Ensure stock does not go negative
+                                $newStock = max(0, $product->stock - $decrement);
+                                $product->update(['stock' => $newStock]);
+                            }
+                        });
+                    }
+
+                    // Mark cart items as paid instead of deleting them
+                    $cart->items()->where('status', 'pending')->update(['status' => 'paid']);
+                });
             } catch (\Exception $e) {
                 // If retrieving the session fails, we still mark paid but leave amounts null
                 // Optionally log the exception here
