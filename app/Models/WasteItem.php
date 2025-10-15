@@ -58,4 +58,7 @@ class WasteItem extends Model
     {
         return $this->photos->first()->image_url ?? asset('images/default-material.png');
     }
+
+        public function pickups() { return $this->hasMany(\App\Models\Pickup::class); }
+
 }

@@ -84,6 +84,13 @@
         Community Forum
     </a>
 </li>
+
+<li class="nav-item">
+@if(auth()->check() && auth()->user()->role->value === 'courier')
+  <a href="{{ route('deliveries.index') }}" class="nav-link">Deliveries</a>
+@endif
+</li>
+
                 <li class="nav-item"><a href="{{ route('auth') }}" class="nav-cta" aria-label="Sign in">Sign In</a></li>
             </ul>
             <div class="hamburger" aria-label="Toggle navigation" aria-expanded="false" role="button" tabindex="0">

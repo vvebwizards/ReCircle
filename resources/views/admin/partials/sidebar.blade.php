@@ -8,6 +8,12 @@
     <nav class="side-nav" role="navigation">
     <a href="{{ route('admin.dashboard') }}" class="side-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}"><i class="fa-solid fa-gauge"></i><span>Overview</span></a>
     <a href="{{ route('admin.users') }}" class="side-link"><i class="fa-solid fa-users {{ request()->routeIs('admin.users') ? 'active' : '' }}"></i><span>Users</span></a>
+   
+    <a href="{{ route('admin.pickups.index') }}"
+   class="side-link {{ request()->routeIs('admin.pickups.*') ? 'active' : '' }}">
+  <i class="fa-solid fa-truck"></i><span>Pickups</span>
+</a>
+
     <a href="{{ route('admin.audit-logs.index') }}" class="side-link"><i class="fa-solid fa-clipboard-list"></i><span>Audit Logs</span></a>
     <a href="{{ route('admin.listings.index') }}" class="side-link {{ request()->routeIs('admin.listings.*') ? 'active' : '' }}"><i class="fa-solid fa-list"></i><span>Listings</span></a>
     <a href="#" class="side-link"><i class="fa-solid fa-gavel"></i><span>Bids</span></a>

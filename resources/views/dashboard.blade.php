@@ -64,6 +64,14 @@
             <span class="qa-title">View Bids</span>
             <span class="qa-sub">Compare offers quickly</span>
           </a>
+          <!-- Quick Actions -->
+  {{-- ... cartes existantes ... --}}
+
+  <a href="{{ route('pickups.index') }}" class="qa-card qa-market" aria-label="Browse marketplace">
+    <div class="text-2xl mb-3"><i class="fa-solid fa-truck"></i></div>
+    <div class="font-semibold">Pickups Management</div>
+    <div class="text-sm text-gray-500">Schedule and track your pickups</div>
+  </a>
           @if(auth()->user() && auth()->user()->role === \App\Enums\UserRole::MAKER)
           <a href="{{ route('maker.bids') }}" class="qa-card qa-maker-bids" aria-label="View bids you placed">
             <span class="qa-icon"><i class="fa-solid fa-hand-holding-dollar"></i></span>
