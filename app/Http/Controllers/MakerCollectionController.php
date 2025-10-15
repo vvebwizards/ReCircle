@@ -17,7 +17,7 @@ class MakerCollectionController extends Controller
 
         if ($search = $request->get('search')) {
             $searchBy = $request->get('search_by', 'title');
-            
+
             switch ($searchBy) {
                 case 'description':
                     $query->where('description', 'like', "%{$search}%");
