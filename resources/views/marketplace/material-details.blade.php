@@ -25,6 +25,14 @@
             </div>
         </div>
 
+        @if(auth()->check() && auth()->user()->role === \App\Enums\UserRole::BUYER)
+        <form id="add-to-cart-form" method="POST" action="{{ route('cart.add') }}" style="display:none;">
+            @csrf
+            <input type="hidden" name="material_id" id="form-material-id" value="{{ $item->id }}">
+            <input type="hidden" name="quantity" id="form-quantity" value="1">
+        </form>
+        @endif
+
         @if($item->quantity == 0)
         <div class="status-alert sold-out">
             <i class="fa-solid fa-times"></i>
@@ -383,10 +391,18 @@ function updateMaterialQuantityDisplay(materialId, quantity) {
 function addMaterialToCartDetail(materialId) {
     const quantityInput = document.getElementById(`quantity-material-detail-${materialId}`);
     const quantity = parseInt(quantityInput.value) || 1;
-    
-    console.log('Add material to cart from detail:', materialId, 'Quantity:', quantity);
+    // Submit hidden form if present
+    const form = document.getElementById('add-to-cart-form');
+    if (form) {
+        document.getElementById('form-material-id').value = materialId;
+        document.getElementById('form-quantity').value = quantity;
+        form.submit();
+        return;
+    }
+
+    // Fallback
+    console.log('Add material to cart from detail (fallback):', materialId, 'Quantity:', quantity);
     alert(`Added ${quantity} {{ strtoupper($item->unit) }} of material to cart!`);
-    
 
 }
 
