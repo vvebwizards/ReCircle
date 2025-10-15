@@ -22,7 +22,17 @@
             auth: @json(route('auth')),
             twofa: @json(route('twofa')),
             forgot: @json(route('forgot-password')),
-            dashboard: @json(route('dashboard', [], false)),
+            dashboard: @auth
+                @if(auth()->user()->role == \App\Enums\UserRole::MAKER)
+                    @json(route('maker.dashboard', [], false))
+                @elseif(auth()->user()->role == \App\Enums\UserRole::ADMIN)
+                    @json(route('admin.dashboard', [], false))
+                @else
+                    @json(route('dashboard', [], false))
+                @endif
+            @else
+                @json(route('dashboard', [], false))
+            @endauth,
             settingsSecurity: @json(route('settings.security', [], false)),
         };
     </script>
@@ -74,17 +84,29 @@
                 <h2><a href="{{ route('home') }}" class="nav-link" style="text-decoration:none;">ReCircle</a></h2>
             </div>
             <ul class="nav-menu">
-                <li class="nav-item"><a href="{{ route('home') }}#home" class="nav-link">Home</a></li>
-                <li class="nav-item"><a href="{{ route('home') }}#how-it-works" class="nav-link">How It Works</a></li>
-                <li class="nav-item"><a href="{{ route('home') }}#roles" class="nav-link">Roles</a></li>
-                <li class="nav-item"><a href="{{ route('home') }}#impact" class="nav-link">Impact</a></li>
-<li class="nav-item">
-    <a href="{{ route('forum.index') }}" class="nav-link">
-        <i class="fa-solid fa-comments mr-1"></i>
-        Community Forum
-    </a>
-</li>
-                <li class="nav-item"><a href="{{ route('auth') }}" class="nav-cta" aria-label="Sign in">Sign In</a></li>
+                @auth
+                    {{-- Dashboard link is added by JavaScript --}}
+                    <li class="nav-item">
+                        <a href="{{ route('forum.index') }}" class="nav-link">
+                            <i class="fa-solid fa-comments mr-1"></i>
+                            Community Forum
+                        </a>
+                    </li>
+                    {{-- Other authenticated user links could go here --}}
+                @else
+                    {{-- Links for guest users --}}
+                    <li class="nav-item"><a href="{{ route('home') }}#home" class="nav-link">Home</a></li>
+                    <li class="nav-item"><a href="{{ route('home') }}#how-it-works" class="nav-link">How It Works</a></li>
+                    <li class="nav-item"><a href="{{ route('home') }}#roles" class="nav-link">Roles</a></li>
+                    <li class="nav-item"><a href="{{ route('home') }}#impact" class="nav-link">Impact</a></li>
+                    <li class="nav-item">
+                        <a href="{{ route('forum.index') }}" class="nav-link">
+                            <i class="fa-solid fa-comments mr-1"></i>
+                            Community Forum
+                        </a>
+                    </li>
+                    <li class="nav-item"><a href="{{ route('auth') }}" class="nav-cta" aria-label="Sign in">Sign In</a></li>
+                @endauth
             </ul>
             <div class="hamburger" aria-label="Toggle navigation" aria-expanded="false" role="button" tabindex="0">
                 <span class="bar"></span>

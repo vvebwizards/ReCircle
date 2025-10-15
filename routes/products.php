@@ -26,10 +26,13 @@ Route::middleware('jwt.auth')->group(function () {
     Route::delete('/products/{product}', [ProductController::class, 'destroy'])
         ->name('maker.products.destroy');
 
-    Route::post('/products/{product}/publish', [ProductController::class, 'publish'])
+    Route::post('/products/{id}/publish', [ProductController::class, 'publish'])
         ->name('maker.products.publish');
 
     Route::patch('/products/{product}/stock', [ProductController::class, 'updateStock'])
         ->name('maker.products.update-stock');
+
+    Route::post('/products/pricing-suggestions', [ProductController::class, 'getPricingSuggestions'])
+        ->name('maker.products.pricing-suggestions');
 
 });

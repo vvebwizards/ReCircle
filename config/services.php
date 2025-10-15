@@ -47,4 +47,7 @@ return [
         'secret' => env('STRIPE_SECRET'),
     ],
 
+    'rapidapi' => [
+        'key' => env('RAPIDAPI_KEY'),
+    ],
 ];

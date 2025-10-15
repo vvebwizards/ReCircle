@@ -228,7 +228,6 @@
                             @if($product->status === \App\Enums\ProductStatus::DRAFT)
                                 <form action="{{ route('maker.products.publish', $product->id) }}" method="POST">
                                     @csrf
-                                    @method('PUT')
                                     <button type="submit" class="btn-action btn-publish">
                                         <i class="fa-solid fa-upload"></i> Publish
                                     </button>

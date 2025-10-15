@@ -87,7 +87,7 @@
                     <i class="fa-solid fa-plus"></i>
                     <span>Create Your First Item</span>
                 </a>
-                <a href="{{ route('generator.waste-items.guide') }}" class="btn-link">
+                <a href="{{ route('generator.waste-items.create') }}" class="btn-link">
                     <i class="fa-solid fa-circle-question"></i>
                     <span>Learn More</span>
                 </a>

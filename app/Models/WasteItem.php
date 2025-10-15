@@ -13,6 +13,7 @@ class WasteItem extends Model
 
     protected $fillable = [
         'generator_id',
+        'maker_id',
         'title',
         'images',
         'estimated_weight',
@@ -36,6 +37,12 @@ class WasteItem extends Model
     public function materials(): HasMany
     {
         return $this->hasMany(Material::class, 'waste_item_id');
+    }
+
+    public function maker(): BelongsTo
+    {
+        /** @phpstan-ignore-next-line return.type */
+        return $this->belongsTo(User::class, 'maker_id');
     }
 
     public function photos(): HasMany

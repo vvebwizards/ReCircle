@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateBidStatusRequest;
 use App\Models\Bid;
 use App\Models\WasteItem;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class BidController extends Controller
@@ -103,6 +104,18 @@ class BidController extends Controller
                         'type' => 'bid',
                     ]);
                 }
+                // set maker on the waste item to the accepted bid's maker
+                $bid->wasteItem()->update(['maker_id' => $bid->maker_id]);
+
+                // reject other pending bids on same waste item
+                $bid->wasteItem
+                    ->bids()
+                    ->where('id', '!=', $bid->id)
+                    ->where('status', Bid::STATUS_PENDING)
+                    ->get()
+                    ->each(function ($other) {
+                        $other->markRejected();
+                    });
             });
         } else {
             $bid->markRejected();
