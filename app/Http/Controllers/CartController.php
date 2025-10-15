@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\UserRole;
 use App\Models\Bid;
 use App\Models\Cart;
+use App\Models\Material;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,7 +25,7 @@ class CartController extends Controller
         );
 
         $cartItems = $cart->items()
-            ->when($user->role === UserRole::BUYER, fn ($q) => $q->with('product'))
+            ->when($user->role === UserRole::BUYER, fn ($q) => $q->with('product', 'material'))
             ->when($user->role === UserRole::MAKER, fn ($q) => $q->with('bid'))
             ->get();
 
@@ -40,20 +41,38 @@ class CartController extends Controller
         $cart = Cart::firstOrCreate(['user_id' => $user->id, 'status' => 'pending']);
 
         if ($user->role === UserRole::BUYER) {
-            $request->validate([
-                'product_id' => 'required|exists:products,id',
-                'quantity' => 'required|integer|min:1',
-            ]);
+            // Support adding product or material to cart
+            if ($request->has('product_id')) {
+                $request->validate([
+                    'product_id' => 'required|exists:products,id',
+                    'quantity' => 'required|integer|min:1',
+                ]);
 
-            $product = Product::findOrFail($request->product_id);
+                $product = Product::findOrFail($request->product_id);
 
-            $cart->items()->create([
-                'product_id' => $product->id,
-                'quantity' => $request->quantity,
-                'price' => $product->price,
-                'status' => 'pending',
-                'type' => 'product',
-            ]);
+                $cart->items()->create([
+                    'product_id' => $product->id,
+                    'quantity' => $request->quantity,
+                    'price' => $product->price,
+                    'status' => 'pending',
+                    'type' => 'product',
+                ]);
+            } elseif ($request->has('material_id')) {
+                $request->validate([
+                    'material_id' => 'required|exists:materials,id',
+                    'quantity' => 'required|integer|min:1',
+                ]);
+
+                $material = Material::findOrFail($request->material_id);
+
+                $cart->items()->create([
+                    'material_id' => $material->id,
+                    'quantity' => $request->quantity,
+                    'price' => 0, // materials may not have a price field; set to 0 or adapt if you add material pricing
+                    'status' => 'pending',
+                    'type' => 'material',
+                ]);
+            }
         } elseif ($user->role === UserRole::MAKER) {
             $request->validate([
                 'bid_id' => 'required|exists:waste_bids,id',
@@ -84,7 +103,7 @@ class CartController extends Controller
         $cart = Cart::where('user_id', $user->id)
             ->where('status', 'pending')
             ->with(['items' => function ($q) {
-                $q->where('status', 'pending')->with('product', 'bid');
+                $q->where('status', 'pending')->with('product', 'bid', 'material');
             }])
             ->firstOrFail();
 
@@ -187,13 +206,24 @@ class CartController extends Controller
 
                     // For buyer purchases, decrement product stock for product-type items
                     if ($user->role === UserRole::BUYER) {
+                        // Decrement product stock
                         $cart->items()->where('status', 'pending')->with('product')->get()->each(function ($item) {
                             if ($item->type === 'product' && $item->product) {
                                 $product = $item->product;
                                 $decrement = (int) $item->quantity;
-                                // Ensure stock does not go negative
                                 $newStock = max(0, $product->stock - $decrement);
                                 $product->update(['stock' => $newStock]);
+                            }
+                        });
+
+                        // Decrement material quantity (units) if material items exist
+                        $cart->items()->where('status', 'pending')->with('material')->get()->each(function ($item) {
+                            if ($item->type === 'material' && $item->material) {
+                                $material = $item->material;
+                                $decrement = (float) $item->quantity;
+                                // Ensure quantity does not go negative
+                                $newQuantity = max(0, $material->quantity - $decrement);
+                                $material->update(['quantity' => $newQuantity]);
                             }
                         });
                     }

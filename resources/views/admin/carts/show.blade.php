@@ -10,13 +10,9 @@
       </div>
       <div class="user-info">
         <div class="user-avatar">
-          @if($cart->user->avatar)
-            <img src="{{ $cart->user->avatar }}" alt="User Avatar">
-          @else
-            <i class="fas fa-user"></i>
-          @endif
+          <span class="avatar sm">{{ strtoupper(substr($cart->user->name ?? 'U', 0, 2)) }}</span>
         </div>
-        <div class="user-details">
+        <div class="user-details" style="color:white">
           <h1>{{ $cart->user->name ?? 'Guest User' }}</h1>
           <p class="user-email">{{ $cart->user->email ?? 'No email' }}</p>
         </div>
@@ -90,15 +86,29 @@
             <td class="item-id">#{{ $item->id }}</td>
             <td class="item-details">
               <div class="item-info">
+                {{-- Product --}}
                 @if($item->product)
                   <div class="product-image">
-                    @if($item->product->image)
-                      <img src="{{ $item->product->image }}" alt="{{ $item->product->name }}">
+                    @if($item->product->images && count($item->product->images) > 0)
+                      <img src="{{ asset($item->product->images->first()->image_path) }}" alt="{{ $item->product->name }}">
                     @else
                       <div class="no-image"><i class="fas fa-image"></i></div>
                     @endif
                   </div>
                   <div class="item-name">{{ $item->product->name }}</div>
+
+                {{-- Material --}}
+                @elseif($item->material)
+                  <div class="product-image">
+                    @if($item->material->images && count($item->material->images) > 0)
+                      <img src="{{ asset($item->material->images->first()->image_path) }}" alt="{{ $item->material->name }}">
+                    @else
+                      <div class="no-image"><i class="fas fa-image"></i></div>
+                    @endif
+                  </div>
+                  <div class="item-name">{{ $item->material->name }}</div>
+
+                {{-- Bid --}}
                 @elseif($item->bid)
                   <div class="bid-badge">
                     <i class="fas fa-gavel"></i>
@@ -109,9 +119,19 @@
                 @endif
               </div>
             </td>
+
             <td class="item-type">
-              <span class="type-badge type-{{ $item->product ? 'product' : ($item->bid ? 'bid' : 'item') }}">
-                {{ $item->product ? 'Product' : ($item->bid ? 'Bid' : 'Item') }}
+              <span class="type-badge 
+                type-{{ 
+                  $item->product ? 'product' : 
+                  ($item->material ? 'material' : 
+                  ($item->bid ? 'bid' : 'item')) 
+                }}">
+                {{ 
+                  $item->product ? 'Product' : 
+                  ($item->material ? 'Material' : 
+                  ($item->bid ? 'Bid' : 'Item')) 
+                }}
               </span>
             </td>
             <td class="price">${{ number_format($item->price, 2) }}</td>
@@ -413,6 +433,12 @@
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
   border: 1px solid #e5e7eb;
   margin-bottom: 2rem;
+}
+
+.type-badge.type-material {
+  background: #e0f2fe; /* light blue background */
+  color: #1e3a8a;
+  border-color: #3b82f6;
 }
 
 .section-header {
