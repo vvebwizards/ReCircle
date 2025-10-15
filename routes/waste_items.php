@@ -8,6 +8,9 @@ Route::middleware('jwt.auth')->group(function () {
         ->name('generator.waste-items.index');
     Route::get('/waste-items/create', [GeneratorWasteItemController::class, 'create'])
         ->name('generator.waste-items.create');
+    // Guide page for generators managing waste items
+    Route::get('/waste-items/guide', [GeneratorWasteItemController::class, 'guide'])
+        ->name('generator.waste-items.guide');
     Route::post('/waste-items', [GeneratorWasteItemController::class, 'store'])
         ->name('generator.waste-items.store');
     Route::get('/waste-items/{wasteItem}', [GeneratorWasteItemController::class, 'show'])

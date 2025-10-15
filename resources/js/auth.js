@@ -227,6 +227,22 @@ document.addEventListener('DOMContentLoaded', () => {
             window.__currentUser = me?.data || null;
           }
         } catch {}
+      } else {
+        // Redirect based on user role
+        if (data.user_role) {
+          switch(data.user_role) {
+            case 'maker':
+              window.location.href = '/maker/dashboard';
+              return;
+            case 'admin':
+              window.location.href = '/admin/dashboard';
+              return;
+            default:
+              // Default dashboard for other roles
+              window.location.href = '/dashboard';
+              return;
+          }
+        }
         
         // Show onboarding modal after short delay
         setTimeout(() => {

@@ -92,7 +92,7 @@
     <select name="waste_item_id" id="waste_item_id" required>
         <option value="">Select a waste item to link</option>
         @forelse($wasteItems as $item)
-           <option value="{{ $item->id }}" {{ old('waste_item_id') == $item->id ? 'selected' : '' }}>
+           <option value="{{ $item->id }}" {{ old('waste_item_id', request('from')) == $item->id ? 'selected' : '' }}>
                 {{ $item->title }} 
                 @if($item->estimated_weight)
                     ({{ $item->estimated_weight }}kg)

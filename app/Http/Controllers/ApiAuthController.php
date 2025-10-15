@@ -138,15 +138,18 @@ class ApiAuthController extends Controller
 
         $issued = $this->jwt->issue($user);
 
+        // Create the additional data array with user role for dashboard redirection
+        $additionalData = [
+            'user_role' => $user->role->value,
+        ];
+
         // Check if user needs onboarding
         if (! $user->onboarding_completed) {
-            return $this->tokenResponse($issued['token'], $issued['expires_at'], [
-                'show_onboarding' => true,
-                'user_id' => $user->id,
-            ]);
+            $additionalData['show_onboarding'] = true;
+            $additionalData['user_id'] = $user->id;
         }
 
-        return $this->tokenResponse($issued['token'], $issued['expires_at']);
+        return $this->tokenResponse($issued['token'], $issued['expires_at'], $additionalData);
     }
 
     // Send a one-time code to the user's verified email after verifying credentials (without issuing a JWT)
