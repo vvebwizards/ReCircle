@@ -45,6 +45,19 @@ window.addEventListener('scroll', () => {
     }
 });
 
+// Reclamation button -> navigates to reclamation create page
+(function() {
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-action="reclamation"]');
+        if (!btn) return;
+        e.preventDefault();
+        // route provided by blade via window.appRoutes or fallback
+        const routes = window.appRoutes || {};
+        const target = routes.reclamationsCreate || routes.reclamations?.create || '/reclamations/create';
+        window.location.href = target;
+    });
+})();
+
 // Animated counter for statistics
 function animateCounter(element, target, duration = 2000) {
     let start = 0;
@@ -229,6 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <li role="menuitem"><a href="#" class="profile-item"><i class="fa-regular fa-user"></i> Profile</a></li>
                     <li role="menuitem"><a href="${('/cart')}" class="profile-item"><i class="fa fa-shopping-cart"></i> Purchases</a></li>
                     <li role="menuitem"><a href="${(routes.settingsSecurity||'/settings/security')}" class="profile-item"><i class="fa-solid fa-gear"></i> Settings</a></li>
+                    <li role="menuitem"><a href="${(routes.reclamations?.index||'/reclamations')}" class="profile-item"><i class="fa-solid fa-flag"></i> Reclamations</a></li>
                     <li role="menuitem"><a href="#" class="profile-item" data-signout><i class="fa-solid fa-right-from-bracket"></i> Sign Out</a></li>
                 </ul>`;
             const dashLi = findByHref(dashUrl)?.parentElement;
