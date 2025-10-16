@@ -16,57 +16,57 @@ use Stripe\Stripe;
 class CartController extends Controller
 {
     public function index(Request $request)
-{
-    $query = Cart::with('user');
+    {
+        $query = Cart::with('user');
 
-    // --- Search ---
-    if ($search = $request->input('search')) {
-        $query->where(function ($q) use ($search) {
-            $q->where('id', $search)
-              ->orWhereHas('user', function ($q2) use ($search) {
-                  $q2->where('name', 'like', "%{$search}%")
-                     ->orWhere('email', 'like', "%{$search}%");
-              });
-        });
-    }
-
-    // --- Status filter ---
-    if ($status = $request->input('status')) {
-        $query->where('status', $status);
-    }
-
-    // --- Min/Max total filter ---
-    if ($min = $request->input('min_total')) {
-        $query->where('total_amount', '>=', $min);
-    }
-    if ($max = $request->input('max_total')) {
-        $query->where('total_amount', '<=', $max);
-    }
-
-    // --- Sorting ---
-    if ($sort = $request->input('sort')) {
-        switch ($sort) {
-            case 'total_asc':
-                $query->orderBy('total_amount', 'asc');
-                break;
-            case 'total_desc':
-                $query->orderBy('total_amount', 'desc');
-                break;
-            case 'date_asc':
-                $query->orderBy('created_at', 'asc');
-                break;
-            case 'date_desc':
-                $query->orderBy('created_at', 'desc');
-                break;
+        // --- Search ---
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('id', $search)
+                    ->orWhereHas('user', function ($q2) use ($search) {
+                        $q2->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                    });
+            });
         }
-    } else {
-        $query->latest();
+
+        // --- Status filter ---
+        if ($status = $request->input('status')) {
+            $query->where('status', $status);
+        }
+
+        // --- Min/Max total filter ---
+        if ($min = $request->input('min_total')) {
+            $query->where('total_amount', '>=', $min);
+        }
+        if ($max = $request->input('max_total')) {
+            $query->where('total_amount', '<=', $max);
+        }
+
+        // --- Sorting ---
+        if ($sort = $request->input('sort')) {
+            switch ($sort) {
+                case 'total_asc':
+                    $query->orderBy('total_amount', 'asc');
+                    break;
+                case 'total_desc':
+                    $query->orderBy('total_amount', 'desc');
+                    break;
+                case 'date_asc':
+                    $query->orderBy('created_at', 'asc');
+                    break;
+                case 'date_desc':
+                    $query->orderBy('created_at', 'desc');
+                    break;
+            }
+        } else {
+            $query->latest();
+        }
+
+        $carts = $query->paginate(10)->withQueryString();
+
+        return view('admin.carts.index', compact('carts'));
     }
-
-    $carts = $query->paginate(10)->withQueryString();
-
-    return view('admin.carts.index', compact('carts'));
-}
 
     // View the cart
     public function viewCart()
