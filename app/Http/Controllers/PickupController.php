@@ -21,35 +21,22 @@ class PickupController extends Controller
 public function index(Request $request)
 {
     $user = auth()->user();
-    $q = trim($request->get('q', ''));
 
-    // base query
-    $query = Pickup::with(['wasteItem:id,title,generator_id']);
+    $query = \App\Models\Pickup::with(['wasteItem:id,title,generator_id'])
+        ->latest();
 
-    // 🔹 Cas courier : ne voir que ce qui est utile au livreur
-    if (optional($user->role)->value === 'courier') {
-        $query->whereIn('status', ['scheduled', 'assigned'])
-              ->where(function ($w) use ($user) {
-                  $w->whereNull('courier_id')              // pas encore pris
-                    ->orWhere('courier_id', $user->id);    // ou déjà assigné à lui
-              });
-    }
-    // 🔹 Cas generator : ses propres pickups via le waste item
-    elseif (optional($user->role)->value === 'generator') {
-        $query->whereHas('wasteItem', fn ($w) => $w->where('generator_id', $user->id));
-    }
-    // 🔹 Autres rôles (admin/maker) : pas de filtre particulier, ou ajoute le tien si besoin
-
-    // Recherche libre
-    if ($q !== '') {
-        $query->where(function ($b) use ($q) {
-            $b->where('pickup_address', 'like', "%{$q}%")
-              ->orWhere('tracking_code', 'like', "%{$q}%")
-              ->orWhereHas('wasteItem', fn($w) => $w->where('title','like',"%{$q}%"));
+    if ($user && ($user->role->value ?? $user->role) === 'courier') {
+        // Courrier : voit les pickups libres + les siens
+        $query->where(function ($q) use ($user) {
+            $q->whereNull('courier_id')
+              ->orWhere('courier_id', $user->id);
         });
+    } else {
+        // Autres rôles : ta logique existante (ex: générateur voit ses propres listings)
+        $query->whereHas('wasteItem', fn ($q) => $q->where('generator_id', $user->id));
     }
 
-    $pickups = $query->latest()->paginate(15)->withQueryString();
+    $pickups = $query->paginate(15)->withQueryString();
 
     return view('pickups.index', compact('pickups'));
 }

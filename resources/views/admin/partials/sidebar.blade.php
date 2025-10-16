@@ -14,6 +14,11 @@
   <i class="fa-solid fa-truck"></i><span>Pickups</span>
 </a>
 
+<a href="{{ route('admin.deliveries.index') }}"
+   class="side-link {{ request()->routeIs('admin.deliveries.*') ? 'active' : '' }}">
+   <i class="fa-solid fa-truck-fast"></i><span>Deliveries</span>
+</a>
+
     <a href="{{ route('admin.audit-logs.index') }}" class="side-link"><i class="fa-solid fa-clipboard-list"></i><span>Audit Logs</span></a>
     <a href="{{ route('admin.listings.index') }}" class="side-link {{ request()->routeIs('admin.listings.*') ? 'active' : '' }}"><i class="fa-solid fa-list"></i><span>Listings</span></a>
     <a href="#" class="side-link"><i class="fa-solid fa-gavel"></i><span>Bids</span></a>

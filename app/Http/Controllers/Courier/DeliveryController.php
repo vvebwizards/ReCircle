@@ -1,14 +1,18 @@
 <?php
+
 namespace App\Http\Controllers\Courier;
 
 use App\Http\Controllers\Controller;
 use App\Models\Delivery;
 use App\Models\Pickup;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class DeliveryController extends Controller
 {
+    /* ------------ helpers ------------ */
     private function ensureCourier()
     {
         $user = auth()->user();
@@ -16,26 +20,65 @@ class DeliveryController extends Controller
         return $user;
     }
 
-    // --- liste (tu l’as déjà) ---
+    /* ------------ list ------------ */
+    public function index(Request $request)
+    {
+        $user = $this->ensureCourier();
+        $q = trim($request->get('q',''));
 
-    // --- NEW: formulaire de “Select delivery” à partir d’un pickup ---
+        $deliveries = Delivery::with([
+                'pickup:id,waste_item_id,pickup_address,scheduled_pickup_window_start,scheduled_pickup_window_end',
+                'pickup.wasteItem:id,title'
+            ])
+            ->forCourier($user->id)   // scope sur le modèle Delivery
+            ->active()               // status actifs & non soft-deleted
+            ->when($q !== '', function ($b) use ($q) {
+                $b->where('tracking_code', 'like', "%$q%")
+                  ->orWhereHas('pickup.wasteItem', fn($w) => $w->where('title','like',"%$q%"))
+                  ->orWhereHas('pickup', fn($p) => $p->where('pickup_address','like',"%$q%"));
+            })
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('courier.deliveries.index', compact('deliveries'));
+    }
+    public function completed(Request $request)
+{
+    $user = $this->ensureCourier();
+
+    $deliveries = Delivery::with(['pickup:id,waste_item_id,pickup_address,scheduled_pickup_window_start,scheduled_pickup_window_end','pickup.wasteItem:id,title'])
+        ->forCourier($user->id)
+        ->completed()            // scope: delivered / failed / cancelled
+        ->latest('arrived_hub_at')
+        ->paginate(15)
+        ->withQueryString();
+
+    return view('courier.deliveries.index', [
+        'deliveries' => $deliveries,
+        'tab' => 'completed',
+    ]);
+}
+
+    /* ------------ select/create from pickup ------------ */
     public function createFromPickup(Pickup $pickup)
     {
         $user = $this->ensureCourier();
 
-        // Empêcher doublon: une delivery par pickup
-        $existing = Delivery::where('pickup_id', $pickup->id)->first();
-        if ($existing) {
-            return redirect()
-                ->route('deliveries.index')
-                ->with('ok', "A delivery already exists for pickup #{$pickup->id}.");
+        // si une delivery ACTIVE existe déjà pour ce pickup → retour
+        $hasActive = Delivery::where('pickup_id', $pickup->id)
+            ->whereNull('deleted_at')
+            ->exists();
+
+        if ($hasActive) {
+            return redirect()->route('deliveries.index')
+                ->with('ok', "Pickup #{$pickup->id} a déjà une delivery active.");
         }
 
-        // valeurs par défaut Hub (Cas A — Hub fixe)
         $defaults = [
-            'hub_address' => config('delivery.hub.address', 'ReCircle Hub — 12 Rue Exemple, Tunis'),
-            'hub_lat'     => config('delivery.hub.lat', 36.8065),
-            'hub_lng'     => config('delivery.hub.lng', 10.1815),
+            'hub_address'   => config('delivery.hub.address', 'ReCircle Hub — 12 Rue Exemple, Tunis'),
+            'hub_lat'       => config('delivery.hub.lat', 36.8065),
+            'hub_lng'       => config('delivery.hub.lng', 10.1815),
             'courier_phone' => $user->phone ?? '',
         ];
 
@@ -45,7 +88,6 @@ class DeliveryController extends Controller
         ]);
     }
 
-    // --- NEW: enregistrement de la delivery ---
     public function storeFromPickup(Request $request, Pickup $pickup)
     {
         $user = $this->ensureCourier();
@@ -59,227 +101,167 @@ class DeliveryController extends Controller
             'start_now'     => ['nullable','boolean'],
         ]);
 
-        // une seule delivery par pickup
-        $delivery = Delivery::firstOrCreate(
-            ['pickup_id' => $pickup->id],
-            [
-                'courier_id'   => $user->id,
-                'courier_phone'=> $data['courier_phone'],
-                'hub_address'  => $data['hub_address'],
-                'hub_lat'      => $data['hub_lat'] ?? null,
-                'hub_lng'      => $data['hub_lng'] ?? null,
-                'status'       => 'assigned',                 // assignée au livreur
-                'tracking_code'=> $pickup->tracking_code ?: Str::upper(Str::random(12)),
-                'assigned_at'  => now(),
-                'notes'        => $data['notes'] ?? null,
-            ]
+        abort_if(
+            Delivery::where('pickup_id', $pickup->id)->whereNull('deleted_at')->exists(),
+            422, 'Delivery active déjà existante pour ce pickup.'
         );
 
-        // Si “démarrer maintenant”, passer en transit + timestamp de prise
-        if ($request->boolean('start_now')) {
-            $delivery->status       = 'in_transit';
-            $delivery->picked_up_at = now();
-            $delivery->save();
-        }
-
-        return redirect()
-            ->route('deliveries.index')
-            ->with('ok', "Delivery for pickup #{$pickup->id} created.");
-    }
-
-    // --- EXISTANT (index / markInTransit / markDelivered) ---
-    public function index(Request $request)
-    {
-        $user = $this->ensureCourier();
-        $q = trim($request->get('q',''));
-
-        $deliveries = Delivery::with(['pickup:id,waste_item_id,pickup_address,scheduled_pickup_window_start,scheduled_pickup_window_end'])
-            ->forCourier($user->id)
-            ->active()
-            ->when($q !== '', function ($b) use ($q) {
-                $b->where('tracking_code', 'like', "%$q%")
-                  ->orWhereHas('pickup.wasteItem', fn($w) => $w->where('title','like',"%$q%"))
-                  ->orWhereHas('pickup', fn($p) => $p->where('pickup_address','like',"%$q%"));
-            })
-            ->latest()
-            ->paginate(15)
-            ->withQueryString();
-
-        return view('courier.deliveries.index', compact('deliveries'));
-    }
-
-    public function markInTransit(Delivery $delivery)
-    {
-        $user = $this->ensureCourier();
-        if (is_null($delivery->courier_id)) {
-            $delivery->courier_id = $user->id;
-        } elseif ($delivery->courier_id !== $user->id) {
-            abort(403, 'This delivery is assigned to another courier.');
-        }
-        abort_if(!in_array($delivery->status, ['scheduled','assigned']), 422);
-
-        $delivery->status       = 'in_transit';
-        $delivery->picked_up_at = $delivery->picked_up_at ?? now();
-        $delivery->save();
-
-        return back()->with('ok', "Delivery #{$delivery->id} is now In transit.");
-    }
-
-    public function markDelivered(Delivery $delivery)
-    {
-        $user = $this->ensureCourier();
-        abort_if($delivery->courier_id !== $user->id, 403);
-        abort_if($delivery->status !== 'in_transit', 422);
-
-        $delivery->status         = 'delivered';
-        $delivery->arrived_hub_at = now();
-        $delivery->save();
-
-        return back()->with('ok', "Delivery #{$delivery->id} delivered to hub.");
-    }
-// Le bouton "Select delivery" arrive ici
-    public function claim(Request $request, Pickup $pickup)
-    {
-        $user = $this->ensureCourier();
-
-        // déjà prise ?
-        if (Delivery::where('pickup_id', $pickup->id)->exists()) {
-            return back()->with('ok', "Pickup #{$pickup->id} est déjà liée à une delivery.");
-        }
-
-        DB::transaction(function () use ($pickup, $user) {
-            // créer la delivery
-            Delivery::create([
-                'pickup_id'    => $pickup->id,
-                'courier_id'   => $user->id,
-                'courier_phone'=> $user->phone ?? null, // si tu as une colonne phone côté users
-                'hub_address'  => config('recircle.hub.address', 'ReCircle Hub — 12 Rue Exemple, Tunis'),
-                'hub_lat'      => config('recircle.hub.lat'),
-                'hub_lng'      => config('recircle.hub.lng'),
-                'status'       => 'assigned',
-                'tracking_code'=> $pickup->tracking_code, // ou un nouveau code si tu préfères
+        DB::transaction(function () use ($data, $pickup, $user, $request) {
+            $delivery = Delivery::create([
+                'pickup_id'     => $pickup->id,
+                'courier_id'    => $user->id,
+                'courier_phone' => $data['courier_phone'],
+                'hub_address'   => $data['hub_address'],
+                'hub_lat'       => $data['hub_lat'] ?? null,
+                'hub_lng'       => $data['hub_lng'] ?? null,
+                'status'        => 'assigned',
+                'tracking_code' => $pickup->tracking_code ?: Str::upper(Str::random(12)),
+                'assigned_at'   => now(),
+                'notes'         => $data['notes'] ?? null,
             ]);
 
-            // 🔴 mettre à jour la PICKUP aussi
+            // option: démarrer immédiatement
+            if ($request->boolean('start_now')) {
+                $delivery->update([
+                    'status'        => 'in_transit',
+                    'picked_up_at'  => now(),
+                ]);
+            }
+
+            // garder la pickup synchronisée (facultatif)
             $pickup->update([
                 'courier_id' => $user->id,
-                'status'     => 'assigned',
+                'status'     => $delivery->status === 'in_transit' ? 'in_transit' : 'assigned',
             ]);
         });
 
-        return redirect()->route('deliveries.index')->with('ok', "Delivery for pickup #{$pickup->id} created.");
+        return redirect()->route('deliveries.index')
+            ->with('ok', "Delivery pour pickup #{$pickup->id} créée.");
     }
-}
 
+    /* ------------ edit/update ------------ */
+    public function edit(Delivery $delivery)
+    {
+        $user = $this->ensureCourier();
+        abort_if($delivery->courier_id && $delivery->courier_id !== $user->id, 403);
 
-   /* public function claim(\App\Models\Delivery $delivery)
+        $allowed = match ($delivery->status) {
+            'scheduled', 'assigned' => ['scheduled','assigned','in_transit','cancelled'],
+            'in_transit'            => ['in_transit','delivered','failed'],
+            default                 => [], // delivered/failed/cancelled
+        };
+
+        return view('courier.deliveries.edit', compact('delivery','allowed'));
+    }
+
+   public function update(Request $request, \App\Models\Delivery $delivery)
 {
     $user = $this->ensureCourier();
+    abort_if($delivery->courier_id && $delivery->courier_id !== $user->id, 403);
 
-    // déjà pris par un autre ?
-    if (!is_null($delivery->courier_id) && $delivery->courier_id !== $user->id) {
-        abort(409, 'This delivery is already assigned to another courier.');
+    $allowed = match ($delivery->status) {
+        'scheduled', 'assigned' => ['scheduled','assigned','in_transit','cancelled'],
+        'in_transit'            => ['in_transit','delivered','failed'],
+        default                 => [],
+    };
+
+    $data = $request->validate([
+        'status'        => ['required', Rule::in($allowed)],
+        'courier_phone' => ['nullable','string','max:40'],
+        'notes'         => ['nullable','string'],
+    ]);
+
+    // ✅ Cas "Cancelled" -> on supprime la delivery et on libère le pickup
+    if ($data['status'] === 'cancelled') {
+        // libérer le pickup pour qu'il réapparaisse dans la liste
+        if ($delivery->pickup) {
+            $delivery->pickup->update([
+                'courier_id' => null,
+                'status'     => 'scheduled',   // ou laisse comme tu veux
+            ]);
+        }
+
+        // suppression définitive de la ligne (pas soft)
+        $delivery->forceDelete(); // si tu préfères soft: $delivery->delete();
+
+        return redirect()
+            ->route('deliveries.index')
+            ->with('ok', "Delivery #{$delivery->id} cancelled and removed.");
     }
 
-    // rattacher au courier courant
-    $delivery->courier_id   = $user->id;
-    // si tu veux stocker le téléphone à la volée :
-    if (!$delivery->courier_phone && isset($user->phone)) {
-        $delivery->courier_phone = $user->phone;
+    // --- autres statuts (logique inchangée) ---
+    if (is_null($delivery->courier_id)) {
+        $delivery->courier_id = $user->id;
     }
 
-    // scheduled -> assigned
-    if ($delivery->status === 'scheduled') {
-        $delivery->status      = 'assigned';
-        $delivery->assigned_at = now();
+    $delivery->courier_phone = $data['courier_phone'] ?? $delivery->courier_phone;
+    $delivery->notes         = $data['notes'] ?? $delivery->notes;
+    $delivery->status        = $data['status'];
+
+    if ($delivery->status === 'in_transit' && is_null($delivery->picked_up_at)) {
+        $delivery->picked_up_at = now();
+    }
+    if ($delivery->status === 'delivered' && is_null($delivery->arrived_hub_at)) {
+        $delivery->arrived_hub_at = now();
     }
 
     $delivery->save();
 
-    // sync aussi le pickup
-    if ($delivery->relationLoaded('pickup')) {
-        $delivery->pickup->update(['courier_id' => $user->id]);
-    } else {
-        optional($delivery->pickup)->update(['courier_id' => $user->id]);
-    }
-
-    return back()->with('ok', "Delivery #{$delivery->id} assigned to you.");
-}*/
-
-
-
-/*namespace App\Http\Controllers\Courier;
-
-use App\Http\Controllers\Controller;
-use App\Models\Delivery;
-use Illuminate\Http\Request;
-
-class DeliveryController extends Controller
+    return redirect()->route('deliveries.index')->with('ok', "Delivery #{$delivery->id} updated.");
+}
+public function availablePickups(Request $request)
 {
-    private function ensureCourier()
-    {
-        $user = auth()->user();
-        // adapte selon ton Enum/colonne de rôle
-        abort_if(!$user || $user->role->value !== 'courier', 403);
-        return $user;
-    }
+    $this->ensureCourier();
+    $q = trim($request->get('q', ''));
 
-    public function index(Request $request)
-    {
-        $user = $this->ensureCourier();
-        $q = trim($request->get('q',''));
+    $pickups = \App\Models\Pickup::with(['wasteItem:id,title'])
+        ->whereNull('courier_id')                // ← seulement les non-assignés
+        ->where('status', 'scheduled')           // (optionnel) filtre statut
+        ->when($q !== '', function ($b) use ($q) {
+            $b->where('pickup_address','like',"%$q%")
+              ->orWhere('tracking_code','like',"%$q%")
+              ->orWhereHas('wasteItem', fn($w)=>$w->where('title','like',"%$q%"));
+        })
+        ->latest()
+        ->paginate(15)
+        ->withQueryString();
 
-        $deliveries = Delivery::with(['pickup:id,waste_item_id,pickup_address,scheduled_pickup_window_start,scheduled_pickup_window_end'])
-            ->forCourier($user->id)
-            ->active()
-            ->when($q !== '', function ($b) use ($q) {
-                $b->where('tracking_code', 'like', "%$q%")
-                  ->orWhereHas('pickup.wasteItem', fn($w) => $w->where('title','like',"%$q%"))
-                  ->orWhereHas('pickup', fn($p) => $p->where('pickup_address','like',"%$q%"));
-            })
-            ->latest()
-            ->paginate(15)
-            ->withQueryString();
-return view()->file(
-    resource_path('views/courier/deliveries/index.blade.php'),
-    compact('deliveries')
-);
-        return view('courier.deliveries.index', compact('deliveries'));
-    }
-
+    return view('courier.deliveries.available', compact('pickups', 'q'));
+}
+    /* ------------ quick actions ------------ */
     public function markInTransit(Delivery $delivery)
     {
         $user = $this->ensureCourier();
-
-        // S’auto-assigner si non assignée
         if (is_null($delivery->courier_id)) {
             $delivery->courier_id = $user->id;
         } elseif ($delivery->courier_id !== $user->id) {
             abort(403, 'This delivery is assigned to another courier.');
         }
-
-        // Autorisé uniquement depuis scheduled/assigned
         abort_if(!in_array($delivery->status, ['scheduled','assigned']), 422);
 
-        $delivery->status       = 'in_transit';
-        $delivery->picked_up_at = $delivery->picked_up_at ?? now();
-        $delivery->save();
+        $delivery->update([
+            'status'       => 'in_transit',
+            'picked_up_at' => $delivery->picked_up_at ?? now(),
+        ]);
 
-        return back()->with('ok', "Delivery #{$delivery->id} is now In transit.");
+        optional($delivery->pickup)->update(['status' => 'in_transit']);
+
+        return back()->with('ok', "Delivery #{$delivery->id} est maintenant In transit.");
     }
 
     public function markDelivered(Delivery $delivery)
     {
         $user = $this->ensureCourier();
         abort_if($delivery->courier_id !== $user->id, 403);
-
         abort_if($delivery->status !== 'in_transit', 422);
 
-        $delivery->status        = 'delivered';
-        $delivery->arrived_hub_at= now();
-        $delivery->save();
+        $delivery->update([
+            'status'         => 'delivered',
+            'arrived_hub_at' => now(),
+        ]);
 
-        return back()->with('ok', "Delivery #{$delivery->id} delivered to hub.");
+        optional($delivery->pickup)->update(['status' => 'picked']); // si tu veux
+
+        return back()->with('ok', "Delivery #{$delivery->id} livrée au hub.");
     }
-    
-}*/
+}

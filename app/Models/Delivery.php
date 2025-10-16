@@ -7,7 +7,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Builder;
 class Delivery extends Model
 {
-    use SoftDeletes;
+   // use SoftDeletes;
+    protected $dates = ['deleted_at'];
 
     public const STATUS_SCHEDULED  = 'scheduled';
     public const STATUS_ASSIGNED   = 'assigned';
@@ -44,6 +45,26 @@ class Delivery extends Model
     {
         return $this->belongsTo(Pickup::class);
     }
+    
+public function scopeSearch(Builder $q, ?string $term): Builder
+    {
+        $term = trim((string)$term);
+        if ($term === '') return $q;
+
+        return $q->where(function($b) use ($term) {
+            $b->where('tracking_code','like',"%{$term}%")
+              ->orWhereHas('pickup', fn($p) =>
+                    $p->where('pickup_address','like',"%{$term}%")
+              )
+              ->orWhereHas('pickup.wasteItem', fn($w) =>
+                    $w->where('title','like',"%{$term}%")
+              );
+        });
+    }
+
+public function scopeCompleted($q) {
+    return $q->whereIn('status', ['delivered','failed','cancelled']);
+}
 
     public function courier()
     {

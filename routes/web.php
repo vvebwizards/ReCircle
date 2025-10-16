@@ -7,6 +7,7 @@ use App\Http\Controllers\DashboardBidController; // si tu l’utilises dans bids
 use App\Http\Controllers\BidController;
 use App\Http\Controllers\Admin\AdminPickupController;
 use App\Http\Controllers\Courier\DeliveryController;
+use App\Http\Controllers\Admin\AdminDeliveryController;
 
 Route::get('/', function () {
     return view('home');
@@ -48,6 +49,12 @@ Route::get('/maker/analytics', [App\Http\Controllers\AnalyticsController::class,
 Route::middleware(['jwt.auth'])->get('/maker/bids', [\App\Http\Controllers\MakerBidController::class, 'index'])->name('maker.bids');
 
 Route::prefix('admin')->middleware(['jwt.auth'])->group(function () {
+    // Admin > Deliveries
+    Route::prefix('deliveries')->name('admin.deliveries.')->group(function () {
+        Route::get('/',              [AdminDeliveryController::class, 'index'])->name('index');       // Active
+        Route::get('/completed',     [AdminDeliveryController::class, 'completed'])->name('completed'); // Completed
+        Route::get('/{delivery}',    [AdminDeliveryController::class, 'show'])->name('show');         // Détail
+    });
     // Admin > Pickups
     Route::prefix('pickups')->name('admin.pickups.')->group(function () {
         Route::get('/', [AdminPickupController::class, 'index'])->name('index');
@@ -107,12 +114,26 @@ Route::middleware(['jwt.auth'])->group(function () {
     Route::get('/deliveries',               [DeliveryController::class, 'index'])->name('deliveries.index');
     Route::post('/deliveries/claim/{pickup}', [\App\Http\Controllers\Courier\DeliveryController::class, 'claim'])
     ->name('deliveries.claim');
+    
     Route::patch('/deliveries/{delivery}/start',     [DeliveryController::class, 'markInTransit'])->name('deliveries.start');
     Route::patch('/deliveries/{delivery}/delivered', [DeliveryController::class, 'markDelivered'])->name('deliveries.delivered');
- //Deliveries (création à partir d’un pickup)
+ // Deliveries (courier)
+Route::get('/deliveries/{delivery}/edit',     [\App\Http\Controllers\Courier\DeliveryController::class, 'edit'])->name('deliveries.edit');
+Route::patch('/deliveries/{delivery}',        [\App\Http\Controllers\Courier\DeliveryController::class, 'update'])->name('deliveries.update');
+
+Route::get('/deliveries/completed', [DeliveryController::class, 'completed'])
+    ->name('deliveries.completed');
+    //Deliveries (création à partir d’un pickup)
 Route::get('/pickups/{pickup}/select-delivery',  [DeliveryController::class, 'createFromPickup'])->name('deliveries.createFromPickup');
 Route::post('/pickups/{pickup}/select-delivery', [DeliveryController::class, 'storeFromPickup'])->name('deliveries.storeFromPickup');
-  
+  // Liste des pickups disponibles (courier_id NULL)
+    Route::get('/deliveries/pickups', [DeliveryController::class, 'availablePickups'])
+        ->name('deliveries.pickups');
+
+    // Créer une delivery à partir d’un pickup disponible
+    Route::post('/deliveries/from-pickup/{pickup}', [DeliveryController::class, 'storeFromPickup'])
+        ->name('deliveries.fromPickup.store');
+
 /* Route::prefix('deliveries')->name('deliveries.')->middleware(['jwt.auth'])->group(function () {
     // Liste des courses pour le courier
     Route::get('/', [DeliveryController::class, 'index'])->name('index');
