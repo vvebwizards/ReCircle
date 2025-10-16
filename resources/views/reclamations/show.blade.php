@@ -89,52 +89,108 @@
         </div>
     </div>
 
-    {{-- Responses Section --}}
-    @if($reclamation->responses->count() > 0)
-        <div class="mt-8">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4">
-                Responses ({{ $reclamation->responses->count() }})
-            </h2>
+    {{-- Add Reply Section --}}
+    @if(!$reclamation->isClosed())
+        <div class="mt-8 bg-white rounded-lg shadow-md border border-gray-200 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Add Your Reply</h2>
+            <form action="{{ route('reclamation.user-reply.store', $reclamation) }}" method="POST">
+                @csrf
+                <div class="mb-4">
+                    <label for="message" class="block text-sm font-medium text-gray-700 mb-2">
+                        Your Message
+                    </label>
+                    <textarea 
+                        id="message" 
+                        name="message" 
+                        rows="4" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        placeholder="Type your reply or additional information here..."
+                        required
+                    >{{ old('message') }}</textarea>
+                    @error('message')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+                <div class="flex justify-end">
+                    <button 
+                        type="submit" 
+                        class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-md transition-colors"
+                    >
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                        </svg>
+                        Send Reply
+                    </button>
+                </div>
+            </form>
+        </div>
+    @endif
 
-            <div class="space-y-4">
-                @foreach($reclamation->responses as $response)
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                        <div class="flex items-start justify-between mb-3">
-                            <div class="flex items-center gap-2">
-                                <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    {{-- Conversation Thread --}}
+    <div class="mt-8">
+        <h2 class="text-xl font-semibold text-gray-900 mb-6">
+            Conversation History ({{ $reclamation->responses->count() + 1 }})
+        </h2>
+
+        <div class="space-y-6">
+            {{-- All Responses (Admin + User Replies) --}}
+            @foreach($reclamation->responses->sortBy('created_at') as $response)
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 {{ $response->isFromUser() ? 'ml-8 bg-gray-50' : '' }}">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 {{ $response->isFromAdmin() ? 'bg-indigo-100' : 'bg-green-100' }} rounded-full flex items-center justify-center">
+                                @if($response->isFromAdmin())
+                                    <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                                               d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                                     </svg>
-                                </div>
-                                <div>
-                                    <p class="font-semibold text-gray-900">
-                                        {{ $response->admin->name ?? 'Admin' }}
-                                    </p>
-                                    <p class="text-xs text-gray-500">Admin</p>
-                                </div>
+                                @else
+                                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                              d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                                    </svg>
+                                @endif
                             </div>
-                            <span class="text-xs text-gray-500">
-                                {{ $response->created_at->diffForHumans() }}
-                            </span>
+                            <div>
+                                <p class="font-semibold text-gray-900">
+                                    @if($response->isFromAdmin())
+                                        {{ $response->admin->name ?? 'Admin' }}
+                                    @else
+                                        {{ $response->user->name ?? $reclamation->user->name }}
+                                    @endif
+                                </p>
+                                <p class="text-sm text-gray-500">
+                                    @if($response->isFromAdmin())
+                                        Administrator
+                                    @else
+                                        Your Reply
+                                    @endif
+                                </p>
+                            </div>
                         </div>
-
-                        <div class="pl-10">
-                            <p class="text-gray-700 leading-relaxed whitespace-pre-wrap">{{ $response->message }}</p>
-                        </div>
+                        <span class="text-sm text-gray-500">
+                            {{ $response->created_at->format('M j, Y g:i A') }}
+                        </span>
                     </div>
-                @endforeach
-            </div>
+                    <div class="pl-13">
+                        <p class="text-gray-700 leading-relaxed whitespace-pre-wrap">{{ $response->message }}</p>
+                    </div>
+                </div>
+            @endforeach
+
+            {{-- No Responses Message --}}
+            @if($reclamation->responses->count() === 0)
+                <div class="bg-gray-50 rounded-lg p-8 text-center">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                    </svg>
+                    <p class="mt-2 text-gray-600">No responses yet.</p>
+                    <p class="text-sm text-gray-500">An admin will respond to your reclamation soon.</p>
+                </div>
+            @endif
         </div>
-    @else
-        <div class="mt-8 bg-gray-50 rounded-lg p-8 text-center">
-            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-            </svg>
-            <p class="mt-2 text-gray-600">No responses yet.</p>
-            <p class="text-sm text-gray-500">An admin will respond to your reclamation soon.</p>
-        </div>
-    @endif
+    </div>
 </main>
 @endsection

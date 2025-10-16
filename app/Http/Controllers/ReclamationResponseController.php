@@ -27,15 +27,15 @@ class ReclamationResponseController extends Controller
     public function store(Request $request, Reclamation $reclamation)
     {
         $validated = $request->validate([
-            'response_message' => 'required|string|min:10',
+            'message' => 'required|string|min:10', // Changed from response_message to message
             'status' => 'required|in:pending,resolved,rejected',
         ]);
 
         $response = ReclamationResponse::create([
             'reclamation_id' => $reclamation->id,
-            'admin_id' => Auth::id(),
-            'response_message' => $validated['response_message'],
-            'status' => $validated['status'],
+            'admin_id' => Auth::id(), // Admin response
+            'user_id' => null, // Explicitly set to null
+            'message' => $validated['message'],
         ]);
 
         // Update reclamation status based on response

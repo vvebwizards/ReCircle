@@ -117,3 +117,5 @@ require __DIR__.'/badges.php';
 
 // Reclamation routes (register this so reclamation named routes are available)
 require __DIR__.'/reclamation.php';
+
+require __DIR__.'/admin_reclamations.php';

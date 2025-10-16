@@ -3,6 +3,10 @@
 
 @section('title', 'Create Reclamation')
 
+@push('head')
+@vite(['resources/js/reclamation.js'])
+@endpush
+
 @section('content')
 <main class="container py-8" style="margin-top: 90px;">
     {{-- Back button --}}
@@ -23,61 +27,59 @@
     </div>
 
     {{-- Reclamation Form --}}
-    <div class="bg-white rounded-lg shadow-md border border-gray-200 p-6">
-        <form action="{{ route('reclamations.store') }}" method="POST">
-            @csrf
+<div class="bg-white rounded-lg shadow-md border border-gray-200 p-6">
+    <form action="{{ route('reclamations.store') }}" method="POST">
+        @csrf
 
-            {{-- Topic Field --}}
-            <div class="mb-6">
-                <label for="topic" class="block text-sm font-medium text-gray-700 mb-2">
-                    Topic <span class="text-red-500">*</span>
-                </label>
-                <input type="text" 
-                       name="topic" 
-                       id="topic" 
-                       value="{{ old('topic') }}"
-                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('topic') border-red-500 @enderror"
-                       placeholder="Brief summary of your reclamation"
-                       required>
-                @error('topic')
-                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                @enderror
-            </div>
+        {{-- Topic Field --}}
+        <div class="mb-6">
+            <label for="topic" class="block text-sm font-medium text-gray-700 mb-2">
+                Topic <span class="text-red-500">*</span>
+            </label>
+            <input type="text" 
+                   name="topic" 
+                   id="topic" 
+                   value="{{ old('topic') }}"
+                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('topic') border-red-500 @enderror"
+                   placeholder="Brief summary of your reclamation">
+            @error('topic')
+                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+            @enderror
+        </div>
 
-            {{-- Description Field --}}
-            <div class="mb-6">
-                <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
-                    Description <span class="text-red-500">*</span>
-                </label>
-                <textarea name="description" 
-                          id="description" 
-                          rows="6"
-                          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('description') border-red-500 @enderror"
-                          placeholder="Please provide detailed information about your reclamation (minimum 10 characters)"
-                          required>{{ old('description') }}</textarea>
-                @error('description')
-                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                @enderror
-                <p class="mt-1 text-xs text-gray-500">Minimum 10 characters required</p>
-            </div>
+        {{-- Description Field --}}
+        <div class="mb-6">
+            <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
+                Description <span class="text-red-500">*</span>
+            </label>
+            <textarea name="description" 
+                      id="description" 
+                      rows="6"
+                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('description') border-red-500 @enderror"
+                      placeholder="Please provide detailed information about your reclamation">{{ old('description') }}</textarea>
+            @error('description')
+                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+            @enderror
+        </div>
 
-            {{-- Form Actions --}}
-            <div class="flex flex-col sm:flex-row gap-3 sm:justify-end">
-                <a href="{{ route('reclamations.index') }}" 
-                   class="inline-flex justify-center items-center px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition-colors">
-                    Cancel
-                </a>
-                <button type="submit" 
-                        class="inline-flex justify-center items-center px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition-colors">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                    Submit Reclamation
-                </button>
-            </div>
-        </form>
-    </div>
+        {{-- Form Actions --}}
+        <div class="flex flex-col sm:flex-row gap-3 sm:justify-end">
+            <a href="{{ route('reclamations.index') }}" 
+               class="inline-flex justify-center items-center px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition-colors">
+                Cancel
+            </a>
+            <button type="submit" 
+                    class="inline-flex justify-center items-center px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition-colors">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Submit Reclamation
+            </button>
+        </div>
+    </form>
+</div>
+
 
     {{-- Help Section --}}
     <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">

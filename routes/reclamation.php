@@ -28,6 +28,10 @@ Route::middleware(['jwt.auth'])->group(function () {
 
     Route::delete('/reclamations/{reclamation}', [ReclamationController::class, 'destroy'])
         ->name('reclamations.destroy');
+
+    // Add this to the authenticated user routes section
+    Route::post('/reclamations/{reclamation}/user-reply', [ReclamationController::class, 'storeUserReply'])
+        ->name('reclamation.user-reply.store');
 });
 
 // Admin routes

@@ -3,18 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Models\Reclamation;
+use App\Models\ReclamationResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class ReclamationController extends Controller
 {
     /**
-     * Display a listing of reclamations (only authenticated user's reclamations).
+     * Display a listing of reclamations.
      */
     public function index()
     {
-        $reclamations = Reclamation::with('responses.admin')
-            ->where('user_id', Auth::id())
+        $reclamations = Reclamation::with('user', 'responses.admin')
             ->latest()
             ->paginate(15);
 
@@ -55,11 +55,6 @@ class ReclamationController extends Controller
      */
     public function show(Reclamation $reclamation)
     {
-        // Only the owner can view their own reclamation
-        if ($reclamation->user_id !== Auth::id()) {
-            abort(403, 'Unauthorized action.');
-        }
-
         $reclamation->load('user', 'responses.admin');
 
         return view('reclamations.show', compact('reclamation'));
@@ -116,6 +111,19 @@ class ReclamationController extends Controller
     }
 
     /**
+     * Display user's own reclamations.
+     */
+    public function myReclamations()
+    {
+        $reclamations = Reclamation::with('responses.admin')
+            ->where('user_id', Auth::id())
+            ->latest()
+            ->paginate(15);
+
+        return view('reclamations.my-reclamations', compact('reclamations'));
+    }
+
+    /**
      * Update reclamation status (Admin only).
      */
     public function updateStatus(Request $request, Reclamation $reclamation)
@@ -128,5 +136,41 @@ class ReclamationController extends Controller
 
         return redirect()->back()
             ->with('success', 'Status updated successfully!');
+    }
+
+    /**
+     * Store a user reply to their reclamation.
+     */
+    public function storeUserReply(Request $request, Reclamation $reclamation)
+    {
+        // Only the owner can reply
+        if ($reclamation->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        // Users cannot reply to closed reclamations
+        if ($reclamation->isClosed()) {
+            abort(403, 'Cannot reply to a closed reclamation.');
+        }
+
+        $validated = $request->validate([
+            'message' => 'required|string|min:5|max:2000',
+        ]);
+
+        // Create user reply with user_id
+        ReclamationResponse::create([
+            'reclamation_id' => $reclamation->id,
+            'user_id' => Auth::id(), // Set the user_id
+            'admin_id' => null, // Explicitly set to null
+            'message' => $validated['message'],
+        ]);
+
+        // Update reclamation status to in_progress when user replies (if it was pending)
+        if ($reclamation->isPending()) {
+            $reclamation->update(['status' => 'in_progress']);
+        }
+
+        return redirect()->route('reclamations.show', $reclamation)
+            ->with('success', 'Your reply has been sent successfully!');
     }
 }

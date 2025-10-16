@@ -13,8 +13,8 @@ class ReclamationResponse extends Model
     protected $fillable = [
         'reclamation_id',
         'admin_id',
-        'response_message',
-        'status',
+        'user_id',
+        'message',
     ];
 
     protected $casts = [
@@ -33,14 +33,29 @@ class ReclamationResponse extends Model
         return $this->belongsTo(User::class, 'admin_id');
     }
 
-    // Helper methods
-    public function getStatusBadgeAttribute(): string
+    public function user(): BelongsTo
     {
-        return match ($this->status) {
-            'pending' => 'bg-yellow-500 text-white',
-            'resolved' => 'bg-green-500 text-white',
-            'rejected' => 'bg-red-500 text-white',
-            default => 'bg-gray-200 text-gray-800',
-        };
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    // Helper methods to determine the author
+    public function isFromAdmin(): bool
+    {
+        return ! is_null($this->admin_id);
+    }
+
+    public function isFromUser(): bool
+    {
+        return ! is_null($this->user_id);
+    }
+
+    public function getAuthorAttribute()
+    {
+        return $this->isFromAdmin() ? $this->admin : $this->user;
+    }
+
+    public function getAuthorTypeAttribute(): string
+    {
+        return $this->isFromAdmin() ? 'admin' : 'user';
     }
 }

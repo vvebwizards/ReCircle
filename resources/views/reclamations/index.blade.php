@@ -4,7 +4,7 @@
 @section('title', 'My Reclamations')
 
 @section('content')
-<div class="container py-8" style="margin-top: 90px; margin-bottom: 100px;">
+<div class="container" style="margin-top: 120px; margin-bottom: 100px;">
     {{-- Header with title + action button --}}
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
         <h1 class="text-2xl font-semibold text-gray-900">My Reclamations</h1>
@@ -30,34 +30,37 @@
     @if ($reclamations->count())
         <ul class="space-y-4">
             @foreach ($reclamations as $r)
-                <li class="p-4 bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
-                    <div class="flex-1">
-                        <a href="{{ route('reclamations.show', $r) }}"
-                           class="font-semibold text-indigo-600 hover:text-indigo-800 hover:underline">
-                            {{ $r->topic }}
-                        </a>
+                {{-- Only show reclamations of the logged-in user --}}
+                @if($r->user_id === auth()->id())
+                    <li class="p-4 bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                        <div class="flex-1">
+                            <a href="{{ route('reclamations.show', $r) }}"
+                               class="font-semibold text-indigo-600 hover:text-indigo-800 hover:underline">
+                                {{ $r->topic }}
+                            </a>
 
-                        <p class="mt-1 text-sm text-gray-600">
-                            {{ Str::limit($r->description, 200) }}
-                        </p>
+                            <p class="mt-1 text-sm text-gray-600">
+                                {{ Str::limit($r->description, 200) }}
+                            </p>
 
-                        <div class="mt-2 flex items-center gap-2">
-                            <span class="inline-block px-2 py-1 text-xs font-medium rounded {{ $r->getStatusBadgeAttribute() }}">
-                                {{ ucfirst(str_replace('_', ' ', $r->status)) }}
-                            </span>
-                            
-                            @if($r->responses->count() > 0)
-                                <span class="text-xs text-gray-500">
-                                    • {{ $r->responses->count() }} {{ Str::plural('response', $r->responses->count()) }}
+                            <div class="mt-2 flex items-center gap-2">
+                                <span class="inline-block px-2 py-1 text-xs font-medium rounded {{ $r->getStatusBadgeAttribute() }}">
+                                    {{ ucfirst(str_replace('_', ' ', $r->status)) }}
                                 </span>
-                            @endif
+                                
+                                @if($r->responses->count() > 0)
+                                    <span class="text-xs text-gray-500">
+                                        • {{ $r->responses->count() }} {{ Str::plural('response', $r->responses->count()) }}
+                                    </span>
+                                @endif
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="text-xs text-gray-500 self-start sm:self-center">
-                        {{ $r->created_at->diffForHumans() }}
-                    </div>
-                </li>
+                        <div class="text-xs text-gray-500 self-start sm:self-center">
+                            {{ $r->created_at->diffForHumans() }}
+                        </div>
+                    </li>
+                @endif
             @endforeach
         </ul>
 
@@ -77,5 +80,83 @@
             </a>
         </div>
     @endif
+
+    {{-- Helpful Tips & Information Section --}}
+    <div class="mt-12 bg-blue-50 border border-blue-200 rounded-lg p-6">
+        <div class="flex items-center gap-3 mb-4">
+            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <h2 class="text-lg font-semibold text-blue-900">Helpful Information</h2>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-6">
+            {{-- Status Guide --}}
+            <div class="space-y-3">
+                <h3 class="font-medium text-blue-800">Understanding Statuses</h3>
+                <ul class="space-y-2 text-sm text-blue-700">
+                    <li class="flex items-start gap-2">
+                        <span class="inline-block w-3 h-3 bg-yellow-500 rounded-full mt-1 flex-shrink-0"></span>
+                        <span><strong>Pending:</strong> Your reclamation is waiting for admin review</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="inline-block w-3 h-3 bg-blue-500 rounded-full mt-1 flex-shrink-0"></span>
+                        <span><strong>In Progress:</strong> An admin is currently working on your case</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="inline-block w-3 h-3 bg-green-500 rounded-full mt-1 flex-shrink-0"></span>
+                        <span><strong>Resolved:</strong> Your issue has been successfully resolved</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="inline-block w-3 h-3 bg-gray-500 rounded-full mt-1 flex-shrink-0"></span>
+                        <span><strong>Closed:</strong> The reclamation has been concluded</span>
+                    </li>
+                </ul>
+            </div>
+
+            {{-- Tips --}}
+            <div class="space-y-3">
+                <h3 class="font-medium text-blue-800">Tips for Better Support</h3>
+                <ul class="space-y-2 text-sm text-blue-700">
+                    <li class="flex items-start gap-2">
+                        <svg class="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span>Be specific and detailed in your descriptions</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <svg class="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span>Check for admin responses regularly</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <svg class="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span>You can reply to admin responses to provide more information</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <svg class="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span>Edit your reclamation while it's still in "Pending" status</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        {{-- Response Time Info --}}
+        <div class="mt-4 p-3 bg-blue-100 rounded-lg border border-blue-200">
+            <div class="flex items-center gap-2 text-sm text-blue-800">
+                <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span><strong>Typical Response Time:</strong> Our team usually responds within 24-48 hours during business days</span>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection
