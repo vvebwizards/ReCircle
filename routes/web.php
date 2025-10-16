@@ -89,7 +89,7 @@ Route::get('/settings/security', function () {
 })->name('settings.security');
 
 Route::middleware(['jwt.auth'])->group(function () {
-    Route::get('/cart', [CartController::class, 'viewCart'])->name('cart.view');
+    Route::get('/admin/carts', [CartController::class, 'index'])->name('admin.carts.index');
     Route::post('/cart/add', [CartController::class, 'addToCart'])->name('cart.add');
     Route::post('/cart/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
     Route::get('/cart/success', [CartController::class, 'success'])->name('cart.success');
@@ -114,3 +114,8 @@ require __DIR__.'/bids.php';
 require __DIR__.'/forum.php';
 
 require __DIR__.'/badges.php';
+
+// Reclamation routes (register this so reclamation named routes are available)
+require __DIR__.'/reclamation.php';
+
+require __DIR__.'/admin_reclamations.php';
