@@ -90,6 +90,7 @@ Route::get('/settings/security', function () {
 
 Route::middleware(['jwt.auth'])->group(function () {
     Route::get('/admin/carts', [CartController::class, 'index'])->name('admin.carts.index');
+    Route::get('/cart', [CartController::class, 'viewCart'])->name('cart.index');
     Route::post('/cart/add', [CartController::class, 'addToCart'])->name('cart.add');
     Route::post('/cart/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
     Route::get('/cart/success', [CartController::class, 'success'])->name('cart.success');
