@@ -34,6 +34,7 @@
                 @json(route('dashboard', [], false))
             @endauth,
             settingsSecurity: @json(route('settings.security', [], false)),
+            reclamationsCreate: @json(route('reclamations.create', [], false)),
         };
     </script>
     @unless (app()->environment('testing'))

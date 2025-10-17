@@ -13,6 +13,7 @@
                 <div class="hero-buttons">
                     <a href="#how-it-works" class="btn btn-primary">See How It Works</a>
                     <a href="{{ route('auth') }}" class="btn btn-secondary">Join the Platform</a>
+                    <a href="{{ route('reclamations.create') }}" class="btn btn-primary" style="background:#ff6b4a; border-color:transparent;">Report an Issue</a>
                 </div>
             </div>
             <div class="hero-image">

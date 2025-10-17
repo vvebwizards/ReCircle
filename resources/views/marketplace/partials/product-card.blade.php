@@ -98,3 +98,68 @@
         </div>
     </div>
 </div>
+
+@once
+    @if(auth()->check() && auth()->user()->role === \App\Enums\UserRole::BUYER)
+        <!-- Shared hidden form for Add to Cart (used by product cards) -->
+        <form id="add-to-cart-form" method="POST" action="{{ route('cart.add') }}" style="display:none;">
+            @csrf
+            <input type="hidden" name="product_id" id="form-product-id" value="">
+            <input type="hidden" name="quantity" id="form-quantity" value="1">
+        </form>
+    @endif
+
+    @push('scripts')
+    <script>
+    // Only define helpers if they don't already exist (product-details defines similar functions)
+    if (typeof increaseProductQuantity === 'undefined') {
+        function increaseProductQuantity(productId, maxStock) {
+            const input = document.getElementById(`quantity-product-${productId}`);
+            if (!input) return;
+            let value = parseInt(input.value) || 1;
+            if (value < maxStock) {
+                input.value = value + 1;
+            }
+        }
+    }
+
+    if (typeof decreaseProductQuantity === 'undefined') {
+        function decreaseProductQuantity(productId, maxStock) {
+            const input = document.getElementById(`quantity-product-${productId}`);
+            if (!input) return;
+            let value = parseInt(input.value) || 1;
+            if (value > 1) {
+                input.value = value - 1;
+            }
+        }
+    }
+
+    if (typeof validateProductQuantity === 'undefined') {
+        function validateProductQuantity(productId, maxStock) {
+            const input = document.getElementById(`quantity-product-${productId}`);
+            if (!input) return;
+            let value = parseInt(input.value) || 1;
+            if (value < 1) input.value = 1;
+            else if (value > maxStock) input.value = maxStock;
+        }
+    }
+
+    if (typeof addProductToCart === 'undefined') {
+        function addProductToCart(productId) {
+            const form = document.getElementById('add-to-cart-form');
+            const qtyInput = document.getElementById(`quantity-product-${productId}`);
+            const quantity = qtyInput ? (parseInt(qtyInput.value) || 1) : 1;
+
+            if (form) {
+                document.getElementById('form-product-id').value = productId;
+                document.getElementById('form-quantity').value = quantity;
+                form.submit();
+                return;
+            }
+
+            alert('Please log in as a Buyer to add items to the cart.');
+        }
+    }
+    </script>
+    @endpush
+@endonce
