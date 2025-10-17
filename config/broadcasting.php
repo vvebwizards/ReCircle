@@ -15,7 +15,8 @@ return [
     |
     */
 
-    'default' => env('BROADCAST_DRIVER', 'pusher'),
+    // Use 'log' as a safe fallback if Pusher isn't installed and we're in a CI environment
+    'default' => env('CI') ? env('BROADCAST_DRIVER', 'log') : env('BROADCAST_DRIVER', 'pusher'),
 
     /*
     |--------------------------------------------------------------------------
