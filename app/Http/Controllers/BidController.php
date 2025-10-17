@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\BidSubmitted;
 use App\Http\Requests\StoreBidRequest;
 use App\Http\Requests\UpdateBidRequest;
 use App\Http\Requests\UpdateBidStatusRequest;
@@ -36,6 +37,9 @@ class BidController extends Controller
             'notes' => $data['notes'] ?? null,
             'status' => Bid::STATUS_PENDING,
         ]);
+        
+        // Broadcast bid submitted event for real-time updates
+        event(new BidSubmitted($bid));
 
         return response()->json($bid->load('maker:id,name'), 201);
     }
@@ -80,6 +84,9 @@ class BidController extends Controller
             DB::transaction(function () use ($bid) {
                 // accept target bid
                 $bid->markAccepted();
+                
+                // Broadcast the accepted bid
+                event(new BidSubmitted($bid));
 
                 // set maker on the waste item to the accepted bid's maker
                 $bid->wasteItem()->update(['maker_id' => $bid->maker_id]);
@@ -92,10 +99,14 @@ class BidController extends Controller
                     ->get()
                     ->each(function ($other) {
                         $other->markRejected();
+                        // Broadcast each rejected bid
+                        event(new BidSubmitted($other));
                     });
             });
         } else {
             $bid->markRejected();
+            // Broadcast the rejected bid
+            event(new BidSubmitted($bid));
         }
 
         return response()->json($bid->fresh()->load('maker:id,name'));
@@ -111,6 +122,9 @@ class BidController extends Controller
         }
 
         $bid->markWithdrawn();
+        
+        // Broadcast the withdrawn bid
+        event(new BidSubmitted($bid));
 
         return response()->json($bid->fresh()->load('maker:id,name'));
     }
