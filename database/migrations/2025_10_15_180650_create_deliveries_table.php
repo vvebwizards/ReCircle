@@ -4,7 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('deliveries', function (Blueprint $table) {
@@ -12,15 +13,15 @@ return new class extends Migration {
 
             // Lien vers le pickup (obligatoire)
             $table->foreignId('pickup_id')
-                  ->constrained('pickups')
-                  ->cascadeOnUpdate()
-                  ->cascadeOnDelete();
+                ->constrained('pickups')
+                ->cascadeOnUpdate()
+                ->cascadeOnDelete();
 
             // Le livreur qui prend en charge (user avec role "courier")
             $table->foreignId('courier_id')
-                  ->nullable()
-                  ->constrained('users')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
 
             // Données côté livreur
             $table->string('courier_phone', 40)->nullable();

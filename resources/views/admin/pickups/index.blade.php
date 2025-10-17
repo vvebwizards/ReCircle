@@ -14,7 +14,7 @@
             <input
                 type="search"
                 name="q"
-                placeholder="Search by listing, address, tracking..."
+                placeholder="Search by waste item, address, status, tracking..."
                 value="{{ request('q') }}"
                 class="search-input"
             />
@@ -36,8 +36,7 @@
             <table class="a-table">
                 <thead>
                     <tr>
-                        <th>#</th>
-                        <th>Listing</th>
+                        <th>Waste Item</th>
                         <th>Address</th>
                         <th>Window</th>
                         <th>Status</th>
@@ -49,15 +48,12 @@
                 <tbody>
                     @foreach($pickups as $p)
                         <tr id="row-{{ $p->id }}">
-                            <td>{{ $p->id }}</td>
-
                             <td>
                                 <div class="user-info">
                                     <span class="avatar sm" style="--h: {{ (($p->waste_item_id ?? 1) * 47) % 360 }};">
                                         {{ strtoupper(substr($p->wasteItem->title ?? '—', 0, 2)) }}
                                     </span>
                                     {{ $p->wasteItem->title ?? '—' }}
-                                    <small class="text-gray-400 ml-1">#{{ $p->waste_item_id }}</small>
                                 </div>
                             </td>
 

@@ -1,13 +1,13 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminDeliveryController;
+use App\Http\Controllers\Admin\AdminPickupController;
+use App\Http\Controllers\BidController;
+// si tu l’utilises dans bids.php aussi
+use App\Http\Controllers\Courier\DeliveryController;
+use App\Http\Controllers\PickupController;
 use App\Http\Controllers\UserManagementController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\PickupController;
-use App\Http\Controllers\DashboardBidController; // si tu l’utilises dans bids.php aussi
-use App\Http\Controllers\BidController;
-use App\Http\Controllers\Admin\AdminPickupController;
-use App\Http\Controllers\Courier\DeliveryController;
-use App\Http\Controllers\Admin\AdminDeliveryController;
 
 Route::get('/', function () {
     return view('home');
@@ -51,9 +51,14 @@ Route::middleware(['jwt.auth'])->get('/maker/bids', [\App\Http\Controllers\Maker
 Route::prefix('admin')->middleware(['jwt.auth'])->group(function () {
     // Admin > Deliveries
     Route::prefix('deliveries')->name('admin.deliveries.')->group(function () {
-        Route::get('/',              [AdminDeliveryController::class, 'index'])->name('index');       // Active
-        Route::get('/completed',     [AdminDeliveryController::class, 'completed'])->name('completed'); // Completed
-        Route::get('/{delivery}',    [AdminDeliveryController::class, 'show'])->name('show');         // Détail
+        Route::get('/', [AdminDeliveryController::class, 'index'])->name('index');       // Active
+        Route::get('/completed', [AdminDeliveryController::class, 'completed'])->name('completed'); // Completed
+        Route::get('/{delivery}', [AdminDeliveryController::class, 'show'])->name('show');         // Détail
+        // ➕ nouveaux endpoints
+        Route::get('/{delivery}/edit', [AdminDeliveryController::class, 'edit'])->name('edit');
+        Route::patch('/{delivery}', [AdminDeliveryController::class, 'update'])->name('update');
+        Route::delete('/{delivery}', [AdminDeliveryController::class, 'destroy'])->name('destroy');
+
     });
     // Admin > Pickups
     Route::prefix('pickups')->name('admin.pickups.')->group(function () {
@@ -62,9 +67,9 @@ Route::prefix('admin')->middleware(['jwt.auth'])->group(function () {
 
         // NEW
         Route::get('/{pickup}/edit', [\App\Http\Controllers\Admin\AdminPickupController::class, 'edit'])->name('edit');
-        Route::put('/{pickup}',      [\App\Http\Controllers\Admin\AdminPickupController::class, 'update'])->name('update');
-        Route::delete('/{pickup}',   [\App\Http\Controllers\Admin\AdminPickupController::class, 'destroy'])->name('destroy');
-        
+        Route::put('/{pickup}', [\App\Http\Controllers\Admin\AdminPickupController::class, 'update'])->name('update');
+        Route::delete('/{pickup}', [\App\Http\Controllers\Admin\AdminPickupController::class, 'destroy'])->name('destroy');
+
     });
     Route::get('/dashboard', function () {
         return view('admin.dashboard');
@@ -94,7 +99,7 @@ require __DIR__.'/products.php';
 Route::middleware(['jwt.auth'])->group(function () {
     Route::get('/pickups', [PickupController::class, 'index'])
         ->name('pickups.index');
-     // Afficher le formulaire de création avec un waste_item pré-sélectionné
+    // Afficher le formulaire de création avec un waste_item pré-sélectionné
     Route::get('/pickups/create', [PickupController::class, 'create'])
         ->name('pickups.create');
 
@@ -107,26 +112,26 @@ Route::middleware(['jwt.auth'])->group(function () {
         ->name('pickups.show');
 
     Route::get('/pickups/{pickup}/edit', [PickupController::class, 'edit'])->name('pickups.edit');     // <- EDIT
-    Route::put('/pickups/{pickup}',      [PickupController::class, 'update'])->name('pickups.update'); // <- UPDATE
-    Route::delete('/pickups/{pickup}',   [PickupController::class, 'destroy'])->name('pickups.destroy'); // <- DELETE
+    Route::put('/pickups/{pickup}', [PickupController::class, 'update'])->name('pickups.update'); // <- UPDATE
+    Route::delete('/pickups/{pickup}', [PickupController::class, 'destroy'])->name('pickups.destroy'); // <- DELETE
 
-    //delevery routes
-    Route::get('/deliveries',               [DeliveryController::class, 'index'])->name('deliveries.index');
+    // delevery routes
+    Route::get('/deliveries', [DeliveryController::class, 'index'])->name('deliveries.index');
     Route::post('/deliveries/claim/{pickup}', [\App\Http\Controllers\Courier\DeliveryController::class, 'claim'])
-    ->name('deliveries.claim');
-    
-    Route::patch('/deliveries/{delivery}/start',     [DeliveryController::class, 'markInTransit'])->name('deliveries.start');
-    Route::patch('/deliveries/{delivery}/delivered', [DeliveryController::class, 'markDelivered'])->name('deliveries.delivered');
- // Deliveries (courier)
-Route::get('/deliveries/{delivery}/edit',     [\App\Http\Controllers\Courier\DeliveryController::class, 'edit'])->name('deliveries.edit');
-Route::patch('/deliveries/{delivery}',        [\App\Http\Controllers\Courier\DeliveryController::class, 'update'])->name('deliveries.update');
+        ->name('deliveries.claim');
 
-Route::get('/deliveries/completed', [DeliveryController::class, 'completed'])
-    ->name('deliveries.completed');
-    //Deliveries (création à partir d’un pickup)
-Route::get('/pickups/{pickup}/select-delivery',  [DeliveryController::class, 'createFromPickup'])->name('deliveries.createFromPickup');
-Route::post('/pickups/{pickup}/select-delivery', [DeliveryController::class, 'storeFromPickup'])->name('deliveries.storeFromPickup');
-  // Liste des pickups disponibles (courier_id NULL)
+    Route::patch('/deliveries/{delivery}/start', [DeliveryController::class, 'markInTransit'])->name('deliveries.start');
+    Route::patch('/deliveries/{delivery}/delivered', [DeliveryController::class, 'markDelivered'])->name('deliveries.delivered');
+    // Deliveries (courier)
+    Route::get('/deliveries/{delivery}/edit', [\App\Http\Controllers\Courier\DeliveryController::class, 'edit'])->name('deliveries.edit');
+    Route::patch('/deliveries/{delivery}', [\App\Http\Controllers\Courier\DeliveryController::class, 'update'])->name('deliveries.update');
+
+    Route::get('/deliveries/completed', [DeliveryController::class, 'completed'])
+        ->name('deliveries.completed');
+    // Deliveries (création à partir d’un pickup)
+    Route::get('/pickups/{pickup}/select-delivery', [DeliveryController::class, 'createFromPickup'])->name('deliveries.createFromPickup');
+    Route::post('/pickups/{pickup}/select-delivery', [DeliveryController::class, 'storeFromPickup'])->name('deliveries.storeFromPickup');
+    // Liste des pickups disponibles (courier_id NULL)
     Route::get('/deliveries/pickups', [DeliveryController::class, 'availablePickups'])
         ->name('deliveries.pickups');
 
@@ -134,25 +139,25 @@ Route::post('/pickups/{pickup}/select-delivery', [DeliveryController::class, 'st
     Route::post('/deliveries/from-pickup/{pickup}', [DeliveryController::class, 'storeFromPickup'])
         ->name('deliveries.fromPickup.store');
 
-/* Route::prefix('deliveries')->name('deliveries.')->middleware(['jwt.auth'])->group(function () {
-    // Liste des courses pour le courier
-    Route::get('/', [DeliveryController::class, 'index'])->name('index');
-    // Actions d'état
-    Route::patch('/{delivery}/start',    [DeliveryController::class, 'markInTransit'])->name('start');
-    Route::patch('/{delivery}/delivered',[DeliveryController::class, 'markDelivered'])->name('delivered');
-});*/
-   /* // Formulaire de pickup pour un match donné
-    Route::get('/matches/{match}/pickups/create', [PickupController::class, 'create'])
-        ->name('pickups.create');
+    /* Route::prefix('deliveries')->name('deliveries.')->middleware(['jwt.auth'])->group(function () {
+        // Liste des courses pour le courier
+        Route::get('/', [DeliveryController::class, 'index'])->name('index');
+        // Actions d'état
+        Route::patch('/{delivery}/start',    [DeliveryController::class, 'markInTransit'])->name('start');
+        Route::patch('/{delivery}/delivered',[DeliveryController::class, 'markDelivered'])->name('delivered');
+    });*/
+    /* // Formulaire de pickup pour un match donné
+     Route::get('/matches/{match}/pickups/create', [PickupController::class, 'create'])
+         ->name('pickups.create');
 
-    // Enregistrement du pickup
-    Route::post('/matches/{match}/pickups', [PickupController::class, 'store'])
-        ->name('pickups.store');
+     // Enregistrement du pickup
+     Route::post('/matches/{match}/pickups', [PickupController::class, 'store'])
+         ->name('pickups.store');
 
-    // (optionnel) liste des pickups
-    Route::get('/pickups', [PickupController::class, 'index'])
-        ->name('pickups.index');*/
-        
+     // (optionnel) liste des pickups
+     Route::get('/pickups', [PickupController::class, 'index'])
+         ->name('pickups.index');*/
+
     require __DIR__.'/waste_items.php';
 });
 
@@ -166,7 +171,6 @@ Route::middleware(['jwt.auth'])->post(
     '/bids/{bid}/accept',
     [BidController::class, 'updateStatus']
 )->name('bids.accept');
-
 
 require __DIR__.'/marketplace.php';
 

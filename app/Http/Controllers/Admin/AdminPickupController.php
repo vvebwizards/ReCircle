@@ -15,8 +15,9 @@ class AdminPickupController extends Controller
             ->when($q !== '', function ($builder) use ($q) {
                 $builder->where(function ($b) use ($q) {
                     $b->where('pickup_address', 'like', "%$q%")
-                      ->orWhere('tracking_code', 'like', "%$q%")
-                      ->orWhereHas('wasteItem', fn($w) => $w->where('title','like',"%$q%"));
+                        ->orWhere('tracking_code', 'like', "%$q%")
+                        ->orWhere('status', 'like', "%$q%")
+                        ->orWhereHas('wasteItem', fn ($w) => $w->where('title', 'like', "%$q%"));
                 });
             })
             ->latest()
@@ -29,26 +30,27 @@ class AdminPickupController extends Controller
     public function show(Pickup $pickup)
     {
         $pickup->load(['wasteItem:id,title']);
+
         return view('admin.pickups.show', compact('pickup'));
     }
 
-    
-  public function edit(Pickup $pickup)
+    public function edit(Pickup $pickup)
     {
         $pickup->load('wasteItem:id,title');
+
         return view('admin.pickups.edit', compact('pickup'));
     }
 
     public function update(Request $request, Pickup $pickup)
     {
         $data = $request->validate([
-            'pickup_address'                => ['required','string','max:255'],
-            'scheduled_pickup_window_start' => ['nullable','date'],
-            'scheduled_pickup_window_end'   => ['nullable','date','after_or_equal:scheduled_pickup_window_start'],
-            'status'                        => ['required','in:scheduled,assigned,in_transit,picked,failed,cancelled'],
-            'tracking_code'                 => ['nullable','string','max:40'],
-            'courier_id'                    => ['nullable','integer'],
-            'notes'                         => ['nullable','string'],
+            'pickup_address' => ['required', 'string', 'max:255'],
+            'scheduled_pickup_window_start' => ['nullable', 'date'],
+            'scheduled_pickup_window_end' => ['nullable', 'date', 'after_or_equal:scheduled_pickup_window_start'],
+            'status' => ['required', 'in:scheduled,assigned,in_transit,picked,failed,cancelled'],
+            'tracking_code' => ['nullable', 'string', 'max:40'],
+            'courier_id' => ['nullable', 'integer'],
+            'notes' => ['nullable', 'string'],
         ]);
 
         $pickup->update($data);

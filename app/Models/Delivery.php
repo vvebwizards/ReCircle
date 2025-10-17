@@ -2,20 +2,26 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Builder;
+
 class Delivery extends Model
 {
-   // use SoftDeletes;
+    // use SoftDeletes;
     protected $dates = ['deleted_at'];
 
-    public const STATUS_SCHEDULED  = 'scheduled';
-    public const STATUS_ASSIGNED   = 'assigned';
+    public const STATUS_SCHEDULED = 'scheduled';
+
+    public const STATUS_ASSIGNED = 'assigned';
+
     public const STATUS_IN_TRANSIT = 'in_transit';
-    public const STATUS_DELIVERED  = 'delivered';
-    public const STATUS_FAILED     = 'failed';
-    public const STATUS_CANCELLED  = 'cancelled';
+
+    public const STATUS_DELIVERED = 'delivered';
+
+    public const STATUS_FAILED = 'failed';
+
+    public const STATUS_CANCELLED = 'cancelled';
 
     protected $fillable = [
         'pickup_id',
@@ -33,11 +39,11 @@ class Delivery extends Model
     ];
 
     protected $casts = [
-        'assigned_at'   => 'datetime',
-        'picked_up_at'  => 'datetime',
-        'arrived_hub_at'=> 'datetime',
-        'hub_lat'       => 'float',
-        'hub_lng'       => 'float',
+        'assigned_at' => 'datetime',
+        'picked_up_at' => 'datetime',
+        'arrived_hub_at' => 'datetime',
+        'hub_lat' => 'float',
+        'hub_lng' => 'float',
     ];
 
     /** Relations */
@@ -45,26 +51,27 @@ class Delivery extends Model
     {
         return $this->belongsTo(Pickup::class);
     }
-    
-public function scopeSearch(Builder $q, ?string $term): Builder
-    {
-        $term = trim((string)$term);
-        if ($term === '') return $q;
 
-        return $q->where(function($b) use ($term) {
-            $b->where('tracking_code','like',"%{$term}%")
-              ->orWhereHas('pickup', fn($p) =>
-                    $p->where('pickup_address','like',"%{$term}%")
-              )
-              ->orWhereHas('pickup.wasteItem', fn($w) =>
-                    $w->where('title','like',"%{$term}%")
-              );
+    public function scopeSearch(Builder $q, ?string $term): Builder
+    {
+        $term = trim((string) $term);
+        if ($term === '') {
+            return $q;
+        }
+
+        return $q->where(function ($b) use ($term) {
+            $b->where('tracking_code', 'like', "%{$term}%")
+                ->orWhereHas('pickup', fn ($p) => $p->where('pickup_address', 'like', "%{$term}%")
+                )
+                ->orWhereHas('pickup.wasteItem', fn ($w) => $w->where('title', 'like', "%{$term}%")
+                );
         });
     }
 
-public function scopeCompleted($q) {
-    return $q->whereIn('status', ['delivered','failed','cancelled']);
-}
+    public function scopeCompleted($q)
+    {
+        return $q->whereIn('status', ['delivered', 'failed', 'cancelled']);
+    }
 
     public function courier()
     {
@@ -75,8 +82,8 @@ public function scopeCompleted($q) {
     public function markAssigned(?int $courierId = null, ?string $phone = null): void
     {
         $this->fill([
-            'status'      => self::STATUS_ASSIGNED,
-            'courier_id'  => $courierId ?? $this->courier_id,
+            'status' => self::STATUS_ASSIGNED,
+            'courier_id' => $courierId ?? $this->courier_id,
             'courier_phone' => $phone ?? $this->courier_phone,
             'assigned_at' => now(),
         ])->save();
@@ -85,7 +92,7 @@ public function scopeCompleted($q) {
     public function markInTransit(): void
     {
         $this->update([
-            'status'       => self::STATUS_IN_TRANSIT,
+            'status' => self::STATUS_IN_TRANSIT,
             'picked_up_at' => $this->picked_up_at ?? now(),
         ]);
     }
@@ -93,11 +100,11 @@ public function scopeCompleted($q) {
     public function markDelivered(): void
     {
         $this->update([
-            'status'        => self::STATUS_DELIVERED,
-            'arrived_hub_at'=> now(),
+            'status' => self::STATUS_DELIVERED,
+            'arrived_hub_at' => now(),
         ]);
     }
-    
+
     // Filtrer par courier connecté
     public function scopeForCourier(Builder $q, int $courierId): Builder
     {
@@ -109,6 +116,6 @@ public function scopeCompleted($q) {
     // Montrer les courses “actives”
     public function scopeActive(Builder $q): Builder
     {
-        return $q->whereIn('status', ['scheduled','assigned','in_transit']);
+        return $q->whereIn('status', ['scheduled', 'assigned', 'in_transit']);
     }
 }

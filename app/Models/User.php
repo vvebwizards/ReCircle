@@ -211,6 +211,9 @@ class User extends Authenticatable implements MustVerifyEmail
             default => 'Newcomer',
         };
     }
-    public function deliveriesAsCourier(){ return $this->hasMany(\App\Models\Delivery::class, 'courier_id');}
 
+    public function deliveriesAsCourier()
+    {
+        return $this->hasMany(\App\Models\Delivery::class, 'courier_id');
+    }
 }
