@@ -565,3 +565,14 @@
 .empty-bids { font-size:.65rem; color:#6b7280; padding:.6rem; text-align:center; border:1px dashed #d1d5db; border-radius:8px; }
 .loading-sm { font-size:.65rem; color:#374151; display:flex; gap:.5rem; align-items:center; }
 .error-text { font-size:.65rem; color:#b91c1c; }
+
+/* Animation for new bids */
+@keyframes bidHighlight {
+  0% { background-color: rgba(147, 197, 253, 0.3); }
+  50% { background-color: rgba(147, 197, 253, 0.1); }
+  100% { background-color: transparent; }
+}
+
+.bid-new-animation {
+  animation: bidHighlight 2s ease-out;
+}

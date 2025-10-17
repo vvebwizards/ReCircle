@@ -31,13 +31,13 @@ class TestBidBroadcast extends Command
         $wasteItemId = $this->argument('waste_item_id');
         $amount = $this->option('amount');
         $userId = $this->option('user_id');
-        
-        if (!$wasteItemId) {
+
+        if (! $wasteItemId) {
             // Find a random waste item or use ID 1
             $wasteItem = WasteItem::inRandomOrder()->first();
             $wasteItemId = $wasteItem ? $wasteItem->id : 1;
         }
-        
+
         $this->info("Sending test bid broadcast for waste item #{$wasteItemId}");
 
         // Create a test bid for broadcasting
@@ -49,21 +49,21 @@ class TestBidBroadcast extends Command
             'waste_item_id' => $wasteItemId,
             'user_id' => $userId,
             'maker' => [
-                'name' => 'Test User'
+                'name' => 'Test User',
             ],
             'created_at' => now()->toIso8601String(),
             'updated_at' => now()->toIso8601String(),
-            'test' => true
+            'test' => true,
         ];
-        
+
         // Broadcast the event
         event(new BidSubmitted($bid));
-        
+
         $this->info('Event broadcasted successfully!');
         $this->line("Channel: waste-item.{$wasteItemId}.bids");
-        $this->line("Event: bid-submitted");
-        $this->line("Data: " . json_encode($bid, JSON_PRETTY_PRINT));
-        
+        $this->line('Event: bid-submitted');
+        $this->line('Data: '.json_encode($bid, JSON_PRETTY_PRINT));
+
         return 0;
     }
 }

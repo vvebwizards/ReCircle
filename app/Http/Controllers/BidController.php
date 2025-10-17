@@ -37,7 +37,7 @@ class BidController extends Controller
             'notes' => $data['notes'] ?? null,
             'status' => Bid::STATUS_PENDING,
         ]);
-        
+
         // Broadcast bid submitted event for real-time updates
         event(new BidSubmitted($bid));
 
@@ -84,7 +84,7 @@ class BidController extends Controller
             DB::transaction(function () use ($bid) {
                 // accept target bid
                 $bid->markAccepted();
-                
+
                 // Broadcast the accepted bid
                 event(new BidSubmitted($bid));
 
@@ -122,7 +122,7 @@ class BidController extends Controller
         }
 
         $bid->markWithdrawn();
-        
+
         // Broadcast the withdrawn bid
         event(new BidSubmitted($bid));
 

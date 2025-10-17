@@ -119,7 +119,7 @@ Route::post('/broadcast-test', function (Illuminate\Http\Request $request) {
     $wasteItemId = $request->input('waste_item_id', 1);
     $amount = $request->input('amount', 500);
     $currency = $request->input('currency', 'EUR');
-    
+
     event(new App\Events\BidSubmitted([
         'id' => 999,
         'amount' => $amount,
@@ -128,14 +128,14 @@ Route::post('/broadcast-test', function (Illuminate\Http\Request $request) {
         'waste_item_id' => $wasteItemId,
         'user_id' => 1,
         'maker' => [
-            'name' => 'Test User'
+            'name' => 'Test User',
         ],
         'test' => true,
-        'timestamp' => now()->toDateTimeString()
+        'timestamp' => now()->toDateTimeString(),
     ]));
-    
+
     return response()->json([
-        'success' => true, 
-        'message' => "Test event broadcasted for waste item #{$wasteItemId}"
+        'success' => true,
+        'message' => "Test event broadcasted for waste item #{$wasteItemId}",
     ]);
 });

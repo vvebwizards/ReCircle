@@ -5,7 +5,6 @@ namespace App\Events;
 use App\Models\Bid;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
@@ -21,7 +20,7 @@ class BidSubmitted implements ShouldBroadcastNow
      * @var \App\Models\Bid|array
      */
     public $bid;
-    
+
     /**
      * Whether this is a test event.
      *
@@ -31,8 +30,8 @@ class BidSubmitted implements ShouldBroadcastNow
 
     /**
      * Create a new event instance.
-     * 
-     * @param \App\Models\Bid|array $bid
+     *
+     * @param  \App\Models\Bid|array  $bid
      */
     public function __construct($bid)
     {
@@ -51,9 +50,9 @@ class BidSubmitted implements ShouldBroadcastNow
             $data = $this->bid;
             $data['debug_info'] = [
                 'time' => now()->toIso8601String(),
-                'channel' => 'waste-item.' . ($data['waste_item_id'] ?? 1) . '.bids',
+                'channel' => 'waste-item.'.($data['waste_item_id'] ?? 1).'.bids',
                 'event' => 'bid-submitted',
-                'isTest' => true
+                'isTest' => true,
             ];
         } else {
             $data = [
@@ -68,15 +67,15 @@ class BidSubmitted implements ShouldBroadcastNow
                 ],
                 'debug_info' => [
                     'time' => now()->toIso8601String(),
-                    'channel' => 'waste-item.' . $this->bid->waste_item_id . '.bids',
-                    'event' => 'bid-submitted'
-                ]
+                    'channel' => 'waste-item.'.$this->bid->waste_item_id.'.bids',
+                    'event' => 'bid-submitted',
+                ],
             ];
         }
-        
+
         // Log the event data for debugging
         \Log::info('Broadcasting BidSubmitted event', $data);
-        
+
         return $data;
     }
 
@@ -89,17 +88,17 @@ class BidSubmitted implements ShouldBroadcastNow
     {
         if ($this->isTest) {
             return [
-                new Channel('waste-item.' . ($this->bid['waste_item_id'] ?? 1) . '.bids'),
-                new PrivateChannel('user.' . ($this->bid['user_id'] ?? 1) . '.bids'),
+                new Channel('waste-item.'.($this->bid['waste_item_id'] ?? 1).'.bids'),
+                new PrivateChannel('user.'.($this->bid['user_id'] ?? 1).'.bids'),
             ];
         }
-        
+
         return [
-            new Channel('waste-item.' . $this->bid->waste_item_id . '.bids'),
-            new PrivateChannel('user.' . $this->bid->maker_id . '.bids'),
+            new Channel('waste-item.'.$this->bid->waste_item_id.'.bids'),
+            new PrivateChannel('user.'.$this->bid->maker_id.'.bids'),
         ];
     }
-    
+
     /**
      * The event's broadcast name.
      *
