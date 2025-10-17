@@ -22,108 +22,107 @@ class MaterialController extends Controller
         return view('maker.create_material', compact('wasteItems'));
     }
 
-public function store(Request $request): RedirectResponse
-{
-    $messages = [
-        'name.required' => 'The material name is required.',
-        'name.max' => 'The material name may not be greater than 255 characters.',
-        'category.required' => 'Please select a category.',
-        'category.in' => 'Please select a valid category.',
-        'unit.required' => 'Please select a unit.',
-        'unit.in' => 'Please select a valid unit.',
-        'quantity.required' => 'The quantity is required.',
-        'quantity.numeric' => 'The quantity must be a number.',
-        'quantity.min' => 'The quantity must be at least 0.',
-        'price.required' => 'The price is required.',
-        'price.numeric' => 'The price must be a number.',
-        'price.min' => 'The price must be at least 0.',
-        'recyclability_score.required' => 'The recyclability score is required.',
-        'recyclability_score.numeric' => 'The recyclability score must be a number.',
-        'recyclability_score.min' => 'The recyclability score must be at least 0%.',
-        'recyclability_score.max' => 'The recyclability score may not be greater than 100%.',
-        'description.required' => 'The description is required.',
-        'description.max' => 'The description may not be greater than 1000 characters.',
-        'waste_item_id.required' => 'Please select a waste item to link.',
-        'waste_item_id.numeric' => 'Please select a valid waste item.',
-        'waste_item_id.min' => 'Please select a valid waste item.',
-        'image_path.required' => 'At least one image is required.',
-        'image_path.min' => 'At least one image is required.',
-        'image_path.*.image' => 'Each file must be an image (jpeg, png, jpg, gif).',
-        'image_path.*.max' => 'Each image may not be greater than 2MB.',
-    ];
+    public function store(Request $request): RedirectResponse
+    {
+        $messages = [
+            'name.required' => 'The material name is required.',
+            'name.max' => 'The material name may not be greater than 255 characters.',
+            'category.required' => 'Please select a category.',
+            'category.in' => 'Please select a valid category.',
+            'unit.required' => 'Please select a unit.',
+            'unit.in' => 'Please select a valid unit.',
+            'quantity.required' => 'The quantity is required.',
+            'quantity.numeric' => 'The quantity must be a number.',
+            'quantity.min' => 'The quantity must be at least 0.',
+            'price.required' => 'The price is required.',
+            'price.numeric' => 'The price must be a number.',
+            'price.min' => 'The price must be at least 0.',
+            'recyclability_score.required' => 'The recyclability score is required.',
+            'recyclability_score.numeric' => 'The recyclability score must be a number.',
+            'recyclability_score.min' => 'The recyclability score must be at least 0%.',
+            'recyclability_score.max' => 'The recyclability score may not be greater than 100%.',
+            'description.required' => 'The description is required.',
+            'description.max' => 'The description may not be greater than 1000 characters.',
+            'waste_item_id.required' => 'Please select a waste item to link.',
+            'waste_item_id.numeric' => 'Please select a valid waste item.',
+            'waste_item_id.min' => 'Please select a valid waste item.',
+            'image_path.required' => 'At least one image is required.',
+            'image_path.min' => 'At least one image is required.',
+            'image_path.*.image' => 'Each file must be an image (jpeg, png, jpg, gif).',
+            'image_path.*.max' => 'Each image may not be greater than 2MB.',
+        ];
 
-    $validated = $request->validate([
-        'name' => 'required|string|max:255',
-        'category' => 'required|in:'.implode(',', Material::CATEGORIES),
-        'unit' => 'required|in:'.implode(',', Material::UNITS),
-        'quantity' => 'required|numeric|min:0',
-        'price' => 'required|numeric|min:0',
-        'recyclability_score' => 'required|numeric|min:0|max:100',
-        'description' => 'required|string|max:1000',
-        'waste_item_id' => 'required|numeric|min:1',
-        'image_path' => 'required|array|min:1',
-        'image_path.*' => 'required|image|max:2048',
-    ], $messages);
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'category' => 'required|in:'.implode(',', Material::CATEGORIES),
+            'unit' => 'required|in:'.implode(',', Material::UNITS),
+            'quantity' => 'required|numeric|min:0',
+            'price' => 'required|numeric|min:0',
+            'recyclability_score' => 'required|numeric|min:0|max:100',
+            'description' => 'required|string|max:1000',
+            'waste_item_id' => 'required|numeric|min:1',
+            'image_path' => 'required|array|min:1',
+            'image_path.*' => 'required|image|max:2048',
+        ], $messages);
 
-    $wasteItem = WasteItem::where('generator_id', Auth::id())
-        ->find($validated['waste_item_id']);
+        $wasteItem = WasteItem::where('generator_id', Auth::id())
+            ->find($validated['waste_item_id']);
 
-    if (!$wasteItem) {
-        return back()->withErrors([
-            'waste_item_id' => 'Selected waste item does not exist or does not belong to you.',
-        ])->withInput();
-    }
-
-    if ($wasteItem->estimated_weight && $validated['quantity'] > $wasteItem->estimated_weight) {
-        return back()->withErrors([
-            'quantity' => "Quantity cannot exceed the available waste item weight ({$wasteItem->estimated_weight}kg).",
-        ])->withInput();
-    }
-
-    if ($validated['price'] > 100000) {
-        return back()->withErrors([
-            'price' => 'Price seems too high. Please verify the amount.',
-        ])->withInput();
-    }
-
-    if ($validated['quantity'] > 100000) {
-        return back()->withErrors([
-            'quantity' => 'Quantity seems too high. Please verify the amount.',
-        ])->withInput();
-    }
-
-
-    $material = Material::create([
-        'name' => $validated['name'],
-        'category' => $validated['category'],
-        'unit' => $validated['unit'],
-        'quantity' => $validated['quantity'],
-        'price' => $validated['price'],
-        'recyclability_score' => $validated['recyclability_score'],
-        'description' => $validated['description'],
-        'waste_item_id' => $validated['waste_item_id'],
-        'maker_id' => Auth::id(),
-    ]);
-
-    $order = 0;
-    if ($request->hasFile('image_path')) {
-        foreach ($request->file('image_path') as $image) {
-            $imageName = time().'_'.uniqid().'_'.$order.'.'.$image->getClientOriginalExtension();
-            $image->move(public_path('images/materials'), $imageName);
-            $imagePath = 'images/materials/'.$imageName;
-
-            MaterialImage::create([
-                'material_id' => $material->id,
-                'image_path' => $imagePath,
-                'order' => $order,
-            ]);
-
-            $order++;
+        if (! $wasteItem) {
+            return back()->withErrors([
+                'waste_item_id' => 'Selected waste item does not exist or does not belong to you.',
+            ])->withInput();
         }
-    }
 
-    return redirect()->route('maker.materials.index')->with('success', 'Material created with '.$order.' images!');
-}
+        if ($wasteItem->estimated_weight && $validated['quantity'] > $wasteItem->estimated_weight) {
+            return back()->withErrors([
+                'quantity' => "Quantity cannot exceed the available waste item weight ({$wasteItem->estimated_weight}kg).",
+            ])->withInput();
+        }
+
+        if ($validated['price'] > 100000) {
+            return back()->withErrors([
+                'price' => 'Price seems too high. Please verify the amount.',
+            ])->withInput();
+        }
+
+        if ($validated['quantity'] > 100000) {
+            return back()->withErrors([
+                'quantity' => 'Quantity seems too high. Please verify the amount.',
+            ])->withInput();
+        }
+
+        $material = Material::create([
+            'name' => $validated['name'],
+            'category' => $validated['category'],
+            'unit' => $validated['unit'],
+            'quantity' => $validated['quantity'],
+            'price' => $validated['price'],
+            'recyclability_score' => $validated['recyclability_score'],
+            'description' => $validated['description'],
+            'waste_item_id' => $validated['waste_item_id'],
+            'maker_id' => Auth::id(),
+        ]);
+
+        $order = 0;
+        if ($request->hasFile('image_path')) {
+            foreach ($request->file('image_path') as $image) {
+                $imageName = time().'_'.uniqid().'_'.$order.'.'.$image->getClientOriginalExtension();
+                $image->move(public_path('images/materials'), $imageName);
+                $imagePath = 'images/materials/'.$imageName;
+
+                MaterialImage::create([
+                    'material_id' => $material->id,
+                    'image_path' => $imagePath,
+                    'order' => $order,
+                ]);
+
+                $order++;
+            }
+        }
+
+        return redirect()->route('maker.materials.index')->with('success', 'Material created with '.$order.' images!');
+    }
 
     public function index(Request $request): View
     {

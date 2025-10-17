@@ -97,83 +97,84 @@ class ProductController extends Controller
         return view('maker.create_product', compact('materials'));
     }
 
-  public function store(Request $request): RedirectResponse
-{
-    $messages = [
-        'name.required' => 'The product name is required.',
-        'materials.required' => 'Please select at least one material.',
-        'materials.*.id.exists' => 'Selected material is invalid.',
-        'materials.*.quantity_used.required' => 'Quantity used is required.',
-        'description.required' => 'The description is required.',
-        'price.required' => 'The price is required.',
-        'stock.required' => 'The stock quantity is required.',
-        'images.required' => 'At least one image is required.',
-        'images.*.image' => 'Each file must be an image (jpeg, png, jpg, gif).',
-        'images.*.max' => 'Each image may not be greater than 5MB.',
-    ];
+    public function store(Request $request): RedirectResponse
+    {
+        $messages = [
+            'name.required' => 'The product name is required.',
+            'materials.required' => 'Please select at least one material.',
+            'materials.*.id.exists' => 'Selected material is invalid.',
+            'materials.*.quantity_used.required' => 'Quantity used is required.',
+            'description.required' => 'The description is required.',
+            'price.required' => 'The price is required.',
+            'stock.required' => 'The stock quantity is required.',
+            'images.required' => 'At least one image is required.',
+            'images.*.image' => 'Each file must be an image (jpeg, png, jpg, gif).',
+            'images.*.max' => 'Each image may not be greater than 5MB.',
+        ];
 
-    $validated = $request->validate([
-        'name' => 'required|string|max:255',
-        'materials' => 'required|array|min:1',
-        'materials.*.id' => 'required|exists:materials,id',
-        'materials.*.quantity_used' => 'required|numeric|min:0.01',
-        'description' => 'required|string|max:2000',
-        'price' => 'required|numeric|min:0',
-        'stock' => 'required|integer|min:1',
-        'images' => 'required|array|min:1',
-        'images.*' => 'required|image|mimes:jpeg,png,jpg,gif|max:5120',
-    ], $messages);
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'materials' => 'required|array|min:1',
+            'materials.*.id' => 'required|exists:materials,id',
+            'materials.*.quantity_used' => 'required|numeric|min:0.01',
+            'description' => 'required|string|max:2000',
+            'price' => 'required|numeric|min:0',
+            'stock' => 'required|integer|min:1',
+            'images' => 'required|array|min:1',
+            'images.*' => 'required|image|mimes:jpeg,png,jpg,gif|max:5120',
+        ], $messages);
 
-    DB::transaction(function () use ($validated, &$product, $request) {
-        $sku = 'PROD-'.strtoupper(uniqid());
+        DB::transaction(function () use ($validated, &$product, $request) {
+            $sku = 'PROD-'.strtoupper(uniqid());
 
-        $product = Product::create([
-            'maker_id' => Auth::id(),
-            'sku' => $sku,
-            'name' => $validated['name'],
-            'description' => $validated['description'],
-            'price' => $validated['price'],
-            'stock' => $validated['stock'],
-            'status' => ProductStatus::DRAFT,
-        ]);
+            $product = Product::create([
+                'maker_id' => Auth::id(),
+                'sku' => $sku,
+                'name' => $validated['name'],
+                'description' => $validated['description'],
+                'price' => $validated['price'],
+                'stock' => $validated['stock'],
+                'status' => ProductStatus::DRAFT,
+            ]);
 
-        foreach ($validated['materials'] as $mat) {
-            $material = Material::findOrFail($mat['id']);
+            foreach ($validated['materials'] as $mat) {
+                $material = Material::findOrFail($mat['id']);
 
-            if ($material->quantity < $mat['quantity_used']) {
-                throw new \Exception("Insufficient material: {$material->name}");
+                if ($material->quantity < $mat['quantity_used']) {
+                    throw new \Exception("Insufficient material: {$material->name}");
+                }
+
+                $material->quantity -= $mat['quantity_used'];
+                $material->save();
+
+                $product->materials()->attach($material->id, [
+                    'quantity_used' => $mat['quantity_used'],
+                    'unit' => $material->unit,
+                ]);
             }
 
-            $material->quantity -= $mat['quantity_used'];
-            $material->save();
+            $order = 0;
+            foreach ($request->file('images') as $image) {
+                $imageName = time().'_'.uniqid().'_'.$order.'.'.$image->getClientOriginalExtension();
+                $image->move(public_path('images/products'), $imageName);
+                $imagePath = 'images/products/'.$imageName;
 
-            $product->materials()->attach($material->id, [
-                'quantity_used' => $mat['quantity_used'],
-                'unit' => $material->unit,
-            ]);
-        }
+                ProductImage::create([
+                    'product_id' => $product->id,
+                    'image_path' => $imagePath,
+                    'order' => $order,
+                ]);
+                $order++;
+            }
 
-        $order = 0;
-        foreach ($request->file('images') as $image) {
-            $imageName = time().'_'.uniqid().'_'.$order.'.'.$image->getClientOriginalExtension();
-            $image->move(public_path('images/products'), $imageName);
-            $imagePath = 'images/products/'.$imageName;
+            Material::recalculateImpactsForProduct($product);
+            $product->generateMaterialPassport();
+        });
 
-            ProductImage::create([
-                'product_id' => $product->id,
-                'image_path' => $imagePath,
-                'order' => $order,
-            ]);
-            $order++;
-        }
+        return redirect()->route('maker.products')
+            ->with('success', 'Product created successfully!');
+    }
 
-        Material::recalculateImpactsForProduct($product);
-        $product->generateMaterialPassport();
-    });
-
-    return redirect()->route('maker.products')
-        ->with('success', 'Product created successfully!');
-}
     public function edit(int $id): View
     {
         $product = Product::with(['materials', 'images' => fn ($q) => $q->orderBy('order')])
