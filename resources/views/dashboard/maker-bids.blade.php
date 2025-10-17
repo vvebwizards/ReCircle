@@ -160,8 +160,22 @@ document.addEventListener('click', async (e) => {
     sTitle.textContent=listingTitle; sAmt.textContent=amtText; sStatus.textContent='PENDING';
     errorMsg.hidden=true; errorMsg.textContent='';
     modal.hidden=false; modal.setAttribute('aria-hidden','false');
-    confirmBtn.disabled=false; spinner.hidden=true; confirmBtn.querySelector('.lbl').textContent='Withdraw Bid';
-    setTimeout(()=>confirmBtn.focus(), 30); document.body.style.overflow='hidden';
+    
+    // Safely set button text and state
+    confirmBtn.disabled=false; 
+    spinner.hidden=true;
+    
+    // Save original button HTML if needed
+    confirmBtn._originalHTML = confirmBtn.innerHTML;
+    
+    // Check if .lbl exists before trying to set it
+    const lblElement = confirmBtn.querySelector('.lbl');
+    if (lblElement) {
+      lblElement.textContent='Withdraw Bid';
+    }
+    
+    setTimeout(()=>confirmBtn.focus(), 30); 
+    document.body.style.overflow='hidden';
   }
   function closeModal(){ modal.hidden=true; modal.setAttribute('aria-hidden','true'); document.body.style.overflow=''; if(lastFocus) lastFocus.focus(); activeBtn=null; activeBidId=null; activeRow=null; }
   document.addEventListener('click', e => {
@@ -172,7 +186,23 @@ document.addEventListener('click', async (e) => {
   document.addEventListener('keydown', e => { if(e.key==='Escape' && !modal.hidden) closeModal(); });
   confirmBtn.addEventListener('click', async () => {
     if(!activeBidId || !activeRow) return;
-    confirmBtn.disabled=true; spinner.hidden=false; confirmBtn.querySelector('.lbl').textContent='Withdrawing...'; errorMsg.hidden=true; errorMsg.textContent='';
+    
+    // Safely update button text and state - check if .lbl exists first
+    const lblElement = confirmBtn.querySelector('.lbl');
+    confirmBtn.disabled = true;
+    spinner.hidden = false;
+    
+    if (lblElement) {
+      lblElement.textContent = 'Withdrawing...';
+    } else {
+      // Fallback if .lbl isn't found - save original button content
+      confirmBtn._originalHTML = confirmBtn.innerHTML;
+      confirmBtn.innerHTML = '<span class="spinner"></span> Withdrawing...';
+    }
+    
+    errorMsg.hidden = true;
+    errorMsg.textContent = '';
+    
     try {
       const res = await fetch(`/bids/${activeBidId}/withdraw`, {
         method:'PATCH',
@@ -184,14 +214,41 @@ document.addEventListener('click', async (e) => {
         },
         credentials:'include'
       });
+      
       if(!res.ok){ throw new Error(await res.text() || 'Failed'); }
+      
       // Update row
       const pill = activeRow.querySelector('.pill');
-      pill.textContent='WITHDRAWN'; pill.className='pill p-withdrawn';
-      activeBtn.replaceWith(document.createElement('span')).textContent='—';
+      if (pill) {
+        pill.textContent = 'WITHDRAWN'; 
+        pill.className = 'pill p-withdrawn';
+      }
+      
+      // Replace the button with a dash
+      const span = document.createElement('span');
+      span.textContent = '—';
+      activeBtn.replaceWith(span);
+      
       closeModal();
     } catch(err){
-      console.error('Withdraw failed', err); confirmBtn.disabled=false; spinner.hidden=true; confirmBtn.querySelector('.lbl').textContent='Withdraw Bid'; errorMsg.textContent='Failed to withdraw. Try again.'; errorMsg.hidden=false;
+      console.error('Withdraw failed', err);
+      confirmBtn.disabled = false;
+      spinner.hidden = true;
+      
+      // Safely restore button text
+      const lblElement = confirmBtn.querySelector('.lbl');
+      if (lblElement) {
+        lblElement.textContent = 'Withdraw Bid';
+      } else if (confirmBtn._originalHTML) {
+        // Use saved original HTML if no .lbl
+        confirmBtn.innerHTML = confirmBtn._originalHTML;
+      } else {
+        // Complete fallback
+        confirmBtn.innerHTML = 'Withdraw Bid';
+      }
+      
+      errorMsg.textContent = 'Failed to withdraw. Try again.';
+      errorMsg.hidden = false;
     }
   });
 })();
