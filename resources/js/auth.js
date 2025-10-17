@@ -228,8 +228,19 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         } catch {}
       } else {
-        // Redirect based on user role
+        // Check if user needs onboarding
+        if (data.needs_onboarding) {
+          console.log('User needs onboarding, showing modal');
+          // Show onboarding modal and prevent any redirects
+          localStorage.setItem('onboarding_required', 'true');
+          const onboarding = new OnboardingFlow();
+          onboarding.showModal();
+          return;
+        }
+        
+        // If no onboarding needed, redirect based on user role
         if (data.user_role) {
+          console.log('No onboarding needed, redirecting based on role:', data.user_role);
           switch(data.user_role) {
             case 'maker':
               window.location.href = '/maker/dashboard';
@@ -244,14 +255,17 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
         
-        // Show onboarding modal after short delay
-        setTimeout(() => {
-          const onboarding = new OnboardingFlow();
-          onboarding.showModal();
-        }, 500);
         return;
       }
 
+      // Check for mandatory onboarding first
+      if (localStorage.getItem('onboarding_required') === 'true') {
+        console.log('Onboarding required flag detected, showing modal');
+        const onboarding = new OnboardingFlow();
+        onboarding.showModal();
+        return;
+      }
+      
       // On success, back-end sets HttpOnly cookie. Fetch current user then redirect.
       try {
         const meRes = await fetch('/api/auth/me', { headers: { 'Accept': 'application/json' }, credentials: 'include' });
@@ -557,7 +571,36 @@ document.addEventListener('DOMContentLoaded', () => {
       };
       this.faceAuth = null;
       this.modal = document.getElementById('onboarding-modal');
+      
+      // Set up navigation blocking
+      this._setupNavigationBlocking();
+      
       this.initializeFlow();
+    }
+    
+    _setupNavigationBlocking() {
+      // Set onboarding flag in localStorage
+      localStorage.setItem('onboarding_required', 'true');
+      
+      // Block ESC key for this modal
+      const origKeydownHandler = document.onkeydown;
+      document.onkeydown = (e) => {
+        if (e.key === 'Escape' && localStorage.getItem('onboarding_required') === 'true') {
+          console.log('Escape key blocked during onboarding');
+          e.preventDefault();
+          return false;
+        }
+        return origKeydownHandler ? origKeydownHandler(e) : true;
+      };
+      
+      // Block before unload
+      window.addEventListener('beforeunload', (e) => {
+        if (localStorage.getItem('onboarding_required') === 'true') {
+          e.preventDefault();
+          e.returnValue = 'You need to complete your profile setup before leaving.';
+          return e.returnValue;
+        }
+      });
     }
 
     initializeFlow() {
@@ -607,6 +650,7 @@ document.addEventListener('DOMContentLoaded', () => {
     bindEvents() {
       // Skip all button
       document.getElementById('skip-all-btn')?.addEventListener('click', () => {
+        console.log('Skip all button clicked, completing onboarding');
         this.completeOnboarding();
       });
 
@@ -698,14 +742,24 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 200);
     }
 
-    hideModal() {
-      if (!this.modal) return;
-      this.modal.classList.add('hidden');
-      this.modal.setAttribute('aria-hidden', 'true');
-      document.body.style.overflow = '';
+  hideModal() {
+    // If onboarding is required, prevent closing the modal
+    if (localStorage.getItem('onboarding_required') === 'true') {
+      console.log('Onboarding required - preventing modal from closing');
+      return;
     }
-
-    generateQRFromSecret(secret, qrElement) {
+    
+    if (!this.modal) return;
+    this.modal.classList.add('hidden');
+    this.modal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    
+    // If we have a redirect URL saved, navigate there
+    if (this._redirectUrl) {
+      console.log('Navigating to dashboard after onboarding completion');
+      window.location.href = this._redirectUrl;
+    }
+  }    generateQRFromSecret(secret, qrElement) {
       // Generate a proper TOTP URI
       const appName = 'ReCircle';
       const userEmail = window.currentUserEmail || 'user@recircle.com';
@@ -1119,6 +1173,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async completeOnboarding() {
       try {
+        // Disable the button to prevent multiple clicks
+        const completeBtn = document.getElementById('complete-onboarding');
+        const skipAllBtn = document.getElementById('skip-all-btn');
+        
+        if (completeBtn) {
+          completeBtn.disabled = true;
+          completeBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+        }
+        
+        if (skipAllBtn) {
+          skipAllBtn.disabled = true;
+          skipAllBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+        }
+        
+        // Set a shorter timeout to force redirect if the request takes too long
+        const forcedRedirectTimeout = setTimeout(() => {
+          console.log('Request taking too long, forcing redirect');
+          localStorage.removeItem('onboarding_required');
+          if (completeBtn) completeBtn.innerHTML = 'Timeout - Redirecting...';
+          if (skipAllBtn) skipAllBtn.innerHTML = 'Timeout - Redirecting...';
+          window.location.replace('/dashboard');
+        }, 3000);
+        
         const response = await fetch('/onboarding/complete', {
           method: 'POST',
           headers: {
@@ -1127,19 +1204,127 @@ document.addEventListener('DOMContentLoaded', () => {
           },
           credentials: 'include'
         });
+        
+        // Clear the timeout since we got a response
+        clearTimeout(forcedRedirectTimeout);
 
         const result = await response.json();
         if (result.success) {
-          this.hideModal();
-          this.showSuccess('Profile setup complete! Welcome to ReCircle.');
+          // Clear the onboarding required flag
+          localStorage.removeItem('onboarding_required');
+          console.log('Onboarding completed successfully, flag cleared');
           
+          // FORCE direct redirect to dashboard with a small timeout to ensure UI updates
+          const dashboardUrl = result.redirect || '/dashboard';
+          console.log('Success! Redirecting directly to:', dashboardUrl);
+          
+          // Force immediate button text update to provide feedback
+          if (completeBtn) completeBtn.innerHTML = 'Success! Redirecting...';
+          if (skipAllBtn) skipAllBtn.innerHTML = 'Success! Redirecting...';
+          
+          // Force navigation with both methods to ensure redirect happens
           setTimeout(() => {
-            window.location.href = result.redirect || '/dashboard';
+            window.location.href = dashboardUrl;
+          }, 500);
+          window.location.replace(dashboardUrl);
+        } else {
+          // Re-enable the buttons if there was an error
+          if (completeBtn) {
+            completeBtn.disabled = false;
+            completeBtn.innerHTML = 'Start Using ReCircle';
+          }
+          
+          if (skipAllBtn) {
+            skipAllBtn.disabled = false;
+            skipAllBtn.innerHTML = 'Skip All & Continue';
+          }
+          
+          this.showError(result.message || 'Failed to complete onboarding');
+          
+          // Force redirect after a short delay even if there was an error
+          if (completeBtn) completeBtn.innerHTML = 'Error - Redirecting...';
+          if (skipAllBtn) skipAllBtn.innerHTML = 'Error - Redirecting...';
+          
+          console.log('Server returned error but forcing redirect to dashboard');
+          localStorage.removeItem('onboarding_required');
+          
+          // Redirect immediately rather than waiting
+          setTimeout(() => {
+            window.location.replace('/dashboard');
           }, 1000);
         }
       } catch (_error) {
+        console.error('Error completing onboarding:', _error);
+        
+        // Re-enable the buttons if there was an error
+        const completeBtn = document.getElementById('complete-onboarding');
+        const skipAllBtn = document.getElementById('skip-all-btn');
+        
+        if (completeBtn) {
+          completeBtn.disabled = false;
+          completeBtn.innerHTML = 'Start Using ReCircle';
+        }
+        
+        if (skipAllBtn) {
+          skipAllBtn.disabled = false;
+          skipAllBtn.innerHTML = 'Skip All & Continue';
+        }
+        
         this.showError('Failed to complete onboarding');
+        
+        // Force redirect after a short delay even if there was an error
+        if (completeBtn) completeBtn.innerHTML = 'Error - Redirecting...';
+        if (skipAllBtn) skipAllBtn.innerHTML = 'Error - Redirecting...';
+        
+        console.log('Error occurred but forcing redirect to dashboard');
+        localStorage.removeItem('onboarding_required');
+        
+        // Redirect immediately rather than waiting
+        setTimeout(() => {
+          window.location.replace('/dashboard');
+        }, 1000);
       }
+    }
+    
+    showCompletionScreen(redirectUrl) {
+      // Find the steps container
+      const stepsContainer = document.querySelector('.onboarding-steps');
+      if (!stepsContainer) return;
+      
+      // Save redirect URL for later
+      this._redirectUrl = redirectUrl;
+      console.log('Saved redirect URL:', redirectUrl);
+      
+      // Create completion screen
+      const completionScreen = document.createElement('div');
+      completionScreen.className = 'onboarding-completion';
+      completionScreen.innerHTML = `
+        <div class="success-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+        </div>
+        <h3 class="completion-title">Setup Complete!</h3>
+        <p class="completion-message">Thank you for setting up your profile. You're all set to start using ReCircle.</p>
+        <button class="btn primary" id="go-to-dashboard">Go to Dashboard</button>
+      `;
+      
+      // Replace steps with completion screen
+      stepsContainer.innerHTML = '';
+      stepsContainer.appendChild(completionScreen);
+      
+      // Add event listener to the dashboard button
+      document.getElementById('go-to-dashboard')?.addEventListener('click', () => {
+        console.log('Dashboard button clicked, redirecting to:', this._redirectUrl);
+        window.location.href = this._redirectUrl;
+      });
+      
+      // Auto-redirect after 2 seconds if the user doesn't click the button
+      setTimeout(() => {
+        console.log('Auto-redirecting to dashboard');
+        window.location.href = this._redirectUrl;
+      }, 2000);
     }
 
     showFieldError(fieldId, message) {
@@ -1337,7 +1522,36 @@ class OnboardingFlow {
     };
     this.faceAuth = null;
     this.modal = document.getElementById('onboarding-modal');
+    
+    // Set up navigation blocking
+    this._setupNavigationBlocking();
+    
     this.initializeFlow();
+  }
+  
+  _setupNavigationBlocking() {
+    // Set onboarding flag in localStorage
+    localStorage.setItem('onboarding_required', 'true');
+    
+    // Block ESC key for this modal
+    const origKeydownHandler = document.onkeydown;
+    document.onkeydown = (e) => {
+      if (e.key === 'Escape' && localStorage.getItem('onboarding_required') === 'true') {
+        console.log('Escape key blocked during onboarding');
+        e.preventDefault();
+        return false;
+      }
+      return origKeydownHandler ? origKeydownHandler(e) : true;
+    };
+    
+    // Block before unload
+    window.addEventListener('beforeunload', (e) => {
+      if (localStorage.getItem('onboarding_required') === 'true') {
+        e.preventDefault();
+        e.returnValue = 'You need to complete your profile setup before leaving.';
+        return e.returnValue;
+      }
+    });
   }
 
   initializeFlow() {
@@ -1349,6 +1563,12 @@ class OnboardingFlow {
   bindEvents() {
     // Skip all button
     document.getElementById('skip-all-btn')?.addEventListener('click', () => {
+      console.log('Skip all button clicked, completing onboarding');
+      const skipBtn = document.getElementById('skip-all-btn');
+      if (skipBtn) {
+        skipBtn.disabled = true;
+        skipBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+      }
       this.completeOnboarding();
     });
 
@@ -1420,10 +1640,22 @@ class OnboardingFlow {
   }
 
   hideModal() {
+    // If onboarding is required, prevent closing the modal
+    if (localStorage.getItem('onboarding_required') === 'true') {
+      console.log('Onboarding required - preventing modal from closing');
+      return;
+    }
+    
     if (this.modal) {
       this.modal.classList.add('hidden');
       this.modal.setAttribute('aria-hidden', 'true');
       document.body.style.overflow = '';
+      
+      // If we have a redirect URL saved, navigate there
+      if (this._redirectUrl) {
+        console.log('Navigating to dashboard after onboarding completion');
+        window.location.href = this._redirectUrl;
+      }
     }
   }
 
@@ -1717,26 +1949,136 @@ class OnboardingFlow {
 
   async completeOnboarding() {
     try {
+      // Disable any buttons to prevent multiple clicks
+      const completeBtn = document.getElementById('complete-onboarding');
+      const skipAllBtn = document.getElementById('skip-all-btn');
+      
+      // Disable buttons and show loading state
+      if (completeBtn) {
+        completeBtn.disabled = true;
+        completeBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+      }
+      
+      if (skipAllBtn) {
+        skipAllBtn.disabled = true;
+        skipAllBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+      }
+      
+      // Set a shorter timeout to force redirect if the request takes too long
+      const forcedRedirectTimeout = setTimeout(() => {
+        console.log('Request taking too long, forcing redirect');
+        localStorage.removeItem('onboarding_required');
+        if (completeBtn) completeBtn.innerHTML = 'Timeout - Redirecting...';
+        if (skipAllBtn) skipAllBtn.innerHTML = 'Timeout - Redirecting...';
+        window.location.replace('/dashboard');
+      }, 3000);
+      
       const response = await fetch('/onboarding/complete', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-        }
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+          'Accept': 'application/json'
+        },
+        credentials: 'include'
       });
+      
+      // Clear the timeout since we got a response
+      clearTimeout(forcedRedirectTimeout);
 
       const result = await response.json();
       if (result.success) {
-        this.hideModal();
-        this.showSuccess('Profile setup complete! Welcome to ReCircle.');
+        // Clear the onboarding required flag
+        localStorage.removeItem('onboarding_required');
+        console.log('Onboarding completed successfully, flag cleared');
         
+        // FORCE direct redirect to dashboard with a small timeout to ensure UI updates
+        const dashboardUrl = result.redirect || '/dashboard';
+        console.log('Success! Redirecting directly to:', dashboardUrl);
+        
+        // Force immediate button text update to provide feedback
+        if (completeBtn) completeBtn.innerHTML = 'Success! Redirecting...';
+        if (skipAllBtn) skipAllBtn.innerHTML = 'Success! Redirecting...';
+        
+        // Force navigation with both methods to ensure redirect happens
         setTimeout(() => {
-          window.location.href = result.redirect || '/dashboard';
+          window.location.href = dashboardUrl;
+        }, 500);
+        window.location.replace(dashboardUrl);
+      } else {
+        // Force redirect after a short delay even if there was an error
+        if (completeBtn) completeBtn.innerHTML = 'Error - Redirecting...';
+        if (skipAllBtn) skipAllBtn.innerHTML = 'Error - Redirecting...';
+        
+        console.log('Server returned error but forcing redirect to dashboard');
+        localStorage.removeItem('onboarding_required');
+        this.showError(result.message || 'Failed to complete onboarding');
+        
+        // Redirect immediately rather than waiting
+        setTimeout(() => {
+          window.location.replace('/dashboard');
         }, 1000);
       }
     } catch (_error) {
+      console.error('Error completing onboarding:', _error);
+      
+      // Force redirect after a short delay even if there was an error
+      const completeBtn = document.getElementById('complete-onboarding');
+      const skipAllBtn = document.getElementById('skip-all-btn');
+      
+      if (completeBtn) completeBtn.innerHTML = 'Error - Redirecting...';
+      if (skipAllBtn) skipAllBtn.innerHTML = 'Error - Redirecting...';
+      
+      console.log('Error occurred but forcing redirect to dashboard');
+      localStorage.removeItem('onboarding_required');
       this.showError('Failed to complete onboarding');
+      
+      // Redirect immediately rather than waiting
+      setTimeout(() => {
+        window.location.replace('/dashboard');
+      }, 1000);
     }
+  }
+  
+  showCompletionScreen(redirectUrl) {
+    // Find the steps container
+    const stepsContainer = document.querySelector('.onboarding-steps');
+    if (!stepsContainer) return;
+    
+    // Save redirect URL for later
+    this._redirectUrl = redirectUrl;
+    console.log('Saved redirect URL:', redirectUrl);
+    
+    // Create completion screen
+    const completionScreen = document.createElement('div');
+    completionScreen.className = 'onboarding-completion';
+    completionScreen.innerHTML = `
+      <div class="success-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+      </div>
+      <h3 class="completion-title">Setup Complete!</h3>
+      <p class="completion-message">Thank you for setting up your profile. You're all set to start using ReCircle.</p>
+      <button class="btn primary" id="go-to-dashboard">Go to Dashboard</button>
+    `;
+    
+    // Replace steps with completion screen
+    stepsContainer.innerHTML = '';
+    stepsContainer.appendChild(completionScreen);
+    
+    // Add event listener to the dashboard button
+    document.getElementById('go-to-dashboard')?.addEventListener('click', () => {
+      console.log('Going to dashboard with URL:', this._redirectUrl);
+      window.location.href = this._redirectUrl;
+    });
+    
+    // Auto-redirect after 2 seconds if the user doesn't click the button
+    setTimeout(() => {
+      console.log('Auto-redirecting to dashboard');
+      window.location.href = this._redirectUrl;
+    }, 2000);
   }
 
   showFieldError(fieldId, message) {
