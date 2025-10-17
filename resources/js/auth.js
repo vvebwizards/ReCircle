@@ -164,6 +164,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const original = btn.textContent;
     btn.textContent = 'Signing in...';
     btn.disabled = true;
+    
+    // Mark the form as being processed to prevent the beforeunload dialog
+    signinForm.setAttribute('data-login-in-progress', 'true');
+    
+    // Prevent "Leave site?" dialog during login - clear all beforeunload handlers
+    window.onbeforeunload = null;
+    // Remove any potential event listeners
+    const noOp = () => {};
+    window.addEventListener('beforeunload', noOp);
+    window.removeEventListener('beforeunload', noOp);
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
@@ -231,6 +241,15 @@ document.addEventListener('DOMContentLoaded', () => {
         // Check if user needs onboarding
         if (data.needs_onboarding) {
           console.log('User needs onboarding, showing modal');
+          
+          // Completely disable all beforeunload events to prevent dialog
+          window.onbeforeunload = null;
+          
+          // Remove any other beforeunload handlers
+          const noOp = () => {};
+          window.addEventListener('beforeunload', noOp);
+          window.removeEventListener('beforeunload', noOp);
+          
           // Show onboarding modal and prevent any redirects
           localStorage.setItem('onboarding_required', 'true');
           const onboarding = new OnboardingFlow();
@@ -261,6 +280,30 @@ document.addEventListener('DOMContentLoaded', () => {
       // Check for mandatory onboarding first
       if (localStorage.getItem('onboarding_required') === 'true') {
         console.log('Onboarding required flag detected, showing modal');
+        
+        // Clear beforeunload event to prevent "Leave site?" dialog
+        const oldBeforeUnload = window.onbeforeunload;
+        window.onbeforeunload = null;
+        
+        // Remove any existing event listeners for beforeunload
+        const noOp = () => {};
+        window.addEventListener('beforeunload', noOp);
+        window.removeEventListener('beforeunload', noOp);
+        
+        // Make sure we're completely removing all beforeunload handlers
+        // This is the most aggressive approach to ensure no dialog appears
+        const allWindowProps = Object.getOwnPropertyNames(window);
+        for (const prop of allWindowProps) {
+          if (prop.includes('beforeunload') || prop.includes('onbeforeunload')) {
+            try {
+              window[prop] = null;
+            } catch (e) {
+              // Ignore errors for read-only properties
+            }
+          }
+        }
+        
+        // Now show the onboarding modal
         const onboarding = new OnboardingFlow();
         onboarding.showModal();
         return;
@@ -593,14 +636,22 @@ document.addEventListener('DOMContentLoaded', () => {
         return origKeydownHandler ? origKeydownHandler(e) : true;
       };
       
-      // Block before unload
-      window.addEventListener('beforeunload', (e) => {
-        if (localStorage.getItem('onboarding_required') === 'true') {
+      // Store a reference to the beforeunload handler to be able to remove it later
+      this._beforeUnloadHandler = (e) => {
+        // Only block navigation if onboarding is required AND the modal is actually visible
+        // AND we're not in the login process (checking for specific form submission)
+        if (localStorage.getItem('onboarding_required') === 'true' && 
+            this.modal && 
+            !this.modal.hidden && 
+            !document.querySelector('form[data-login-in-progress="true"]')) {
           e.preventDefault();
           e.returnValue = 'You need to complete your profile setup before leaving.';
           return e.returnValue;
         }
-      });
+      };
+      
+      // Add the handler
+      window.addEventListener('beforeunload', this._beforeUnloadHandler);
     }
 
     initializeFlow() {
@@ -1544,14 +1595,22 @@ class OnboardingFlow {
       return origKeydownHandler ? origKeydownHandler(e) : true;
     };
     
-    // Block before unload
-    window.addEventListener('beforeunload', (e) => {
-      if (localStorage.getItem('onboarding_required') === 'true') {
+    // Store a reference to the beforeunload handler to be able to remove it later
+    this._beforeUnloadHandler = (e) => {
+      // Only block navigation if onboarding is required AND the modal is actually visible
+      // AND we're not in the login process (checking for specific form submission)
+      if (localStorage.getItem('onboarding_required') === 'true' && 
+          this.modal && 
+          !this.modal.hidden && 
+          !document.querySelector('form[data-login-in-progress="true"]')) {
         e.preventDefault();
         e.returnValue = 'You need to complete your profile setup before leaving.';
         return e.returnValue;
       }
-    });
+    };
+    
+    // Add the handler
+    window.addEventListener('beforeunload', this._beforeUnloadHandler);
   }
 
   initializeFlow() {
