@@ -15,12 +15,19 @@ return new class extends Migration
             $table->enum('unit', ['kg', 'pcs', 'm2', 'l']);
             $table->decimal('quantity', 10, 2)->default(0);
             $table->unsignedTinyInteger('recyclability_score')->default(0);
+
+            $table->decimal('co2_kg_saved', 10, 2)->default(0);
+            $table->decimal('landfill_kg_avoided', 10, 2)->default(0);
+            $table->decimal('energy_saved_kwh', 10, 2)->default(0);
+
             $table->foreignId('maker_id')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('waste_item_id')->constrained('waste_items')->cascadeOnDelete();
+            $table->foreignId('waste_item_id')->nullable()->constrained('waste_items')->nullOnDelete();
+
             $table->text('description')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });
+
     }
 
     public function down(): void

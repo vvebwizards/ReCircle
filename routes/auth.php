@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/auth', [AuthController::class, 'show'])->name('auth');
+Route::get('/login', [AuthController::class, 'show'])->name('login');
 
 Route::get('/twofa', function () {
     return view('auth.twofa');
@@ -73,4 +74,23 @@ Route::prefix('api/auth')->group(function () {
 
     // Email code send (does not require JWT yet; validates credentials)
     Route::post('2fa/email/send', [ApiAuthController::class, 'sendEmailCode']);
+
+    // Facial recognition fallback after failed login attempts
+    Route::post('facial-fallback', [ApiAuthController::class, 'facialFallback']);
+});
+
+// Facial Recognition Authentication Routes
+use App\Http\Controllers\FaceAuthController;
+use App\Http\Controllers\OnboardingController;
+
+Route::get('/facial-login', [FaceAuthController::class, 'showFacialLogin'])->name('facial.login');
+Route::post('/api/face/enroll', [FaceAuthController::class, 'enroll'])->middleware('jwt.auth');
+Route::post('/api/face/authenticate', [FaceAuthController::class, 'authenticate']);
+
+// Onboarding Routes (require authentication)
+Route::middleware('jwt.auth')->prefix('onboarding')->group(function () {
+    Route::post('/setup-2fa', [OnboardingController::class, 'setup2FA']);
+    Route::post('/verify-2fa', [OnboardingController::class, 'verify2FA']);
+    Route::post('/avatar', [OnboardingController::class, 'updateAvatar']);
+    Route::post('/complete', [OnboardingController::class, 'completeOnboarding']);
 });

@@ -167,7 +167,7 @@
                     <div class="product-content">
                         <div class="product-header">
                             <h3 class="product-name">{{ $product->name }}</h3>
-                            <span class="price-tag">{{ $product->formatted_price }}</span>
+                            <span class="price-tag">{{ $product->price }} £</span>
                         </div>
                         
                         @if($product->material)
@@ -228,7 +228,6 @@
                             @if($product->status === \App\Enums\ProductStatus::DRAFT)
                                 <form action="{{ route('maker.products.publish', $product->id) }}" method="POST">
                                     @csrf
-                                    @method('PUT')
                                     <button type="submit" class="btn-action btn-publish">
                                         <i class="fa-solid fa-upload"></i> Publish
                                     </button>
