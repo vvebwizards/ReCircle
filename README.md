@@ -79,7 +79,14 @@ php artisan config:cache route:cache view:cache
 ```
 Serve via a real web server (Nginx/Apache) pointing document root at `public/`.
 
-## 6. Continuous Integration (CI)
+## 6. Real-time Features
+
+### Real-time Bidding System
+The application features a WebSocket-based real-time bidding system. When users place bids, they appear instantly for other users viewing the same listing, and bid cards on the dashboard update in real-time.
+
+See [Real-time Bidding Documentation](docs/realtime-bids.md) for setup and usage details.
+
+## 7. Continuous Integration (CI)
 The GitHub Actions workflow runs only for pushes and pull requests targeting the `develop` branch (feature branches open PRs into `develop`).
 
 Pipeline stages / jobs:

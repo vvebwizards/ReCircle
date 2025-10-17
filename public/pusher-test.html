@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pusher Test</title>
+    <script src="https://js.pusher.com/8.4.0/pusher.min.js"></script>
+</head>
+<body>
+    <h1>Pusher Test</h1>
+    <div id="status">Connecting...</div>
+    <div id="messages"></div>
+
+    <script>
+        // Enable Pusher logging
+        Pusher.logToConsole = true;
+
+        // Initialize Pusher
+        const pusher = new Pusher('c8652c49f017e104a528', {
+            cluster: 'eu',
+            forceTLS: true
+        });
+
+        // Connection status
+        pusher.connection.bind('connected', () => {
+            document.getElementById('status').textContent = 'Connected to Pusher!';
+            appendMessage('Connected to Pusher successfully');
+        });
+
+        pusher.connection.bind('failed', () => {
+            document.getElementById('status').textContent = 'Failed to connect to Pusher';
+            appendMessage('Connection to Pusher failed');
+        });
+
+        pusher.connection.bind('disconnected', () => {
+            document.getElementById('status').textContent = 'Disconnected from Pusher';
+            appendMessage('Disconnected from Pusher');
+        });
+
+        pusher.connection.bind('error', (err) => {
+            document.getElementById('status').textContent = 'Pusher connection error: ' + err.message;
+            appendMessage('Pusher error: ' + err.message);
+        });
+
+        // Subscribe to the channel
+        const channel = pusher.subscribe('waste-item.1.bids');
+        
+        channel.bind('subscription_succeeded', () => {
+            appendMessage('Successfully subscribed to channel waste-item.1.bids');
+        });
+        
+        channel.bind('subscription_error', (error) => {
+            appendMessage('Failed to subscribe to channel: ' + error);
+        });
+        
+        // Listen for events
+        channel.bind('new-bid', (data) => {
+            appendMessage('Received new-bid event: ' + JSON.stringify(data));
+        });
+
+        // Helper function to add messages to the page
+        function appendMessage(message) {
+            const messagesDiv = document.getElementById('messages');
+            const messageElement = document.createElement('div');
+            messageElement.textContent = new Date().toISOString() + ': ' + message;
+            messagesDiv.appendChild(messageElement);
+        }
+    </script>
+</body>
+</html>

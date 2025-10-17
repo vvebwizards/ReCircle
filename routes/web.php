@@ -115,6 +115,40 @@ require __DIR__.'/forum.php';
 
 require __DIR__.'/badges.php';
 
+// Pusher test routes
+Route::get('/pusher-test', function () {
+    return view('pusher-auth-test');
+});
+
+// WebSocket debug console
+Route::get('/debug/websocket', function () {
+    return view('debug.websocket-debug');
+});
+
+Route::post('/broadcast-test', function (Illuminate\Http\Request $request) {
+    $wasteItemId = $request->input('waste_item_id', 1);
+    $amount = $request->input('amount', 500);
+    $currency = $request->input('currency', 'EUR');
+
+    event(new App\Events\BidSubmitted([
+        'id' => 999,
+        'amount' => $amount,
+        'currency' => $currency,
+        'status' => 'pending',
+        'waste_item_id' => $wasteItemId,
+        'user_id' => 1,
+        'maker' => [
+            'name' => 'Test User',
+        ],
+        'test' => true,
+        'timestamp' => now()->toDateTimeString(),
+    ]));
+
+    return response()->json([
+        'success' => true,
+        'message' => "Test event broadcasted for waste item #{$wasteItemId}",
+    ]);
+});
 // Reclamation routes (register this so reclamation named routes are available)
 require __DIR__.'/reclamation.php';
 
