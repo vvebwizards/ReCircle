@@ -59,7 +59,7 @@
         </div>
 
         <div class="filters-section">
-            <form action="{{ route('maker.products') }}" method="GET" id="filterForm">
+            <form action="{{ route('maker.products') }}" method="GET" id="filterForm" novalidate>
                 <div class="filters-row">
                     <div class="filter-group">
                         <label class="filter-label" for="search">Search</label>

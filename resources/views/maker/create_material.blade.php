@@ -10,18 +10,13 @@
         <form action="{{ route('materials.store') }}" method="POST" enctype="multipart/form-data" class="product-form" novalidate>
             @csrf
             
-            @if(session('success'))
-            <div class="alert alert-success">
-                {{ session('success') }}
-            </div>
-            @endif
-
             <div class="form-group full-width">
                 <label for="name">Material Name *</label>
                 <input type="text" name="name" id="name" 
                        value="{{ old('name') }}" 
                        placeholder="e.g., Recycled Plastic Pellets" 
-                       required>
+                       required
+                       class="@error('name') error-border @enderror">
                 @error('name')
                     <span class="error-text">{{ $message }}</span>
                 @enderror
@@ -29,7 +24,8 @@
 
             <div class="form-group">
                 <label for="category">Category *</label>
-                <select name="category" id="category" required>
+                <select name="category" id="category" required
+                        class="@error('category') error-border @enderror">
                     <option value="">Select a category</option>
                     @foreach(\App\Models\Material::CATEGORIES as $category)
                         <option value="{{ $category }}" {{ old('category') == $category ? 'selected' : '' }}>
@@ -44,7 +40,8 @@
 
             <div class="form-group">
                 <label for="unit">Unit *</label>
-                <select name="unit" id="unit" required>
+                <select name="unit" id="unit" required
+                        class="@error('unit') error-border @enderror">
                     <option value="">Select unit</option>
                     @foreach(\App\Models\Material::UNITS as $unit)
                         <option value="{{ $unit }}" {{ old('unit') == $unit ? 'selected' : '' }}>
@@ -61,8 +58,20 @@
                 <label for="quantity">Quantity *</label>
                 <input type="number" name="quantity" id="quantity" 
                        value="{{ old('quantity') }}" 
-                       placeholder="0.00" step="0.01" min="0" required>
+                       placeholder="0.00" step="0.01" min="0" required
+                       class="@error('quantity') error-border @enderror">
                 @error('quantity')
+                    <span class="error-text">{{ $message }}</span>
+                @enderror
+            </div>
+
+            <div class="form-group">
+                <label for="price">Price (£) *</label>
+                <input type="number" name="price" id="price" 
+                       value="{{ old('price') }}" 
+                       placeholder="0.00" step="0.01" min="0" required
+                       class="@error('price') error-border @enderror">
+                @error('price')
                     <span class="error-text">{{ $message }}</span>
                 @enderror
             </div>
@@ -71,7 +80,8 @@
                 <label for="recyclability_score">Recyclability Score (%) *</label>
                 <input type="number" name="recyclability_score" id="recyclability_score" 
                        value="{{ old('recyclability_score') }}" 
-                       placeholder="0-100" min="0" max="100" required>
+                       placeholder="0-100" min="0" max="100" required
+                       class="@error('recyclability_score') error-border @enderror">
                 @error('recyclability_score')
                     <span class="error-text">{{ $message }}</span>
                 @enderror
@@ -81,36 +91,41 @@
                 <label for="description">Description *</label>
                 <textarea name="description" id="description" rows="3" 
                           placeholder="Describe the material, its properties, and potential uses" 
-                          required>{{ old('description') }}</textarea>
+                          required
+                          class="@error('description') error-border @enderror">{{ old('description') }}</textarea>
                 @error('description')
                     <span class="error-text">{{ $message }}</span>
                 @enderror
             </div>
 
-<div class="form-group full-width">
-    <label for="waste_item_id">Link Waste Item *</label>
-    <select name="waste_item_id" id="waste_item_id" required>
-        <option value="">Select a waste item to link</option>
-        @forelse($wasteItems as $item)
-           <option value="{{ $item->id }}" {{ old('waste_item_id') == $item->id ? 'selected' : '' }}>
-                {{ $item->title }} 
-                @if($item->estimated_weight)
-                    ({{ $item->estimated_weight }}kg)
-                @endif
-                - {{ $item->created_at->format('M d, Y') }}
-            </option>
-        @empty
-            <option value="" disabled>No waste items available. Get one first from your marketplace.</option>
-        @endforelse
-    </select>
-    
-</div>
+            <div class="form-group full-width">
+                <label for="waste_item_id">Link Waste Item *</label>
+                <select name="waste_item_id" id="waste_item_id" required
+                        class="@error('waste_item_id') error-border @enderror">
+                    <option value="">Select a waste item to link</option>
+                    @forelse($wasteItems as $item)
+                       <option value="{{ $item->id }}" {{ old('waste_item_id') == $item->id ? 'selected' : '' }}>
+                            {{ $item->title }} 
+                            @if($item->estimated_weight)
+                                ({{ $item->estimated_weight }}kg available)
+                            @endif
+                            - {{ $item->created_at->format('M d, Y') }}
+                        </option>
+                    @empty
+                        <option value="" disabled>No waste items available. Get one first from your marketplace.</option>
+                    @endforelse
+                </select>
+                @error('waste_item_id')
+                    <span class="error-text">{{ $message }}</span>
+                @enderror
+            </div>
 
             <div class="form-group full-width">
                 <label for="image_path">Material Images *</label>
                 <input type="file" name="image_path[]" id="image_path" 
-                       accept="image/*" multiple required>
-                <span class="helper-text">Select multiple images (PNG, JPG, JPEG up to 5MB each)</span>
+                       accept="image/*" multiple required
+                       class="@error('image_path') error-border @enderror @error('image_path.*') error-border @enderror">
+                <span class="helper-text">Select multiple images (PNG, JPG, JPEG up to 2MB each)</span>
                 
                 <div id="imagePreview" class="image-preview-container"></div>
                 
@@ -140,6 +155,7 @@
                     <li><strong>Material Name:</strong> Be descriptive and specific about your material</li>
                     <li><strong>Category & Unit:</strong> Select appropriate category and measurement unit</li>
                     <li><strong>Quantity:</strong> Enter the exact amount of material available</li>
+                    <li><strong>Price:</strong> Set the price per unit of material</li>
                     <li><strong>Recyclability Score:</strong> Rate how recyclable this material is (0-100%)</li>
                     <li><strong>Waste Item Link:</strong> Connect to the original waste item source</li>
                     <li><strong>Images:</strong> Show clear photos of the material from different angles</li>
@@ -183,6 +199,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
         });
+    }
+
+    const quantityInput = document.getElementById('quantity');
+    const wasteItemSelect = document.getElementById('waste_item_id');
+    
+    if (quantityInput && wasteItemSelect) {
+        quantityInput.addEventListener('blur', validateQuantity);
+        wasteItemSelect.addEventListener('change', validateQuantity);
+    }
+
+    function validateQuantity() {
+        const selectedOption = wasteItemSelect.options[wasteItemSelect.selectedIndex];
+        const wasteItemText = selectedOption.textContent;
+        const quantity = parseFloat(quantityInput.value);
+        
+        const weightMatch = wasteItemText.match(/\(([\d.]+)kg available\)/);
+        if (weightMatch && quantity > parseFloat(weightMatch[1])) {
+            alert(`Warning: Quantity (${quantity}) exceeds available waste item weight (${weightMatch[1]}kg).`);
+        }
     }
 });
 </script>
