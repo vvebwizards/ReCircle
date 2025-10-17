@@ -98,27 +98,24 @@
                 @enderror
             </div>
 
-            <div class="form-group full-width">
-                <label for="waste_item_id">Link Waste Item *</label>
-                <select name="waste_item_id" id="waste_item_id" required
-                        class="@error('waste_item_id') error-border @enderror">
-                    <option value="">Select a waste item to link</option>
-                    @forelse($wasteItems as $item)
-                       <option value="{{ $item->id }}" {{ old('waste_item_id') == $item->id ? 'selected' : '' }}>
-                            {{ $item->title }} 
-                            @if($item->estimated_weight)
-                                ({{ $item->estimated_weight }}kg available)
-                            @endif
-                            - {{ $item->created_at->format('M d, Y') }}
-                        </option>
-                    @empty
-                        <option value="" disabled>No waste items available. Get one first from your marketplace.</option>
-                    @endforelse
-                </select>
-                @error('waste_item_id')
-                    <span class="error-text">{{ $message }}</span>
-                @enderror
-            </div>
+<div class="form-group full-width">
+    <label for="waste_item_id">Link Waste Item *</label>
+    <select name="waste_item_id" id="waste_item_id" required>
+        <option value="">Select a waste item to link</option>
+        @forelse($wasteItems as $item)
+           <option value="{{ $item->id }}" {{ old('waste_item_id', request('from')) == $item->id ? 'selected' : '' }}>
+                {{ $item->title }} 
+                @if($item->estimated_weight)
+                    ({{ $item->estimated_weight }}kg)
+                @endif
+                - {{ $item->created_at->format('M d, Y') }}
+            </option>
+        @empty
+            <option value="" disabled>No waste items available. Get one first from your marketplace.</option>
+        @endforelse
+    </select>
+    
+</div>
 
             <div class="form-group full-width">
                 <label for="image_path">Material Images *</label>

@@ -14,3 +14,17 @@ Route::middleware(JwtAuthenticate::class)->group(function () {
     Route::get('auth/me', [ApiAuthController::class, 'me']);
     Route::apiResource('waste-items', WasteItemController::class);
 });
+
+// Add route for getting current user (using web auth for dashboard)
+Route::middleware('web')->group(function () {
+    Route::get('user', function () {
+        if (auth()->check()) {
+            // Get fresh user data from database
+            $user = \App\Models\User::find(auth()->id());
+
+            return response()->json($user);
+        }
+
+        return response()->json(null, 401);
+    });
+});

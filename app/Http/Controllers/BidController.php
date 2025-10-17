@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\BidSubmitted;
 use App\Http\Requests\StoreBidRequest;
 use App\Http\Requests\UpdateBidRequest;
 use App\Http\Requests\UpdateBidStatusRequest;
 use App\Models\Bid;
 use App\Models\WasteItem;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class BidController extends Controller
@@ -35,6 +37,9 @@ class BidController extends Controller
             'notes' => $data['notes'] ?? null,
             'status' => Bid::STATUS_PENDING,
         ]);
+
+        // Broadcast bid submitted event for real-time updates
+        event(new BidSubmitted($bid));
 
         return response()->json($bid->load('maker:id,name'), 201);
     }
@@ -79,13 +84,52 @@ class BidController extends Controller
             DB::transaction(function () use ($bid) {
                 // accept target bid
                 $bid->markAccepted();
+
+                // Broadcast the accepted bid
+                event(new BidSubmitted($bid));
+
                 // reject other pending bids on same waste item
-                $bid->wasteItem->bids()->where('id', '!=', $bid->id)->where('status', Bid::STATUS_PENDING)->get()->each(function ($other) {
-                    $other->markRejected();
-                });
+                $bid->wasteItem->bids()
+                    ->where('id', '!=', $bid->id)
+                    ->where('status', Bid::STATUS_PENDING)
+                    ->get()
+                    ->each(fn ($other) => $other->markRejected());
+
+                // ✅ Automatically add this bid to the Buyer's cart
+                $buyerId = $bid->maker_id;
+                if ($buyerId) {
+                    $cart = \App\Models\Cart::firstOrCreate([
+                        'user_id' => $buyerId,
+                        'status' => 'pending',
+                    ]);
+
+                    \App\Models\CartItem::create([
+                        'cart_id' => $cart->id,
+                        'bid_id' => $bid->id,
+                        'price' => $bid->amount,
+                        'quantity' => 1,
+                        'type' => 'bid',
+                    ]);
+                }
+                // set maker on the waste item to the accepted bid's maker
+                $bid->wasteItem()->update(['maker_id' => $bid->maker_id]);
+
+                // reject other pending bids on same waste item
+                $bid->wasteItem
+                    ->bids()
+                    ->where('id', '!=', $bid->id)
+                    ->where('status', Bid::STATUS_PENDING)
+                    ->get()
+                    ->each(function ($other) {
+                        $other->markRejected();
+                        // Broadcast each rejected bid
+                        event(new BidSubmitted($other));
+                    });
             });
         } else {
             $bid->markRejected();
+            // Broadcast the rejected bid
+            event(new BidSubmitted($bid));
         }
 
         return response()->json($bid->fresh()->load('maker:id,name'));
@@ -101,6 +145,9 @@ class BidController extends Controller
         }
 
         $bid->markWithdrawn();
+
+        // Broadcast the withdrawn bid
+        event(new BidSubmitted($bid));
 
         return response()->json($bid->fresh()->load('maker:id,name'));
     }

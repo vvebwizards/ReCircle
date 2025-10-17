@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\FacialRecognitionService;
 use App\Services\JwtService;
 use App\Services\TwoFactorService;
 use Illuminate\Http\JsonResponse;
@@ -14,7 +15,10 @@ use Illuminate\Validation\ValidationException;
 
 class ApiAuthController extends Controller
 {
-    public function __construct(private JwtService $jwt) {}
+    public function __construct(
+        private JwtService $jwt,
+        private FacialRecognitionService $facialService
+    ) {}
 
     public function login(Request $request, TwoFactorService $twoFactor): JsonResponse
     {
@@ -27,7 +31,41 @@ class ApiAuthController extends Controller
         ]);
 
         $user = User::where('email', $data['email'])->first();
+
+        // Check if user exists and password is correct
         if (! $user || ! Hash::check($data['password'], $user->password)) {
+            // If user exists, increment failed login attempts
+            if ($user) {
+                $user->incrementFailedLoginAttempts();
+                $maxAttempts = config('auth.max_failed_attempts', 3);
+
+                // Check if we've reached the maximum failed attempts
+                if ($user->failed_login_attempts >= $maxAttempts) {
+                    if ($user->is_facial_registered && ! $user->isBlocked()) {
+                        // User has facial recognition - trigger fallback
+                        return response()->json([
+                            'requires_facial_fallback' => true,
+                            'message' => 'Too many failed attempts. Please verify your identity using facial recognition.',
+                            'failed_attempts' => $user->failed_login_attempts,
+                            'max_attempts' => $maxAttempts,
+                        ], 423); // 423 Locked - custom status for facial fallback required
+                    } else {
+                        // User doesn't have facial recognition - lock account temporarily
+                        $lockoutDuration = config('auth.lockout_duration_minutes', 30);
+                        $user->lockForDuration($lockoutDuration);
+
+                        return response()->json([
+                            'account_locked' => true,
+                            'message' => "Too many failed attempts. Account locked for {$lockoutDuration} minutes.",
+                            'failed_attempts' => $user->failed_login_attempts,
+                            'max_attempts' => $maxAttempts,
+                            'locked_until' => $user->locked_until,
+                            'suggestion' => 'Consider setting up facial recognition for faster recovery in the future.',
+                        ], 429); // 429 Too Many Requests
+                    }
+                }
+            }
+
             throw ValidationException::withMessages([
                 'email' => ['Invalid credentials'],
             ]);
@@ -36,6 +74,23 @@ class ApiAuthController extends Controller
             return response()->json([
                 'message' => 'Your account has been blocked. Please contact administrator.',
             ], 403);
+        }
+
+        // Check if user is temporarily locked out
+        if ($user->isLockedOut()) {
+            return response()->json([
+                'message' => 'Account is temporarily locked due to multiple failed attempts.',
+                'locked_until' => $user->locked_until,
+                'account_locked' => true,
+            ], 429);
+        }
+
+        // Check if user is temporarily locked out
+        if ($user->isLockedOut()) {
+            return response()->json([
+                'message' => 'Account temporarily locked due to failed login attempts. Please try again later.',
+                'locked_until' => $user->locked_until,
+            ], 423);
         }
 
         // Enforce 2FA when enabled
@@ -78,9 +133,23 @@ class ApiAuthController extends Controller
             }
         }
 
+        // Reset failed login attempts on successful login
+        $user->resetFailedLoginAttempts();
+
         $issued = $this->jwt->issue($user);
 
-        return $this->tokenResponse($issued['token'], $issued['expires_at']);
+        // Create the additional data array with user role for dashboard redirection
+        $additionalData = [
+            'user_role' => $user->role->value,
+        ];
+
+        // Check if user needs onboarding
+        if (! $user->onboarding_completed) {
+            $additionalData['show_onboarding'] = true;
+            $additionalData['user_id'] = $user->id;
+        }
+
+        return $this->tokenResponse($issued['token'], $issued['expires_at'], $additionalData);
     }
 
     // Send a one-time code to the user's verified email after verifying credentials (without issuing a JWT)
@@ -111,6 +180,61 @@ class ApiAuthController extends Controller
         }
 
         return response()->json(['message' => 'Email code sent']);
+    }
+
+    /**
+     * Handle facial recognition fallback authentication
+     */
+    public function facialFallback(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'email' => ['required', 'email'],
+            'descriptor' => ['required', 'array', 'min:128'],
+        ]);
+
+        $user = User::where('email', $data['email'])->first();
+        if (! $user) {
+            return response()->json(['message' => 'User not found'], 404);
+        }
+
+        // Check if user can use facial fallback
+        if (! $this->facialService->canUseFacialFallback($user)) {
+            return response()->json([
+                'message' => 'Facial fallback not available for this user',
+            ], 400);
+        }
+
+        // Verify facial identity
+        $result = $this->facialService->verifyFacialIdentity($data['email'], $data['descriptor']);
+
+        if ($result['success']) {
+            // Process successful facial verification
+            $this->facialService->processFacialFallbackSuccess($user);
+
+            // Issue JWT token
+            $issued = $this->jwt->issue($user);
+
+            $additionalData = [
+                'message' => 'Facial verification successful',
+                'facial_fallback_used' => true,
+            ];
+
+            if (! $user->onboarding_completed) {
+                $additionalData['show_onboarding'] = true;
+                $additionalData['user_id'] = $user->id;
+            }
+
+            return $this->tokenResponse($issued['token'], $issued['expires_at'], $additionalData);
+        } else {
+            // Process failed facial verification
+            $lockoutInfo = $this->facialService->processFacialFallbackFailure($user);
+
+            return response()->json([
+                'message' => 'Facial verification failed',
+                'facial_verification_failed' => true,
+                ...$lockoutInfo,
+            ], 401);
+        }
     }
 
     public function me(Request $request): JsonResponse
@@ -145,16 +269,23 @@ class ApiAuthController extends Controller
         return $this->forgetToken();
     }
 
-    private function tokenResponse(string $jwt, string $expiresAt): JsonResponse
+    private function tokenResponse(string $jwt, string $expiresAt, array $additionalData = []): JsonResponse
     {
         $minutes = (int) config('jwt.ttl');
 
         $secure = app()->environment('production');
 
-        return response()->json([
+        $responseData = [
             'token_type' => 'Bearer',
             'expires_at' => $expiresAt,
-        ])->withCookie(cookie(
+        ];
+
+        // Merge additional data if provided
+        if (! empty($additionalData)) {
+            $responseData = array_merge($responseData, $additionalData);
+        }
+
+        return response()->json($responseData)->withCookie(cookie(
             name: config('jwt.cookie'),
             value: $jwt,
             minutes: $minutes,

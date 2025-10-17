@@ -45,6 +45,19 @@ window.addEventListener('scroll', () => {
     }
 });
 
+// Reclamation button -> navigates to reclamation create page
+(function() {
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-action="reclamation"]');
+        if (!btn) return;
+        e.preventDefault();
+        // route provided by blade via window.appRoutes or fallback
+        const routes = window.appRoutes || {};
+        const target = routes.reclamationsCreate || routes.reclamations?.create || '/reclamations/create';
+        window.location.href = target;
+    });
+})();
+
 // Animated counter for statistics
 function animateCounter(element, target, duration = 2000) {
     let start = 0;
@@ -227,7 +240,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 </button>
                 <ul class="profile-menu" role="menu" aria-label="Profile menu">
                     <li role="menuitem"><a href="#" class="profile-item"><i class="fa-regular fa-user"></i> Profile</a></li>
+                    <li role="menuitem"><a href="${('/cart')}" class="profile-item"><i class="fa fa-shopping-cart"></i> Purchases</a></li>
                     <li role="menuitem"><a href="${(routes.settingsSecurity||'/settings/security')}" class="profile-item"><i class="fa-solid fa-gear"></i> Settings</a></li>
+                    <li role="menuitem"><a href="${(routes.reclamations?.index||'/reclamations')}" class="profile-item"><i class="fa-solid fa-flag"></i> Reclamations</a></li>
                     <li role="menuitem"><a href="#" class="profile-item" data-signout><i class="fa-solid fa-right-from-bracket"></i> Sign Out</a></li>
                 </ul>`;
             const dashLi = findByHref(dashUrl)?.parentElement;
@@ -242,8 +257,57 @@ document.addEventListener('DOMContentLoaded', () => {
             const initials = (parts[0]?.[0] || 'U') + (parts[1]?.[0] || (parts[0]?.[1] || 'R'));
             return initials.toUpperCase();
         };
+        console.log('NEW JS: buildAuthed called with user:', user);
         const avatarEl = document.getElementById('nav-avatar');
-        if (avatarEl) avatarEl.textContent = initialsFrom(user);
+        console.log('NEW JS: Found nav-avatar element:', avatarEl);
+        
+        // Fetch fresh user data from server to get avatar
+        fetch('/api/user')
+            .then(response => response.json())
+            .then(freshUser => {
+                console.log('NEW JS: Fresh user data from API:', freshUser);
+                
+                if (avatarEl) {
+                    // Check if user has an avatar image
+                    console.log('NEW JS: User avatar field:', freshUser && freshUser.avatar);
+                    if (freshUser && freshUser.avatar) {
+                        console.log('NEW JS: Creating avatar image element');
+                        // Create image element for avatar
+                        const avatarImg = document.createElement('img');
+                        avatarImg.src = `/storage/${freshUser.avatar}`;
+                        avatarImg.alt = freshUser.name || 'User Avatar';
+                        avatarImg.style.cssText = 'width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255, 255, 255, 0.2);';
+                        
+                        console.log('NEW JS: Avatar image src set to:', avatarImg.src);
+                        
+                        // Handle image load error - fallback to initials
+                        avatarImg.onerror = function() {
+                            console.log('Avatar image failed to load, showing initials');
+                            avatarEl.textContent = initialsFrom(freshUser);
+                        };
+                        
+                        // Handle successful image load
+                        avatarImg.onload = function() {
+                            console.log('Avatar image loaded successfully');
+                        };
+                        
+                        // Clear existing content and add image
+                        avatarEl.innerHTML = '';
+                        avatarEl.appendChild(avatarImg);
+                    } else {
+                        console.log('NEW JS: No avatar found, showing initials');
+                        // No avatar, show initials
+                        avatarEl.textContent = initialsFrom(freshUser || user);
+                    }
+                }
+            })
+            .catch(error => {
+                console.log('NEW JS: Error fetching user data, using fallback:', error);
+                // Fallback to original logic
+                if (avatarEl) {
+                    avatarEl.textContent = initialsFrom(user);
+                }
+            });
 
         const getProfile = () => document.getElementById('nav-profile');
         const closeAnyProfile = () => {

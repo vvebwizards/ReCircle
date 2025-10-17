@@ -16,8 +16,8 @@ class MaterialController extends Controller
 {
     public function create(): View
     {
-
-        $wasteItems = WasteItem::where('generator_id', Auth::id())->get();
+        // Makers should link materials to waste items assigned to them
+        $wasteItems = WasteItem::where('maker_id', Auth::id())->get();
 
         return view('maker.create_material', compact('wasteItems'));
     }
@@ -51,6 +51,16 @@ class MaterialController extends Controller
             'image_path.*.image' => 'Each file must be an image (jpeg, png, jpg, gif).',
             'image_path.*.max' => 'Each image may not be greater than 2MB.',
         ];
+
+        // Ensure the selected waste item belongs to the maker
+        $wasteItem = WasteItem::where('maker_id', Auth::id())
+            ->find($request->waste_item_id);
+
+        if (! $wasteItem) {
+            return back()->withErrors([
+                'waste_item_id' => 'Selected waste item does not exist or does not belong to you.',
+            ])->withInput();
+        }
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',

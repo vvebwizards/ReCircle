@@ -17,13 +17,21 @@
             </div>
             
             <div class="header-actions">
-                @if($item->stock > 0)
+                @if($item->stock > 0 && auth()->check() && auth()->user()->role === \App\Enums\UserRole::BUYER)
                 <button class="btn-success" onclick="addProductToCart({{ $item->id }})">
                     <i class="fa-solid fa-cart-plus"></i> Add to Cart
                 </button>
                 @endif
-                
             </div>
+
+            @if(auth()->check() && auth()->user()->role === \App\Enums\UserRole::BUYER)
+            <!-- Hidden form used for Add to Cart (submits to CartController@addToCart) -->
+            <form id="add-to-cart-form" method="POST" action="{{ route('cart.add') }}" style="display:none;">
+                @csrf
+                <input type="hidden" name="product_id" id="form-product-id" value="{{ $item->id }}">
+                <input type="hidden" name="quantity" id="form-quantity" value="1">
+            </form>
+            @endif
         </div>
 
         @if($item->status === \App\Enums\ProductStatus::SOLD_OUT)
@@ -405,9 +413,32 @@ function addProductToCartDetail(productId) {
     const quantityInput = document.getElementById(`quantity-product-detail-${productId}`);
     const quantity = parseInt(quantityInput.value) || 1;
     
-    console.log('Add product to cart from detail:', productId, 'Quantity:', quantity);
+    // If the hidden form exists (user is a Buyer), submit it with the selected quantity
+    const form = document.getElementById('add-to-cart-form');
+    if (form) {
+        document.getElementById('form-product-id').value = productId;
+        document.getElementById('form-quantity').value = quantity;
+        form.submit();
+        return;
+    }
+
+    // Fallback for unauthenticated or non-buyer users
+    console.log('Add product to cart from detail (fallback):', productId, 'Quantity:', quantity);
     alert(`Added ${quantity} product(s) to cart!`);
  
+}
+
+function addProductToCart(productId) {
+    // Header quick-add button uses quantity = 1
+    const form = document.getElementById('add-to-cart-form');
+    if (form) {
+        document.getElementById('form-product-id').value = productId;
+        document.getElementById('form-quantity').value = 1;
+        form.submit();
+        return;
+    }
+
+    alert('Please log in as a Buyer to add items to the cart.');
 }
 
 

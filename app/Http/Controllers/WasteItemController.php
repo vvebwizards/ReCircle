@@ -13,7 +13,8 @@ class WasteItemController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = WasteItem::with('photos');
+        $query = WasteItem::with('photos')
+            ->whereNull('maker_id'); // Only show waste items that aren't assigned to a maker
 
         if ($request->filled('condition')) {
             $query->where('condition', $request->string('condition'));

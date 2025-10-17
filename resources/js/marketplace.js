@@ -1,6 +1,10 @@
 import '../css/materials.css';
 
 // Marketplace photo lightbox (adapted from generator waste items lightbox)
+// Import WebSocket functionality
+import { listenForBids } from './bidSocket';
+console.log('[Marketplace] Imported bidSocket');
+
 document.addEventListener('DOMContentLoaded', () => {
   const overlay = document.getElementById('marketplaceModalOverlay');
   const modal = document.getElementById('marketplacePhotosModal');
@@ -13,6 +17,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const bidFeedback = document.getElementById('bidFeedback');
   const bidExistingWrap = document.getElementById('bidExistingWrap');
   const bidExistingList = document.getElementById('bidExistingList');
+  
+  // WebSocket subscription for current bid item
+  let currentBidSubscription = null;
   if(!modal){ console.warn('[Marketplace] Photos modal not found'); return; }
   console.log('[Marketplace] Lightbox script init');
 
@@ -133,11 +140,32 @@ document.addEventListener('DOMContentLoaded', () => {
     bidOverlay?.classList.add('active');
     bidModal.classList.remove('hidden');
     loadExistingBids(id);
+    
+    // Unsubscribe from previous channel if any
+    if (currentBidSubscription) {
+      currentBidSubscription.unsubscribe();
+      currentBidSubscription = null;
+    }
+    
+    // Subscribe to real-time bids for this waste item
+    currentBidSubscription = listenForBids(id, (data) => {
+      // When a new bid is received, update the bid list
+      console.log('[Marketplace] Received bid data:', data);
+      const bidData = Array.isArray(data) ? data : [data];
+      appendToExistingBids(bidData);
+    });
   }
+  
   function closeBidModal(){
     bidModal?.classList.add('hidden');
     bidOverlay?.classList.remove('active');
     bidOverlay?.setAttribute('aria-hidden','true');
+    
+    // Unsubscribe when modal is closed
+    if (currentBidSubscription) {
+      currentBidSubscription.unsubscribe();
+      currentBidSubscription = null;
+    }
   }
   bidOverlay?.addEventListener('click', e => { if(e.target===bidOverlay) closeBidModal(); });
   bidModal?.querySelectorAll('[data-close], .modal-close').forEach(b=>b.addEventListener('click', closeBidModal));
@@ -174,7 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const json = await res.json();
       const data = json.data || json; // paginate vs flat
       renderBidList(data);
-    } catch(e){
+    } catch(_e){
       bidExistingList.innerHTML = '<div class="error-text">Failed to load bids.</div>';
     }
   }
@@ -187,9 +215,45 @@ document.addEventListener('DOMContentLoaded', () => {
     bidExistingWrap.hidden = false;
     bidExistingList.innerHTML = data.map(b => bidItemHtml(b)).join('');
   }
+  
+  function appendToExistingBids(newBids){
+    if (!Array.isArray(newBids) || !newBids.length) return;
+    
+    // Check if we need to replace the "no bids" message
+    if (bidExistingList.querySelector('.empty-bids')) {
+      bidExistingList.innerHTML = '';
+    }
+    
+    // Check if bid already exists (to avoid duplicates)
+    newBids.forEach(bid => {
+      const existingBid = bidExistingList.querySelector(`[data-bid-id="${bid.id}"]`);
+      if (existingBid) {
+        // Update existing bid element
+        existingBid.outerHTML = bidItemHtml(bid);
+      } else {
+        // Add new bid at the top
+        const newBidElement = document.createElement('div');
+        newBidElement.innerHTML = bidItemHtml(bid);
+        bidExistingList.insertAdjacentHTML('afterbegin', newBidElement.innerHTML);
+        
+        // Add highlight animation
+        const addedBid = bidExistingList.querySelector(`[data-bid-id="${bid.id}"]`);
+        if (addedBid) {
+          addedBid.classList.add('bid-new-animation');
+          setTimeout(() => {
+            addedBid.classList.remove('bid-new-animation');
+          }, 2000);
+        }
+      }
+    });
+    
+    // Always show the bids container
+    bidExistingWrap.hidden = false;
+  }
+  
   function bidItemHtml(b){
     const status = b.status || 'pending';
-    return `<div class="bid-row bid-status-${status}">
+    return `<div class="bid-row bid-status-${status}" data-bid-id="${b.id}">
       <div class="bid-main">
         <span class="bid-amount">${Number(b.amount).toFixed(2)} ${b.currency}</span>
         <span class="bid-maker">by ${b.maker?.name || 'Unknown'}</span>
@@ -239,7 +303,7 @@ document.addEventListener('DOMContentLoaded', () => {
         throw new Error('Forbidden');
       }
       if(!res.ok) throw new Error('Request failed');
-      const created = await res.json();
+      const _created = await res.json();
       // Refresh list
       loadExistingBids(id);
       bidFeedback.hidden = false;

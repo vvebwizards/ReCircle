@@ -111,7 +111,7 @@
             </a>
             @if($material->quantity > 0)
                 <button class="btn-action btn-cart" 
-                        onclick="addMaterialToCart({{ $material->id }}, '{{ $material->unit }}')">
+                        onclick="addMaterialToCart({{ $material->id }})">
                     <i class="fa-solid fa-cart-plus"></i> Add to Cart
                 </button>
             @else
@@ -122,3 +122,35 @@
         </div>
     </div>
 </div>
+
+@once
+    @if(auth()->check() && auth()->user()->role === \App\Enums\UserRole::BUYER)
+        <!-- Shared hidden form for Add to Cart (materials) -->
+        <form id="add-to-cart-form" method="POST" action="{{ route('cart.add') }}" style="display:none;">
+            @csrf
+            <input type="hidden" name="material_id" id="form-material-id" value="">
+            <input type="hidden" name="quantity" id="form-quantity" value="1">
+        </form>
+    @endif
+
+    @push('scripts')
+    <script>
+    if (typeof addMaterialToCart === 'undefined') {
+        function addMaterialToCart(materialId) {
+            const form = document.getElementById('add-to-cart-form');
+            const qtyInput = document.getElementById(`quantity-${materialId}`);
+            const quantity = qtyInput ? (parseFloat(qtyInput.value) || 1) : 1;
+
+            if (form) {
+                document.getElementById('form-material-id').value = materialId;
+                document.getElementById('form-quantity').value = quantity;
+                form.submit();
+                return;
+            }
+
+            alert('Please log in as a Buyer to add materials to the cart.');
+        }
+    }
+    </script>
+    @endpush
+@endonce

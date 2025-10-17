@@ -25,9 +25,14 @@ class User extends Authenticatable implements MustVerifyEmail
         'google_id',
         'role',
         'password',
+        'avatar',
+        'onboarding_completed',
         'blocked_at',
         'block_reason',
         'blocked_by',
+        'failed_login_attempts',
+        'locked_until',
+        'is_facial_registered',
     ];
 
     /**
@@ -56,6 +61,8 @@ class User extends Authenticatable implements MustVerifyEmail
             'two_factor_confirmed_at' => 'datetime',
             'role' => UserRole::class,
             'blocked_at' => 'datetime',
+            'locked_until' => 'datetime',
+            'is_facial_registered' => 'bool',
         ];
     }
 
@@ -63,6 +70,44 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isBlocked(): bool
     {
         return ! is_null($this->blocked_at);
+    }
+
+    // Check if user is temporarily locked due to failed login attempts
+    public function isLockedOut(): bool
+    {
+        return $this->locked_until && $this->locked_until->isFuture();
+    }
+
+    // Increment failed login attempts
+    public function incrementFailedLoginAttempts(): void
+    {
+        $this->increment('failed_login_attempts');
+        $this->save();
+    }
+
+    // Reset failed login attempts
+    public function resetFailedLoginAttempts(): void
+    {
+        $this->update([
+            'failed_login_attempts' => 0,
+            'locked_until' => null,
+        ]);
+    }
+
+    // Lock user for specified duration (in minutes)
+    public function lockForDuration(int $minutes): void
+    {
+        $this->update([
+            'locked_until' => now()->addMinutes($minutes),
+        ]);
+    }
+
+    // Check if facial recognition fallback should be triggered
+    public function shouldTriggerFacialFallback(): bool
+    {
+        $maxAttempts = config('auth.max_failed_attempts', 3);
+
+        return $this->failed_login_attempts >= $maxAttempts && $this->is_facial_registered;
     }
 
     // Scope for blocked users
@@ -117,5 +162,63 @@ class User extends Authenticatable implements MustVerifyEmail
     public function blockedByUser()
     {
         return $this->belongsTo(User::class, 'blocked_by');
+    }
+
+    public function badges()
+    {
+        return $this->belongsToMany(Badge::class, 'user_badges')
+            ->withPivot('earned_at', 'message')
+            ->withTimestamps()
+            ->orderBy('user_badges.earned_at', 'desc');
+    }
+
+    public function stats()
+    {
+        return $this->hasOne(UserStat::class);
+    }
+
+    // Helper methods for badges
+    public function hasBadge($badgeId): bool
+    {
+        return $this->badges->contains('id', $badgeId);
+    }
+
+    public function getPointsAttribute()
+    {
+        return $this->stats?->total_points ?? 0;
+    }
+
+    public function getLevelAttribute()
+    {
+        return $this->stats?->level ?? 1;
+    }
+
+    // Get user's rank based on points
+    public function getRankAttribute()
+    {
+        if (! $this->stats) {
+            return 'Newcomer';
+        }
+
+        $points = $this->stats->total_points;
+
+        return match (true) {
+            $points >= 5000 => 'Eco Champion',
+            $points >= 2500 => 'Sustainability Expert',
+            $points >= 1000 => 'Circular Economy Advocate',
+            $points >= 500 => 'Waste Warrior',
+            $points >= 100 => 'Eco Enthusiast',
+            default => 'Newcomer',
+        };
+    }
+
+    public function reclamations(): HasMany
+    {
+        return $this->hasMany(Reclamation::class);
+    }
+
+    public function reclamationResponses(): HasMany
+    {
+        return $this->hasMany(ReclamationResponse::class, 'admin_id');
     }
 }
