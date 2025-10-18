@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @push('head')
-@vite(['resources/css/dashboard-bids.css'])
+@vite(['resources/css/dashboard-bids.css', 'resources/css/dashboard.css'])
 @endpush
 
 @section('content')
@@ -73,10 +73,10 @@
             $img = $primary ? ($primary->image_url ?? $primary->image_path) : asset('images/default-material.png');
             $count = $item->bids->count();
           @endphp
-          <div class="bid-item-card" data-item-id="{{ $item->id }}">
+          <div class="bid-item-card" data-item-id="{{ $item->id }}" data-waste-item-id="{{ $item->id }}">
             <div class="card-media">
               <img src="{{ $img }}" alt="{{ $item->title }} image" loading="lazy" />
-              <span class="badge total">{{ $count }} {{ Str::plural('Bid',$count) }}</span>
+              <span class="badge total bid-counter">{{ $count }} {{ Str::plural('Bid',$count) }}</span>
               @if($accepted)
                 <span class="badge accepted">Accepted {{ number_format($accepted->amount,2) }} {{ $accepted->currency }}</span>
               @endif
@@ -168,6 +168,7 @@
 </form>
 
 @push('scripts')
+@vite(['resources/js/dashboardBids.js', 'resources/js/bidSocket.js'])
 <script>
 (function () {
   // --- MODAL ---

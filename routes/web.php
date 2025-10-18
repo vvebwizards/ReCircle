@@ -6,6 +6,8 @@ use App\Http\Controllers\BidController;
 // si tu l’utilises dans bids.php aussi
 use App\Http\Controllers\Courier\DeliveryController;
 use App\Http\Controllers\PickupController;
+use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\UserManagementController;
 use Illuminate\Support\Facades\Route;
 
@@ -13,9 +15,10 @@ Route::get('/', function () {
     return view('home');
 })->name('home');
 
+// Dashboard route with role-based redirect middleware
 Route::get('/dashboard', function () {
     return view('dashboard');
-})->middleware('jwt.auth')->name('dashboard');
+})->middleware(['jwt.auth', \App\Http\Middleware\RedirectBasedOnRole::class])->name('dashboard');
 
 // API endpoint for getting current user data
 Route::get('/api/user', function () {
@@ -40,13 +43,19 @@ Route::middleware(['jwt.auth'])->get('/dashboard/bids', [\App\Http\Controllers\D
 
 Route::get('/maker/dashboard', function () {
     return view('maker.dashboard');
-})->name('maker.dashboard');
+})->middleware('jwt.auth')->name('maker.dashboard');
 
-Route::get('/maker/analytics', [App\Http\Controllers\AnalyticsController::class, 'index'])
+Route::get('/maker/analytics', [AnalyticsController::class, 'index'])
     ->middleware(['jwt.auth'])
     ->name('maker.analytics');
 
+Route::get('/maker/analytics/pdf', [AnalyticsController::class, 'generateAnalyticsPDF'])
+    ->name('analytics.pdf')
+    ->middleware(['jwt.auth']);
+
 Route::middleware(['jwt.auth'])->get('/maker/bids', [\App\Http\Controllers\MakerBidController::class, 'index'])->name('maker.bids');
+Route::middleware(['jwt.auth'])->get('/maker/collection', [\App\Http\Controllers\MakerCollectionController::class, 'index'])->name('maker.collection');
+Route::middleware(['jwt.auth'])->get('/maker/collection/{wasteItem}/images', [\App\Http\Controllers\MakerCollectionController::class, 'images'])->name('maker.collection.images');
 
 Route::prefix('admin')->middleware(['jwt.auth'])->group(function () {
     // Admin > Deliveries
@@ -84,11 +93,37 @@ Route::prefix('admin')->middleware(['jwt.auth'])->group(function () {
     Route::get('/audit-logs', [App\Http\Controllers\AuditLogController::class, 'index'])->name('admin.audit-logs.index');
 
     require __DIR__.'/admin_listings.php';
+    require __DIR__.'/admin_carts.php';
+
+    // Admin notifications routes (consolidated, ordered to avoid /{id} swallowing others)
+    Route::prefix('notifications')->group(function () {
+        // List
+        Route::get('/', [\App\Http\Controllers\AdminNotificationController::class, 'index'])->name('admin.notifications.index');
+        // JSON count endpoints (declare BEFORE /{id})
+        Route::get('/unread-count', [\App\Http\Controllers\AdminNotificationController::class, 'unreadCount'])->name('admin.notifications.unread-count');
+        // Legacy alias kept for compatibility with older JS
+        Route::get('/api/unread-count', [\App\Http\Controllers\AdminNotificationController::class, 'unreadCount'])->name('admin.notifications.unread-count-legacy');
+        // Actions
+        Route::patch('/{id}/read', [\App\Http\Controllers\AdminNotificationController::class, 'markAsRead'])->name('admin.notifications.mark-as-read');
+        Route::patch('/mark-all-read', [\App\Http\Controllers\AdminNotificationController::class, 'markAllAsRead'])->name('admin.notifications.mark-all-read');
+        // Show and delete (after specific routes)
+        Route::get('/{id}', [\App\Http\Controllers\AdminNotificationController::class, 'show'])->name('admin.notifications.show');
+        Route::delete('/{id}', [\App\Http\Controllers\AdminNotificationController::class, 'destroy'])->name('admin.notifications.destroy');
+    });
 });
 
 Route::get('/settings/security', function () {
     return view('settings.security');
 })->name('settings.security');
+
+Route::middleware(['jwt.auth'])->group(function () {
+    Route::get('/admin/carts', [CartController::class, 'index'])->name('admin.carts.index');
+    Route::get('/cart', [CartController::class, 'viewCart'])->name('cart.index');
+    Route::post('/cart/add', [CartController::class, 'addToCart'])->name('cart.add');
+    Route::post('/cart/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
+    Route::get('/cart/success', [CartController::class, 'success'])->name('cart.success');
+    Route::get('/cart/cancel', [CartController::class, 'cancel'])->name('cart.cancel');
+});
 
 require __DIR__.'/auth.php';
 
@@ -224,3 +259,41 @@ Route::get('/test-auth', function () {
         return response()->json(['authenticated' => false], 401);
     }
 });
+// Pusher test routes
+Route::get('/pusher-test', function () {
+    return view('pusher-auth-test');
+});
+
+// WebSocket debug console
+Route::get('/debug/websocket', function () {
+    return view('debug.websocket-debug');
+});
+
+Route::post('/broadcast-test', function (Illuminate\Http\Request $request) {
+    $wasteItemId = $request->input('waste_item_id', 1);
+    $amount = $request->input('amount', 500);
+    $currency = $request->input('currency', 'EUR');
+
+    event(new App\Events\BidSubmitted([
+        'id' => 999,
+        'amount' => $amount,
+        'currency' => $currency,
+        'status' => 'pending',
+        'waste_item_id' => $wasteItemId,
+        'user_id' => 1,
+        'maker' => [
+            'name' => 'Test User',
+        ],
+        'test' => true,
+        'timestamp' => now()->toDateTimeString(),
+    ]));
+
+    return response()->json([
+        'success' => true,
+        'message' => "Test event broadcasted for waste item #{$wasteItemId}",
+    ]);
+});
+// Reclamation routes (register this so reclamation named routes are available)
+require __DIR__.'/reclamation.php';
+
+require __DIR__.'/admin_reclamations.php';

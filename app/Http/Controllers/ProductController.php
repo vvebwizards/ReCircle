@@ -6,6 +6,7 @@ use App\Enums\ProductStatus;
 use App\Models\Material;
 use App\Models\Product;
 use App\Models\ProductImage;
+use App\Services\SimpleEtsyPricingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,6 +15,40 @@ use Illuminate\View\View;
 
 class ProductController extends Controller
 {
+    private $pricingService;
+
+    public function __construct()
+    {
+        $this->pricingService = new SimpleEtsyPricingService;
+    }
+
+    public function getPricingSuggestions(Request $request)
+    {
+        $request->validate([
+            'product_name' => 'required|string|min:2',
+            'category' => 'required|string',
+            'cost_price' => 'nullable|numeric|min:0',
+        ]);
+
+        try {
+            $suggestions = $this->pricingService->getPricingSuggestions(
+                $request->product_name,
+                $request->category,
+                $request->cost_price
+            );
+
+            return response()->json($suggestions);
+
+        } catch (\Exception $e) {
+            \Log::error('Pricing suggestions error: '.$e->getMessage());
+
+            return response()->json([
+                'error' => 'Unable to generate pricing suggestions',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function index(Request $request): View
     {
         $query = Product::with(['materials', 'images'])
@@ -89,57 +124,63 @@ class ProductController extends Controller
             'images.*' => 'required|image|mimes:jpeg,png,jpg,gif|max:5120',
         ], $messages);
 
-        DB::transaction(function () use ($validated, &$product, $request) {
+        try {
+            DB::transaction(function () use ($validated, &$product, $request) {
 
-            $sku = 'PROD-'.strtoupper(uniqid());
+                $sku = 'PROD-'.strtoupper(uniqid());
 
-            $product = Product::create([
-                'maker_id' => Auth::id(),
-                'sku' => $sku,
-                'name' => $validated['name'],
-                'description' => $validated['description'],
-                'price' => $validated['price'],
-                'stock' => $validated['stock'],
-                'status' => ProductStatus::DRAFT,
-            ]);
+                $product = Product::create([
+                    'maker_id' => Auth::id(),
+                    'sku' => $sku,
+                    'name' => $validated['name'],
+                    'description' => $validated['description'],
+                    'price' => $validated['price'],
+                    'stock' => $validated['stock'],
+                    'status' => ProductStatus::DRAFT,
+                ]);
 
-            foreach ($validated['materials'] as $mat) {
-                $material = Material::findOrFail($mat['id']);
+                foreach ($validated['materials'] as $mat) {
+                    $material = Material::findOrFail($mat['id']);
 
-                if ($material->quantity < $mat['quantity_used']) {
-                    throw new \Exception("Insufficient material: {$material->name}");
+                    if ($material->quantity < $mat['quantity_used']) {
+                        throw new \Exception("Insufficient material: {$material->name}");
+                    }
+
+                    $material->quantity -= $mat['quantity_used'];
+                    $material->save();
+
+                    $product->materials()->attach($material->id, [
+                        'quantity_used' => $mat['quantity_used'],
+                        'unit' => $material->unit,
+                    ]);
                 }
 
-                $material->quantity -= $mat['quantity_used'];
-                $material->save();
+                $order = 0;
+                foreach ($request->file('images') as $image) {
+                    $imageName = time().'_'.uniqid().'_'.$order.'.'.$image->getClientOriginalExtension();
+                    $image->move(public_path('images/products'), $imageName);
+                    $imagePath = 'images/products/'.$imageName;
 
-                $product->materials()->attach($material->id, [
-                    'quantity_used' => $mat['quantity_used'],
-                    'unit' => $material->unit,
-                ]);
-            }
+                    ProductImage::create([
+                        'product_id' => $product->id,
+                        'image_path' => $imagePath,
+                        'order' => $order,
+                    ]);
+                    $order++;
+                }
 
-            $order = 0;
-            foreach ($request->file('images') as $image) {
-                $imageName = time().'_'.uniqid().'_'.$order.'.'.$image->getClientOriginalExtension();
-                $image->move(public_path('images/products'), $imageName);
-                $imagePath = 'images/products/'.$imageName;
+                Material::recalculateImpactsForProduct($product);
+                $product->generateMaterialPassport();
+            });
 
-                ProductImage::create([
-                    'product_id' => $product->id,
-                    'image_path' => $imagePath,
-                    'order' => $order,
-                ]);
-                $order++;
-            }
+            return redirect()->route('maker.products')
+                ->with('success', 'Product created successfully!');
 
-            Material::recalculateImpactsForProduct($product);
+        } catch (\Exception $e) {
+            \Log::error('Product creation failed: '.$e->getMessage());
 
-            $product->generateMaterialPassport();
-        });
-
-        return redirect()->route('maker.products')
-            ->with('success', 'Product created successfully!');
+            return back()->withErrors(['error' => 'Failed to create product: '.$e->getMessage()])->withInput();
+        }
     }
 
     public function edit(int $id): View
@@ -158,7 +199,7 @@ class ProductController extends Controller
 
     public function update(Request $request, int $id): RedirectResponse
     {
-        $product = Product::where('maker_id', Auth::id())->findOrFail($id);
+        $product = Product::with('materials')->where('maker_id', Auth::id())->findOrFail($id);
 
         $messages = [
             'name.required' => 'The product name is required.',
@@ -182,115 +223,145 @@ class ProductController extends Controller
             'price' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
             'status' => 'required|in:'.implode(',', ProductStatus::getValues()),
+            'warranty_months' => 'nullable|integer|min:0',
+            'care_instructions' => 'nullable|string|max:1000',
             'images' => 'sometimes|array',
             'images.*' => 'sometimes|image|mimes:jpeg,png,jpg,gif|max:5120',
             'remove_images' => 'sometimes|array',
             'remove_images.*' => 'sometimes|numeric',
         ], $messages);
 
-        DB::transaction(function () use ($validated, $product, $request) {
+        try {
+            DB::transaction(function () use ($validated, $product, $request) {
+                $product->update([
+                    'name' => $validated['name'],
+                    'description' => $validated['description'],
+                    'price' => $validated['price'],
+                    'stock' => $validated['stock'],
+                    'status' => $validated['status'],
+                    'warranty_months' => $validated['warranty_months'] ?? $product->warranty_months,
+                    'care_instructions' => $validated['care_instructions'] ?? $product->care_instructions,
+                ]);
 
-            $product->update([
-                'name' => $validated['name'],
-                'description' => $validated['description'],
-                'price' => $validated['price'],
-                'stock' => $validated['stock'],
-                'status' => $validated['status'],
-            ]);
+                $currentMaterials = $product->materials->keyBy('id');
+                $newMaterialIds = collect($validated['materials'])->pluck('id')->toArray();
 
-            $currentMaterials = $product->materials()->pluck('quantity_used', 'id')->toArray();
-
-            $newMaterialIds = collect($validated['materials'])->pluck('id')->toArray();
-            foreach ($currentMaterials as $matId => $qtyUsed) {
-                if (! in_array($matId, $newMaterialIds)) {
-                    $material = Material::find($matId);
-                    $material->quantity += $qtyUsed;
-                    $material->save();
-                }
-            }
-
-            $syncData = [];
-            foreach ($validated['materials'] as $mat) {
-                $material = Material::findOrFail($mat['id']);
-                $diff = $mat['quantity_used'] - ($currentMaterials[$mat['id']] ?? 0);
-
-                if ($diff > $material->quantity) {
-                    throw new \Exception("Insufficient material: {$material->name}");
-                }
-
-                $material->quantity -= $diff;
-                $material->save();
-
-                $syncData[$material->id] = [
-                    'quantity_used' => $mat['quantity_used'],
-                    'unit' => $material->unit,
-                ];
-            }
-
-            $product->materials()->sync($syncData);
-
-            if ($request->has('remove_images')) {
-                foreach ($request->remove_images as $imageId) {
-                    $image = ProductImage::where('product_id', $product->id)
-                        ->where('id', $imageId)
-                        ->first();
-                    if ($image) {
-                        if (file_exists(public_path($image->image_path))) {
-                            unlink(public_path($image->image_path));
-                        }
-                        $image->delete();
+                foreach ($currentMaterials as $materialId => $material) {
+                    if (! in_array($materialId, $newMaterialIds)) {
+                        $material->quantity += $material->pivot->quantity_used;
+                        $material->save();
                     }
                 }
-            }
 
-            if ($request->hasFile('images')) {
-                $existingCount = $product->images()->count();
-                $order = $existingCount;
+                $syncData = [];
+                foreach ($validated['materials'] as $mat) {
+                    $material = Material::findOrFail($mat['id']);
+                    $currentQuantityUsed = $currentMaterials[$mat['id']]->pivot->quantity_used ?? 0;
+                    $quantityDifference = $mat['quantity_used'] - $currentQuantityUsed;
 
-                foreach ($request->file('images') as $image) {
-                    $imageName = time().'_'.uniqid().'_'.$order.'.'.$image->getClientOriginalExtension();
-                    $image->move(public_path('images/products'), $imageName);
-                    $imagePath = 'images/products/'.$imageName;
+                    if ($quantityDifference > 0 && $quantityDifference > $material->quantity) {
+                        throw new \Exception("Insufficient material: {$material->name}. Available: {$material->quantity}, Needed: {$quantityDifference}");
+                    }
 
-                    ProductImage::create([
-                        'product_id' => $product->id,
-                        'image_path' => $imagePath,
-                        'order' => $order,
-                    ]);
-                    $order++;
+                    $material->quantity -= $quantityDifference;
+                    $material->save();
+
+                    $syncData[$material->id] = [
+                        'quantity_used' => $mat['quantity_used'],
+                        'unit' => $material->unit,
+                    ];
                 }
-            }
 
-            $this->reorderImages($product->id);
-            Material::recalculateImpactsForProduct($product);
-            $product->generateMaterialPassport();
-        });
+                $product->materials()->sync($syncData);
 
-        return redirect()->route('maker.products.show', $product->id)
-            ->with('success', 'Product updated successfully!');
+                if ($request->has('remove_images')) {
+                    foreach ($request->remove_images as $imageId) {
+                        $image = ProductImage::where('product_id', $product->id)
+                            ->where('id', $imageId)
+                            ->first();
+                        if ($image) {
+                            if (file_exists(public_path($image->image_path))) {
+                                unlink(public_path($image->image_path));
+                            }
+                            $image->delete();
+                        }
+                    }
+                }
+
+                if ($request->hasFile('images')) {
+                    $existingCount = $product->images()->count();
+                    $order = $existingCount;
+
+                    foreach ($request->file('images') as $image) {
+                        if ($image->isValid()) {
+                            $imageName = time().'_'.uniqid().'_'.$order.'.'.$image->getClientOriginalExtension();
+                            $imagePath = 'images/products/'.$imageName;
+
+                            if (! file_exists(public_path('images/products'))) {
+                                mkdir(public_path('images/products'), 0755, true);
+                            }
+
+                            $image->move(public_path('images/products'), $imageName);
+
+                            ProductImage::create([
+                                'product_id' => $product->id,
+                                'image_path' => $imagePath,
+                                'order' => $order,
+                            ]);
+                            $order++;
+                        }
+                    }
+                }
+
+                $this->reorderImages($product->id);
+
+                if (method_exists(Material::class, 'recalculateImpactsForProduct')) {
+                    Material::recalculateImpactsForProduct($product);
+                }
+
+                $product->generateMaterialPassport();
+            });
+
+            return redirect()->route('maker.products.show', $product->id)
+                ->with('success', 'Product updated successfully!');
+
+        } catch (\Exception $e) {
+            \Log::error('Product update failed: '.$e->getMessage());
+
+            return back()->withErrors(['error' => 'Failed to update product: '.$e->getMessage()])->withInput();
+        }
     }
 
     public function destroy(int $id): RedirectResponse
     {
         $product = Product::where('maker_id', Auth::id())->findOrFail($id);
 
-        foreach ($product->images as $image) {
-            if (file_exists(public_path($image->image_path))) {
-                unlink(public_path($image->image_path));
-            }
-            $image->delete();
+        try {
+            DB::transaction(function () use ($product) {
+                foreach ($product->images as $image) {
+                    if (file_exists(public_path($image->image_path))) {
+                        unlink(public_path($image->image_path));
+                    }
+                    $image->delete();
+                }
+
+                foreach ($product->materials as $material) {
+                    $material->quantity += $material->pivot->quantity_used;
+                    $material->save();
+                }
+
+                $product->delete();
+            });
+
+            return redirect()->route('maker.products')
+                ->with('success', "Product '{$product->name}' deleted successfully!");
+
+        } catch (\Exception $e) {
+            \Log::error('Product deletion failed: '.$e->getMessage());
+
+            return redirect()->route('maker.products')
+                ->with('error', 'Failed to delete product. Please try again.');
         }
-
-        foreach ($product->materials as $material) {
-            $material->quantity += $material->pivot->quantity_used;
-            $material->save();
-        }
-
-        $productName = $product->name;
-        $product->delete();
-
-        return redirect()->route('maker.products')
-            ->with('success', "Product '{$productName}' deleted successfully!");
     }
 
     public function publish(int $id): RedirectResponse

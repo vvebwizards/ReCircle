@@ -22,8 +22,19 @@
             auth: @json(route('auth')),
             twofa: @json(route('twofa')),
             forgot: @json(route('forgot-password')),
-            dashboard: @json(route('dashboard', [], false)),
+            dashboard: @auth
+                @if(auth()->user()->role == \App\Enums\UserRole::MAKER)
+                    @json(route('maker.dashboard', [], false))
+                @elseif(auth()->user()->role == \App\Enums\UserRole::ADMIN)
+                    @json(route('admin.dashboard', [], false))
+                @else
+                    @json(route('dashboard', [], false))
+                @endif
+            @else
+                @json(route('dashboard', [], false))
+            @endauth,
             settingsSecurity: @json(route('settings.security', [], false)),
+            reclamationsCreate: @json(route('reclamations.create', [], false)),
         };
     </script>
     @unless (app()->environment('testing'))
@@ -66,7 +77,7 @@
     
     @stack('head')
 </head>
-<body class="bg-gray-900 min-h-screen">
+<body class="bg-gray-100 min-h-screen">
     {{-- Navbar (shared) --}}
     <nav class="navbar">
         <div class="nav-container">

@@ -6,7 +6,8 @@
     'resources/css/waste-items.css',
     'resources/css/marketplace-lightbox.css',
     'resources/js/waste-items-filters.js',
-    'resources/js/marketplace.js'
+    'resources/js/marketplace.js',
+    'resources/js/bidSocket.js'
 ])
 @endpush
 
@@ -21,7 +22,6 @@
                 <p>Browse available waste items</p>
             </div>
         </div>
-
         <div class="filters-section modern">
             <form action="{{ route('marketplace.index') }}" method="GET" id="filterForm" class="filter-toolbar" novalidate data-ajax="true">
                 <div class="ft-row">

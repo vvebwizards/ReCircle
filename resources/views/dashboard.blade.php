@@ -79,11 +79,6 @@
             <span class="qa-sub">Track your offers</span>
           </a>
           @endif
-          <a href="{{ route('marketplace.index') }}" class="qa-card qa-market" aria-label="Browse marketplace">
-            <span class="qa-icon"><i class="fa-solid fa-store"></i></span>
-            <span class="qa-title">Marketplace</span>
-            <span class="qa-sub">Discover upcycled goods</span>
-          </a>
           <a href="#" class="qa-card qa-report" aria-label="Open impact report">
             <span class="qa-icon"><i class="fa-solid fa-chart-line"></i></span>
             <span class="qa-title">Impact Report</span>
