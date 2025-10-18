@@ -62,30 +62,41 @@
                     </div>
                     
                     <!-- Follow Button -->
-                    @if(auth()->id() !== $user->id)
-                        <div class="ml-4">
-{{-- Replace the unfollow form --}}
-@if($isFollowing)
-    <form action="{{ route('profiles.unfollow', $user) }}" method="POST">
-        @csrf
-        <button type="submit" 
-                class="px-6 py-2 border border-gray-600 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-all duration-300 transform hover:scale-105">
-            <i class="fa-solid fa-user-minus mr-2"></i>
-            Unfollow
-        </button>
-    </form>
-@else
-    <form action="{{ route('profiles.follow', $user) }}" method="POST">
-        @csrf
-        <button type="submit" 
-                class="px-6 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-500 transition-all duration-300 transform hover:scale-105">
-            <i class="fa-solid fa-user-plus mr-2"></i>
-            Follow
-        </button>
-    </form>
+{{-- In resources/views/profiles/show.blade.php --}}
+{{-- Add this to the header section near the follow button --}}
+
+@if(auth()->id() !== $user->id)
+    <div class="flex items-center space-x-4">
+        <!-- Follow Button -->
+        @if($isFollowing)
+            <form action="{{ route('profiles.unfollow', $user) }}" method="POST">
+                @csrf
+                <button type="submit" 
+                        class="px-6 py-2 border border-gray-600 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-all duration-300 transform hover:scale-105">
+                    <i class="fa-solid fa-user-minus mr-2"></i>
+                    Unfollow
+                </button>
+            </form>
+        @else
+            <form action="{{ route('profiles.follow', $user) }}" method="POST">
+                @csrf
+                <button type="submit" 
+                        class="px-6 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-500 transition-all duration-300 transform hover:scale-105">
+                    <i class="fa-solid fa-user-plus mr-2"></i>
+                    Follow
+                </button>
+            </form>
+        @endif
+
+        <!-- Message Button -->
+        <a href="{{ route('messages.show', $user) }}" 
+           class="inline-flex items-center px-6 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 transition-all duration-300 transform hover:scale-105">
+            <i class="fa-solid fa-envelope mr-2"></i>
+            Message
+        </a>
+    </div>
 @endif
-                        </div>
-                    @endif
+            
                 </div>
             </div>
 
