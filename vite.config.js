@@ -16,7 +16,9 @@ export default defineConfig({
                 'resources/css/edit-product.css',
                 'resources/css/maker_stats.css',
                 'resources/css/buyerMarketplace.css',
+                'resources/css/admin-materials.css',
                 'resources/css/dashboard.css',
+                'resources/css/admin.css',
                 'resources/js/app.js',
                 'resources/js/main.js',
                 'resources/js/auth.js',
@@ -28,7 +30,8 @@ export default defineConfig({
                 'resources/js/update-material.js',
                 'resources/js/bidSocket.js',
                 'resources/js/marketplace.js',
-                'resources/js/dashboardBids.js'
+                'resources/js/dashboardBids.js',
+                'resources/js/admin-materials.js'
             ],
             refresh: true,
         }),

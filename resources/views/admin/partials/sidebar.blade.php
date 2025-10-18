@@ -20,6 +20,7 @@
     </a>
     <a href="{{ route('admin.audit-logs.index') }}" class="side-link {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}"><i class="fa-solid fa-clipboard-list"></i><span>Audit Logs</span></a>
     <a href="{{ route('admin.listings.index') }}" class="side-link {{ request()->routeIs('admin.listings.*') ? 'active' : '' }}"><i class="fa-solid fa-list"></i><span>Listings</span></a>
+        <a href="{{ route('admin.materials.index') }}" class="side-link {{ request()->routeIs('admin.materials.*') ? 'active' : '' }}">  <i class="fa-solid fa-recycle"></i>Materials</span></a>
     <a href="{{ route('admin.carts.index') }}" class="side-link {{ request()->routeIs('admin.carts.*') ? 'active' : '' }}"><i class="fa-solid fa-shopping-cart"></i><span>Carts</span></a>
     <a href="#" class="side-link"><i class="fa-solid fa-gavel"></i><span>Bids</span></a>
     <a href="#" class="side-link"><i class="fa-solid fa-chart-line"></i><span>Reports</span></a>
