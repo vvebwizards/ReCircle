@@ -22,6 +22,11 @@ class AdminReclamationController extends Controller
             $query->where('status', $request->status);
         }
 
+        // Filter by severity
+        if ($request->has('severity') && $request->severity !== 'all') {
+            $query->where('severity', $request->severity);
+        }
+
         // Search functionality
         if ($request->has('search') && $request->search) {
             $query->where(function ($q) use ($request) {
@@ -46,7 +51,14 @@ class AdminReclamationController extends Controller
             'closed' => Reclamation::closed()->count(),
         ];
 
-        return view('admin.reclamations.index', compact('reclamations', 'statusCounts'));
+        // Get counts for severity filters
+        $severityCounts = [
+            'high' => Reclamation::highSeverity()->count(),
+            'medium' => Reclamation::mediumSeverity()->count(),
+            'low' => Reclamation::lowSeverity()->count(),
+        ];
+
+        return view('admin.reclamations.index', compact('reclamations', 'statusCounts', 'severityCounts'));
     }
 
     /**

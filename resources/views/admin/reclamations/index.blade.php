@@ -81,12 +81,19 @@
                             <option value="resolved" {{ request('status') === 'resolved' ? 'selected' : '' }}>Resolved ({{ $statusCounts['resolved'] }})</option>
                             <option value="closed" {{ request('status') === 'closed' ? 'selected' : '' }}>Closed ({{ $statusCounts['closed'] }})</option>
                         </select>
+
+                        <select name="severity" class="a-select filter-severity-select">
+                            <option value="all" {{ request('severity', 'all') === 'all' ? 'selected' : '' }}>All Severity</option>
+                            <option value="high" {{ request('severity') === 'high' ? 'selected' : '' }}>High ({{ $severityCounts['high'] ?? 0 }})</option>
+                            <option value="medium" {{ request('severity') === 'medium' ? 'selected' : '' }}>Medium ({{ $severityCounts['medium'] ?? 0 }})</option>
+                            <option value="low" {{ request('severity') === 'low' ? 'selected' : '' }}>Low ({{ $severityCounts['low'] ?? 0 }})</option>
+                        </select>
                     
                         <button type="submit" class="btn btn-secondary filter-btn">
                             Apply Filters
                         </button>
                         
-                        @if(request('search') || request('status') !== 'all')
+                        @if(request('search') || request('status') !== 'all' || request('severity') !== 'all')
                         <a href="{{ route('admin.reclamations.index') }}" class="btn btn-clear filter-clear-btn" title="Clear Filters">
                             <i class="fa-solid fa-xmark"></i>
                         </a>
@@ -137,6 +144,7 @@
                         <input type="checkbox" id="select-all" onclick="toggleSelectAll(this)">
                     </th>
                     <th>Topic</th>
+                    <th>Severity</th>
                     <th>User</th>
                     <th>Status</th>
                     <th>Responses</th>
@@ -161,6 +169,11 @@
                         <div style="font-size:.875rem;color:#64748b;margin-top:.25rem">
                             {{ Str::limit($reclamation->description, 80) }}
                         </div>
+                    </td>
+                    <td>
+                        <span class="severity-badge severity-{{ $reclamation->severity }}">
+                            {{ $reclamation->severity_label }}
+                        </span>
                     </td>
                     <td>
                         <div class="user-info">
@@ -188,14 +201,14 @@
                     <td class="actions">
                         <div class="action-group">
                             <a href="{{ route('admin.reclamations.show', $reclamation) }}" 
-                               class="icon-btn view is-blue" 
-                               title="View Details">
+                            class="icon-btn view is-blue" 
+                            title="View Details">
                                 <i class="fa-solid fa-eye"></i>
                             </a>
                             <form action="{{ route('admin.reclamations.destroy', $reclamation) }}" 
-                                  method="POST" 
-                                  style="display:inline"
-                                  onsubmit="return confirm('Are you sure you want to delete this reclamation?')">
+                                method="POST" 
+                                style="display:inline"
+                                onsubmit="return confirm('Are you sure you want to delete this reclamation?')">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="icon-btn delete is-red" title="Delete">
@@ -217,7 +230,7 @@
             <i class="fa-solid fa-flag fa-3x text-muted mb-3"></i>
             <h3>No Reclamations Found</h3>
             <p style="color:#64748b">
-                @if(request('search') || request('status') !== 'all')
+                @if(request('search') || request('status') !== 'all' || request('severity') !== 'all')
                   No reclamations match your filters. Try adjusting your search criteria.
                 @else
                   There are no reclamations in the system yet.
@@ -229,8 +242,6 @@
 </div>
 
 <script>
-// NOTE: toggleBulkActions() is removed as visibility is now driven by updateSelectedCount()
-
 function toggleSelectAll(checkbox) {
     document.querySelectorAll('.reclamation-checkbox').forEach(cb => {
         cb.checked = checkbox.checked;
@@ -278,22 +289,47 @@ document.addEventListener('DOMContentLoaded', updateSelectedCount);
 </script>
 
 <style>
-/* --- New Global Styles for Status Mapping --- */
+/* --- New Global Styles for Status & Severity Mapping --- */
 
 /* Base Colors */
 :root {
-    --color-pending-bg: #fffbe6; /* Light Yellow */
-    --color-pending-text: #a16207; /* Dark Yellow */
-    --color-in-progress-bg: #eff6ff; /* Light Blue */
-    --color-in-progress-text: #1d4ed8; /* Dark Blue */
-    --color-resolved-bg: #d1fae5; /* Light Green */
-    --color-resolved-text: #047857; /* Dark Green */
-    --color-closed-bg: #f3f4f6; /* Light Gray */
-    --color-closed-text: #4b5563; /* Dark Gray */
-    --color-primary: #4f46e5; /* Indigo */
-    --color-secondary: #6b7280; /* Gray for filters */
+    --color-pending-bg: #fffbe6;
+    --color-pending-text: #a16207;
+    --color-in-progress-bg: #eff6ff;
+    --color-in-progress-text: #1d4ed8;
+    --color-resolved-bg: #d1fae5;
+    --color-resolved-text: #047857;
+    --color-closed-bg: #f3f4f6;
+    --color-closed-text: #4b5563;
+    
+    /* Severity Colors */
+    --color-high-bg: #fee2e2;
+    --color-high-text: #dc2626;
+    --color-medium-bg: #fef3c7;
+    --color-medium-text: #d97706;
+    --color-low-bg: #d1fae5;
+    --color-low-text: #059669;
+    
+    --color-primary: #4f46e5;
+    --color-secondary: #6b7280;
     --color-border: #e5e7eb;
 }
+
+/* --- Severity Badge Styles --- */
+.severity-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    line-height: 1;
+    white-space: nowrap;
+}
+.severity-high { background: var(--color-high-bg); color: var(--color-high-text); }
+.severity-medium { background: var(--color-medium-bg); color: var(--color-medium-text); }
+.severity-low { background: var(--color-low-bg); color: var(--color-low-text); }
 
 /* --- Utility/Base Styles --- */
 .btn-primary {
@@ -347,8 +383,7 @@ document.addEventListener('DOMContentLoaded', updateSelectedCount);
     margin-top: 0.25rem;
 }
 
-
-/* --- STATS CARD STYLES (Retained) --- */
+/* --- STATS CARD STYLES (Updated for severity) --- */
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -366,7 +401,7 @@ document.addEventListener('DOMContentLoaded', updateSelectedCount);
     border: 1px solid #f3f4f6;
     background: white;
 }
-/* ... (other stat card styles) ... */
+
 .stat-card .stat-icon {
     width: 48px;
     height: 48px;
@@ -400,7 +435,6 @@ document.addEventListener('DOMContentLoaded', updateSelectedCount);
 .stat-card.status-resolved .stat-icon { background: var(--color-resolved-bg); color: var(--color-resolved-text); }
 .stat-card.status-closed .stat-icon { background: var(--color-closed-bg); color: var(--color-closed-text); }
 
-
 /* --- TABLE STATUS BADGE STYLES (Retained) --- */
 .status-badge {
     display: inline-flex;
@@ -417,7 +451,6 @@ document.addEventListener('DOMContentLoaded', updateSelectedCount);
 .status-in_progress { background: var(--color-in-progress-bg); color: var(--color-in-progress-text); }
 .status-resolved { background: var(--color-resolved-bg); color: var(--color-resolved-text); }
 .status-closed { background: var(--color-closed-bg); color: var(--color-closed-text); }
-
 
 /* --- UNIFIED CONTROL BAR STYLES --- */
 .filter-bar-container {
@@ -474,7 +507,8 @@ document.addEventListener('DOMContentLoaded', updateSelectedCount);
     align-items: center;
 }
 
-.a-select.filter-status-select {
+.a-select.filter-status-select,
+.a-select.filter-severity-select {
     padding: 0.75rem 1.25rem;
     border: 1px solid var(--color-border);
     border-radius: 8px;
@@ -519,14 +553,12 @@ document.addEventListener('DOMContentLoaded', updateSelectedCount);
     background: #e5e7eb;
 }
 
-
-/* 2. Bulk Actions View Specific Styles (Adapted for the white container) */
+/* 2. Bulk Actions View Specific Styles */
 .bulk-action-content {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 1.5rem;
-    /* Use the space of the filter-bar */
     width: 100%; 
 }
 
@@ -535,7 +567,6 @@ document.addEventListener('DOMContentLoaded', updateSelectedCount);
     align-items: center;
     gap: 0.75rem;
     flex-shrink: 0;
-    /* Use primary color to highlight the action state */
     color: var(--color-primary); 
 }
 
@@ -586,6 +617,7 @@ document.addEventListener('DOMContentLoaded', updateSelectedCount);
         gap: 0.5rem;
     }
     .a-select.filter-status-select,
+    .a-select.filter-severity-select,
     .filter-btn {
         width: 100%;
     }
@@ -611,8 +643,7 @@ document.addEventListener('DOMContentLoaded', updateSelectedCount);
     }
 }
 
-
-/* --- TABLE STYLES (Minimal definitions for structure integrity) --- */
+/* --- TABLE STYLES --- */
 .a-card {
     background: white;
     border-radius: 12px;
@@ -646,7 +677,7 @@ document.addEventListener('DOMContentLoaded', updateSelectedCount);
     color: #4b5563;
 }
 
-/* User Info Styling (from original) */
+/* User Info Styling */
 .user-info {
     display: flex;
     align-items: center;

@@ -6,6 +6,7 @@ use App\Models\Reclamation;
 use App\Models\ReclamationResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 
 class ReclamationController extends Controller
 {
@@ -39,12 +40,23 @@ class ReclamationController extends Controller
             'description' => 'required|string|min:10',
         ]);
 
-        $reclamation = Reclamation::create([
-            'user_id' => Auth::id(),
-            'topic' => $validated['topic'],
-            'description' => $validated['description'],
-            'status' => 'pending',
-        ]);
+        $reclamation = new Reclamation;
+        $reclamation->user_id = Auth::id();
+        $reclamation->topic = $validated['topic'];
+        $reclamation->description = $validated['description'];
+        $reclamation->status = 'pending';
+
+        // Call Python API for severity classification
+        try {
+            $response = Http::post('http://127.0.0.1:8001/classify', [
+                'description' => $validated['description'],
+            ]);
+            $reclamation->severity = $response->json('severity'); // Changed from category to severity
+        } catch (\Exception $e) {
+            $reclamation->severity = 'medium'; // fallback to medium
+        }
+
+        $reclamation->save();
 
         return redirect()->route('reclamations.show', $reclamation)
             ->with('success', 'Reclamation submitted successfully!');
