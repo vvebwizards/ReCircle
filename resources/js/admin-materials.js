@@ -486,7 +486,6 @@ async saveMaterial() {
             if (response.ok) {
                 this.closeModals();
                 this.refreshMaterials();
-                this.showNotification('Material deleted successfully', 'success');
             } else {
                 throw new Error('Failed to delete material');
             }

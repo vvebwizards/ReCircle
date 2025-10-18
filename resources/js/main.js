@@ -239,7 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <i class="fa-solid fa-chevron-down chev"></i>
                 </button>
                 <ul class="profile-menu" role="menu" aria-label="Profile menu">
-                    <li role="menuitem"><a href="#" class="profile-item"><i class="fa-regular fa-user"></i> Profile</a></li>
+                    <li role="menuitem"><a href="/profile/${user.id}" class="profile-item"><i class="fa-regular fa-user"></i> Profile</a></li>
                     <li role="menuitem"><a href="${('/cart')}" class="profile-item"><i class="fa fa-shopping-cart"></i> Purchases</a></li>
                     <li role="menuitem"><a href="${(routes.settingsSecurity||'/settings/security')}" class="profile-item"><i class="fa-solid fa-gear"></i> Settings</a></li>
                     <li role="menuitem"><a href="${(routes.reclamations?.index||'/reclamations')}" class="profile-item"><i class="fa-solid fa-flag"></i> Reclamations</a></li>
