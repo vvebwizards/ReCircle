@@ -177,8 +177,9 @@ class ProductController extends Controller
                 ->with('success', 'Product created successfully!');
 
         } catch (\Exception $e) {
-            \Log::error('Product creation failed: ' . $e->getMessage());
-            return back()->withErrors(['error' => 'Failed to create product: ' . $e->getMessage()])->withInput();
+            \Log::error('Product creation failed: '.$e->getMessage());
+
+            return back()->withErrors(['error' => 'Failed to create product: '.$e->getMessage()])->withInput();
         }
     }
 
@@ -244,9 +245,9 @@ class ProductController extends Controller
 
                 $currentMaterials = $product->materials->keyBy('id');
                 $newMaterialIds = collect($validated['materials'])->pluck('id')->toArray();
-                
+
                 foreach ($currentMaterials as $materialId => $material) {
-                    if (!in_array($materialId, $newMaterialIds)) {
+                    if (! in_array($materialId, $newMaterialIds)) {
                         $material->quantity += $material->pivot->quantity_used;
                         $material->save();
                     }
@@ -295,11 +296,11 @@ class ProductController extends Controller
                         if ($image->isValid()) {
                             $imageName = time().'_'.uniqid().'_'.$order.'.'.$image->getClientOriginalExtension();
                             $imagePath = 'images/products/'.$imageName;
-                            
-                            if (!file_exists(public_path('images/products'))) {
+
+                            if (! file_exists(public_path('images/products'))) {
                                 mkdir(public_path('images/products'), 0755, true);
                             }
-                            
+
                             $image->move(public_path('images/products'), $imageName);
 
                             ProductImage::create([
@@ -313,11 +314,11 @@ class ProductController extends Controller
                 }
 
                 $this->reorderImages($product->id);
-                
+
                 if (method_exists(Material::class, 'recalculateImpactsForProduct')) {
                     Material::recalculateImpactsForProduct($product);
                 }
-                
+
                 $product->generateMaterialPassport();
             });
 
@@ -325,8 +326,9 @@ class ProductController extends Controller
                 ->with('success', 'Product updated successfully!');
 
         } catch (\Exception $e) {
-            \Log::error('Product update failed: ' . $e->getMessage());
-            return back()->withErrors(['error' => 'Failed to update product: ' . $e->getMessage()])->withInput();
+            \Log::error('Product update failed: '.$e->getMessage());
+
+            return back()->withErrors(['error' => 'Failed to update product: '.$e->getMessage()])->withInput();
         }
     }
 
@@ -355,7 +357,8 @@ class ProductController extends Controller
                 ->with('success', "Product '{$product->name}' deleted successfully!");
 
         } catch (\Exception $e) {
-            \Log::error('Product deletion failed: ' . $e->getMessage());
+            \Log::error('Product deletion failed: '.$e->getMessage());
+
             return redirect()->route('maker.products')
                 ->with('error', 'Failed to delete product. Please try again.');
         }

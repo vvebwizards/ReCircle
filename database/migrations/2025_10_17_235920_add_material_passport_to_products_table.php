@@ -13,31 +13,31 @@ return new class extends Migration
     {
         Schema::table('products', function (Blueprint $table) {
             // Add material_passport column
-            if (!Schema::hasColumn('products', 'material_passport')) {
+            if (! Schema::hasColumn('products', 'material_passport')) {
                 $table->json('material_passport')->nullable()->after('description');
             }
-            
+
             // Add other potentially missing columns used in material passport
-            if (!Schema::hasColumn('products', 'care_instructions')) {
+            if (! Schema::hasColumn('products', 'care_instructions')) {
                 $table->text('care_instructions')->nullable()->after('material_passport');
             }
-            
-            if (!Schema::hasColumn('products', 'warranty_months')) {
+
+            if (! Schema::hasColumn('products', 'warranty_months')) {
                 $table->integer('warranty_months')->nullable()->after('care_instructions');
             }
         });
 
         // Also check if materials table has the required environmental impact columns
         Schema::table('materials', function (Blueprint $table) {
-            if (!Schema::hasColumn('materials', 'co2_kg_saved')) {
+            if (! Schema::hasColumn('materials', 'co2_kg_saved')) {
                 $table->decimal('co2_kg_saved', 10, 2)->default(0)->after('recyclability_score');
             }
-            
-            if (!Schema::hasColumn('materials', 'landfill_kg_avoided')) {
+
+            if (! Schema::hasColumn('materials', 'landfill_kg_avoided')) {
                 $table->decimal('landfill_kg_avoided', 10, 2)->default(0)->after('co2_kg_saved');
             }
-            
-            if (!Schema::hasColumn('materials', 'energy_saved_kwh')) {
+
+            if (! Schema::hasColumn('materials', 'energy_saved_kwh')) {
                 $table->decimal('energy_saved_kwh', 10, 2)->default(0)->after('landfill_kg_avoided');
             }
         });

@@ -9,7 +9,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class MaterialController extends Controller
@@ -17,6 +16,7 @@ class MaterialController extends Controller
     public function create(): View
     {
         $wasteItems = WasteItem::where('maker_id', Auth::id())->get();
+
         return view('maker.create_material', compact('wasteItems'));
     }
 
@@ -70,7 +70,7 @@ class MaterialController extends Controller
         $wasteItem = WasteItem::where('maker_id', Auth::id())
             ->find($validated['waste_item_id']);
 
-        if (!$wasteItem) {
+        if (! $wasteItem) {
             return back()->withErrors([
                 'waste_item_id' => 'Selected waste item does not exist or does not belong to you.',
             ])->withInput();
@@ -119,12 +119,12 @@ class MaterialController extends Controller
                     if ($image->isValid()) {
                         $imageName = time().'_'.uniqid().'_'.$order.'.'.$image->getClientOriginalExtension();
                         $imagePath = 'images/materials/'.$imageName;
-                        
+
                         // Ensure directory exists
-                        if (!file_exists(public_path('images/materials'))) {
+                        if (! file_exists(public_path('images/materials'))) {
                             mkdir(public_path('images/materials'), 0755, true);
                         }
-                        
+
                         $image->move(public_path('images/materials'), $imageName);
 
                         MaterialImage::create([
@@ -142,6 +142,7 @@ class MaterialController extends Controller
             if ($uploadedImagesCount === 0) {
                 // If no images were uploaded, delete the material and return error
                 $material->delete();
+
                 return back()->withErrors([
                     'image_path' => 'Failed to upload images. Please try again.',
                 ])->withInput();
@@ -151,7 +152,8 @@ class MaterialController extends Controller
                 ->with('success', "Material created successfully with {$uploadedImagesCount} images!");
 
         } catch (\Exception $e) {
-            \Log::error('Material creation failed: ' . $e->getMessage());
+            \Log::error('Material creation failed: '.$e->getMessage());
+
             return back()->withErrors([
                 'error' => 'Failed to create material. Please try again.',
             ])->withInput();
@@ -164,15 +166,15 @@ class MaterialController extends Controller
             $query->orderBy('order', 'asc');
         }])->where('maker_id', Auth::id());
 
-        if ($request->has('search') && !empty($request->search)) {
+        if ($request->has('search') && ! empty($request->search)) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'LIKE', "%{$search}%")
-                  ->orWhere('description', 'LIKE', "%{$search}%");
+                    ->orWhere('description', 'LIKE', "%{$search}%");
             });
         }
 
-        if ($request->has('category') && !empty($request->category)) {
+        if ($request->has('category') && ! empty($request->category)) {
             $query->where('category', $request->category);
         }
 
@@ -223,7 +225,8 @@ class MaterialController extends Controller
                 ->with('success', 'Material deleted successfully!');
 
         } catch (\Exception $e) {
-            \Log::error('Material deletion failed: ' . $e->getMessage());
+            \Log::error('Material deletion failed: '.$e->getMessage());
+
             return redirect()->route('maker.materials.index')
                 ->with('error', 'Failed to delete material. Please try again.');
         }
@@ -278,7 +281,7 @@ class MaterialController extends Controller
         $wasteItem = WasteItem::where('maker_id', Auth::id())
             ->find($validated['waste_item_id']);
 
-        if (!$wasteItem) {
+        if (! $wasteItem) {
             return back()->withErrors([
                 'waste_item_id' => 'Selected waste item does not exist or does not belong to you.',
             ])->withInput();
@@ -328,12 +331,12 @@ class MaterialController extends Controller
                     if ($image->isValid()) {
                         $imageName = time().'_'.uniqid().'_'.$order.'.'.$image->getClientOriginalExtension();
                         $imagePath = 'images/materials/'.$imageName;
-                        
+
                         // Ensure directory exists
-                        if (!file_exists(public_path('images/materials'))) {
+                        if (! file_exists(public_path('images/materials'))) {
                             mkdir(public_path('images/materials'), 0755, true);
                         }
-                        
+
                         $image->move(public_path('images/materials'), $imageName);
 
                         MaterialImage::create([
@@ -353,7 +356,8 @@ class MaterialController extends Controller
                 ->with('success', 'Material updated successfully!');
 
         } catch (\Exception $e) {
-            \Log::error('Material update failed: ' . $e->getMessage());
+            \Log::error('Material update failed: '.$e->getMessage());
+
             return back()->withErrors([
                 'error' => 'Failed to update material. Please try again.',
             ])->withInput();
@@ -368,7 +372,7 @@ class MaterialController extends Controller
             },
             'wasteItem',
         ])->where('maker_id', Auth::id())
-          ->findOrFail($id);
+            ->findOrFail($id);
 
         $relatedMaterials = Material::with(['images' => function ($query) {
             $query->orderBy('order', 'asc');

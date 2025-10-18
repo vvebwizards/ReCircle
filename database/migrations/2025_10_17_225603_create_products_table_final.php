@@ -10,11 +10,11 @@ return new class extends Migration
     {
         // Drop if exists from any previous attempts
         Schema::dropIfExists('products');
-        
+
         Schema::create('products', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('maker_id');
-            
+
             $table->string('sku')->unique();
             $table->string('name');
             $table->text('description')->nullable();
@@ -24,13 +24,13 @@ return new class extends Migration
 
             // Simple version - remove complex fields for now
             $table->timestamps();
-            
+
             // Add foreign key separately
             $table->foreign('maker_id')
-                  ->references('id')
-                  ->on('users')
-                  ->onDelete('cascade');
-                  
+                ->references('id')
+                ->on('users')
+                ->onDelete('cascade');
+
             // Add indexes
             $table->index('maker_id');
             $table->index('status');
