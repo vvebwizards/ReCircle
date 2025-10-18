@@ -239,6 +239,9 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isAdmin(): bool
     {
         return $this->role === UserRole::ADMIN;
+    }
+    
+        
     public function reclamations(): HasMany
     {
         return $this->hasMany(Reclamation::class);
