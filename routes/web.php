@@ -300,3 +300,5 @@ require __DIR__.'/reclamation.php';
 require __DIR__.'/admin_reclamations.php';
 
 require __DIR__.'/profiles.php';
+
+require __DIR__.'/messages.php';
