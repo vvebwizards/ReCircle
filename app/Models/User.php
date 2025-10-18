@@ -212,6 +212,36 @@ class User extends Authenticatable implements MustVerifyEmail
         };
     }
 
+    public function deliveriesAsCourier()
+    {
+        return $this->hasMany(\App\Models\Delivery::class, 'courier_id');
+    }
+
+    /**
+     * Notifications reçues par cet utilisateur
+     */
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(\App\Models\Notification::class);
+    }
+
+    /**
+     * Notifications non lues
+     */
+    public function unreadNotifications(): HasMany
+    {
+        return $this->notifications()->whereNull('read_at');
+    }
+
+    /**
+     * Vérifier si l'utilisateur est admin
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === UserRole::ADMIN;
+    }
+    
+        
     public function reclamations(): HasMany
     {
         return $this->hasMany(Reclamation::class);

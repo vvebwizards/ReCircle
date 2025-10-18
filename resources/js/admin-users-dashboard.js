@@ -1,5 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
     const popup = document.getElementById('genericConfirmPopup');
+    
+    // Vérifier si l'élément popup existe avant de continuer
+    if (!popup) {
+        console.log('Popup genericConfirmPopup non trouvé sur cette page');
+        return;
+    }
+    
     const messageEl = popup.querySelector('.popup-message');
     const confirmBtn = popup.querySelector('.btn-confirm');
     const cancelBtn = popup.querySelector('.btn-cancel');

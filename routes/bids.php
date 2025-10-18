@@ -11,4 +11,8 @@ Route::middleware(['jwt.auth'])->group(function () {
     Route::patch('/bids/{bid}', [BidController::class, 'update'])->name('bids.update');
     Route::patch('/bids/{bid}/status', [BidController::class, 'updateStatus'])->name('bids.updateStatus');
     Route::patch('/bids/{bid}/withdraw', [BidController::class, 'withdraw'])->name('bids.withdraw');
+
+    // pickup routes
+    Route::post('/bids/{bid}/accept', [BidController::class, 'accept'])
+        ->name('bids.accept');
 });
