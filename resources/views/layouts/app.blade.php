@@ -91,6 +91,15 @@
 @endif
 </li>
 
+<li class="nav-item">
+@if(auth()->check() && auth()->user()->role->value === 'courier')
+  <a href="{{ route('courier.map') }}" class="nav-link">
+    <i class="fa-solid fa-map mr-1"></i>
+    Maps
+  </a>
+@endif
+</li>
+
                 <li class="nav-item"><a href="{{ route('auth') }}" class="nav-cta" aria-label="Sign in">Sign In</a></li>
             </ul>
             <div class="hamburger" aria-label="Toggle navigation" aria-expanded="false" role="button" tabindex="0">

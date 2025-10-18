@@ -324,86 +324,86 @@
                     Edit Delivery
                 </h1>
                 <p class="page-subtitle">Update delivery information and status</p>
-            </div>
+    </div>
             
             <div class="action-buttons">
                 <a href="{{ url()->previous(route('admin.deliveries.index')) }}" class="btn-action btn-cancel">
                     <i class="fa-solid fa-arrow-left"></i>
                     Back
-                </a>
-            </div>
-        </div>
+        </a>
+    </div>
+</div>
 
         <div class="edit-form-card">
-            {{-- Header Recap --}}
+        {{-- Header Recap --}}
             <div class="listing-display">
-                @php
-                    $pick = optional($delivery->pickup);
-                    $item = optional($pick->wasteItem);
-                    $seed = (($pick->waste_item_id ?? 1) * 47) % 360;
-                @endphp
+            @php
+                $pick = optional($delivery->pickup);
+                $item = optional($pick->wasteItem);
+                $seed = (($pick->waste_item_id ?? 1) * 47) % 360;
+            @endphp
                 <div style="display: flex; flex-direction: column; gap: 1rem;">
                     <div style="display: flex; align-items: center; gap: 1rem;">
                         <span style="width: 48px; height: 48px; background: linear-gradient({{ $seed }}deg, #667eea, #764ba2); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 1rem;">
-                            {{ strtoupper(substr($item->title ?? '—', 0, 2)) }}
-                        </span>
-                        <div>
+                        {{ strtoupper(substr($item->title ?? '—', 0, 2)) }}
+                    </span>
+                    <div>
                             <h3 style="color: #1e293b; font-size: 1.2rem; font-weight: 700; margin-bottom: 0.25rem;">
-                                {{ $item->title ?? 'No listing' }}
-                            </h3>
+                            {{ $item->title ?? 'No listing' }}
+                        </h3>
                             <p style="color: #64748b; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem;">
                                 <i class="fa-solid fa-location-dot"></i>
-                                {{ $pick->pickup_address ?? 'No address' }}
-                            </p>
-                        </div>
+                            {{ $pick->pickup_address ?? 'No address' }}
+                        </p>
                     </div>
-                    
+                </div>
+                
                     <div style="background: rgba(255, 255, 255, 0.8); padding: 1rem; border-radius: 8px; border: 1px solid rgba(226, 232, 240, 0.6);">
                         <div style="color: #64748b; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">Pickup Window</div>
                         <div style="color: #1e293b; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
                             <i class="fa-regular fa-calendar"></i>
-                            {{ optional($pick->scheduled_pickup_window_start)->format('M d, Y') ?? '—' }}
-                        </div>
+                        {{ optional($pick->scheduled_pickup_window_start)->format('M d, Y') ?? '—' }}
+                    </div>
                         <div style="color: #64748b; font-size: 0.85rem;">
-                            {{ optional($pick->scheduled_pickup_window_start)->format('H:i') ?? '—' }} - 
-                            {{ optional($pick->scheduled_pickup_window_end)->format('H:i') ?? '—' }}
-                        </div>
+                        {{ optional($pick->scheduled_pickup_window_start)->format('H:i') ?? '—' }} - 
+                        {{ optional($pick->scheduled_pickup_window_end)->format('H:i') ?? '—' }}
                     </div>
                 </div>
             </div>
+        </div>
 
-            {{-- Errors --}}
-            @if ($errors->any())
+        {{-- Errors --}}
+        @if ($errors->any())
                 <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
                     <div style="color: #dc2626; font-weight: 600; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
                         <i class="fa-solid fa-exclamation-triangle"></i>
                         Please fix the following errors:
                     </div>
                     <ul style="color: #dc2626; list-style: none; padding: 0; margin: 0;">
-                        @foreach ($errors->all() as $e)
+                    @foreach ($errors->all() as $e)
                             <li style="padding: 0.25rem 0; display: flex; align-items: center; gap: 0.5rem;">
                                 <i class="fa-solid fa-circle" style="font-size: 0.5rem;"></i>
                                 {{ $e }}
                             </li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
-            {{-- Success Message --}}
-            @if (session('success'))
+        {{-- Success Message --}}
+        @if (session('success'))
                 <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
                     <div style="color: #059669; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
                         <i class="fa-solid fa-check-circle"></i>
-                        {{ session('success') }}
+                {{ session('success') }}
                     </div>
-                </div>
-            @endif
+            </div>
+        @endif
 
-            {{-- Form --}}
+        {{-- Form --}}
             <form method="POST" action="{{ route('admin.deliveries.update', $delivery) }}">
-                @csrf
-                @method('PATCH')
+            @csrf
+            @method('PATCH')
 
                 <h2 class="form-title">
                     <div class="form-icon">
@@ -413,70 +413,70 @@
                 </h2>
 
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 2rem;">
-                    {{-- Left Column --}}
+                {{-- Left Column --}}
                     <div>
-                        {{-- Delivery Information --}}
+                    {{-- Delivery Information --}}
                         <div style="background: rgba(248, 250, 252, 0.8); border: 1px solid rgba(226, 232, 240, 0.6); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
                             <h3 style="color: #1e293b; font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.75rem;">
                                 <i class="fa-solid fa-truck" style="color: #3b82f6;"></i>
-                                Delivery Information
-                            </h3>
-                            
+                            Delivery Information
+                        </h3>
+                        
                             <div style="display: flex; flex-direction: column; gap: 1rem;">
                                 <div class="form-group">
                                     <label class="form-label">Status *</label>
                                     <select name="status" class="form-select" required>
-                                        @foreach($statuses as $s)
-                                            <option value="{{ $s }}" @selected(old('status', $delivery->status) === $s)>
-                                                {{ ucfirst(str_replace('_', ' ', $s)) }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    @foreach($statuses as $s)
+                                        <option value="{{ $s }}" @selected(old('status', $delivery->status) === $s)>
+                                            {{ ucfirst(str_replace('_', ' ', $s)) }}
+                                        </option>
+                                    @endforeach
+                                </select>
                                     @error('status')
                                         <div class="error-message">
                                             <i class="fa-solid fa-exclamation-circle"></i>
                                             {{ $message }}
                                         </div>
                                     @enderror
-                                </div>
+                            </div>
 
                                 <div class="form-group">
                                     <label class="form-label">Courier Phone *</label>
                                     <div style="position: relative;">
-                                        <input 
-                                            name="courier_phone" 
+                                    <input 
+                                        name="courier_phone" 
                                             class="form-input"
                                             style="padding-left: 2.5rem;"
-                                            placeholder="Enter phone number"
-                                            value="{{ old('courier_phone', $delivery->courier_phone) }}"
+                                        placeholder="Enter phone number"
+                                        value="{{ old('courier_phone', $delivery->courier_phone) }}" 
                                             required
                                             pattern="^\d{8}$"
                                             maxlength="8"
                                             minlength="8"
                                             title="Please enter exactly 8 digits"
-                                        />
+                                    />
                                         <i class="fa-solid fa-phone" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #64748b;"></i>
                                     </div>
                                     <div style="color: #64748b; font-size: 0.8rem; margin-top: 0.5rem;">
                                         Phone number used by the hub to contact the courier (exactly 8 digits required)
-                                    </div>
+                                </div>
                                     @error('courier_phone')
                                         <div class="error-message">
                                             <i class="fa-solid fa-exclamation-circle"></i>
                                             {{ $message }}
-                                        </div>
-                                    @enderror
                                 </div>
+                                    @enderror
+                            </div>
 
                                 <div class="form-group">
                                     <label class="form-label">Notes</label>
-                                    <textarea 
-                                        name="notes" 
-                                        rows="3" 
+                                <textarea 
+                                    name="notes" 
+                                    rows="3" 
                                         class="form-textarea"
-                                        placeholder="Add any delivery notes..."
+                                    placeholder="Add any delivery notes..."
                                         maxlength="500"
-                                    >{{ old('notes', $delivery->notes) }}</textarea>
+                                >{{ old('notes', $delivery->notes) }}</textarea>
                                     <div style="color: #64748b; font-size: 0.8rem; margin-top: 0.5rem;">
                                         Optional notes about the delivery (maximum 500 characters)
                                     </div>
@@ -486,131 +486,131 @@
                                             {{ $message }}
                                         </div>
                                     @enderror
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Delivery Timeline --}}
-                        <div style="background: rgba(248, 250, 252, 0.8); border: 1px solid rgba(226, 232, 240, 0.6); border-radius: 12px; padding: 1.5rem;">
-                            <h3 style="color: #1e293b; font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.75rem;">
-                                <i class="fa-solid fa-clock" style="color: #3b82f6;"></i>
-                                Delivery Timeline
-                            </h3>
-                            
-                            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid rgba(226, 232, 240, 0.6);">
-                                    <span style="color: #64748b; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
-                                        <i class="fa-solid fa-user-check" style="color: #3b82f6;"></i>
-                                        Assigned
-                                    </span>
-                                    <span style="font-family: 'Courier New', monospace; color: #1e293b; font-size: 0.85rem;">
-                                        {{ optional($delivery->assigned_at)->format('Y-m-d H:i') ?? '—' }}
-                                    </span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid rgba(226, 232, 240, 0.6);">
-                                    <span style="color: #64748b; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
-                                        <i class="fa-solid fa-box-open" style="color: #10b981;"></i>
-                                        Picked Up
-                                    </span>
-                                    <span style="font-family: 'Courier New', monospace; color: #1e293b; font-size: 0.85rem;">
-                                        {{ optional($delivery->picked_up_at)->format('Y-m-d H:i') ?? '—' }}
-                                    </span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0;">
-                                    <span style="color: #64748b; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
-                                        <i class="fa-solid fa-warehouse" style="color: #8b5cf6;"></i>
-                                        Arrived at Hub
-                                    </span>
-                                    <span style="font-family: 'Courier New', monospace; color: #1e293b; font-size: 0.85rem;">
-                                        {{ optional($delivery->arrived_hub_at)->format('Y-m-d H:i') ?? '—' }}
-                                    </span>
-                                </div>
                             </div>
                         </div>
                     </div>
 
-                    {{-- Right Column --}}
+                    {{-- Delivery Timeline --}}
+                        <div style="background: rgba(248, 250, 252, 0.8); border: 1px solid rgba(226, 232, 240, 0.6); border-radius: 12px; padding: 1.5rem;">
+                            <h3 style="color: #1e293b; font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.75rem;">
+                                <i class="fa-solid fa-clock" style="color: #3b82f6;"></i>
+                            Delivery Timeline
+                        </h3>
+                        
+                            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid rgba(226, 232, 240, 0.6);">
+                                    <span style="color: #64748b; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+                                        <i class="fa-solid fa-user-check" style="color: #3b82f6;"></i>
+                                    Assigned
+                                </span>
+                                    <span style="font-family: 'Courier New', monospace; color: #1e293b; font-size: 0.85rem;">
+                                    {{ optional($delivery->assigned_at)->format('Y-m-d H:i') ?? '—' }}
+                                </span>
+                            </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid rgba(226, 232, 240, 0.6);">
+                                    <span style="color: #64748b; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+                                        <i class="fa-solid fa-box-open" style="color: #10b981;"></i>
+                                    Picked Up
+                                </span>
+                                    <span style="font-family: 'Courier New', monospace; color: #1e293b; font-size: 0.85rem;">
+                                    {{ optional($delivery->picked_up_at)->format('Y-m-d H:i') ?? '—' }}
+                                </span>
+                            </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0;">
+                                    <span style="color: #64748b; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+                                        <i class="fa-solid fa-warehouse" style="color: #8b5cf6;"></i>
+                                    Arrived at Hub
+                                </span>
+                                    <span style="font-family: 'Courier New', monospace; color: #1e293b; font-size: 0.85rem;">
+                                    {{ optional($delivery->arrived_hub_at)->format('Y-m-d H:i') ?? '—' }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Right Column --}}
                     <div>
-                        {{-- Hub Information --}}
+                    {{-- Hub Information --}}
                         <div style="background: rgba(248, 250, 252, 0.8); border: 1px solid rgba(226, 232, 240, 0.6); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
                             <h3 style="color: #1e293b; font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.75rem;">
                                 <i class="fa-solid fa-warehouse" style="color: #3b82f6;"></i>
-                                Hub Information
-                            </h3>
-                            
+                            Hub Information
+                        </h3>
+                        
                             <div style="display: flex; flex-direction: column; gap: 1rem;">
                                 <div class="form-group">
                                     <label class="form-label">Hub Address</label>
                                     <div style="position: relative;">
-                                        <input 
-                                            name="hub_address" 
+                                    <input 
+                                        name="hub_address" 
                                             class="form-input"
                                             style="padding-left: 2.5rem;"
-                                            placeholder="Enter hub address"
-                                            value="{{ old('hub_address', $delivery->hub_address) }}" 
-                                        />
+                                        placeholder="Enter hub address"
+                                        value="{{ old('hub_address', $delivery->hub_address) }}" 
+                                    />
                                         <i class="fa-solid fa-location-dot" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #64748b;"></i>
                                     </div>
                                     @error('hub_address')
                                         <div class="error-message">
                                             <i class="fa-solid fa-exclamation-circle"></i>
                                             {{ $message }}
-                                        </div>
-                                    @enderror
                                 </div>
+                                    @enderror
+                            </div>
 
                                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                                     <div class="form-group">
                                         <label class="form-label">Latitude</label>
                                         <div style="position: relative;">
-                                            <input 
-                                                name="hub_lat" 
-                                                type="number" 
-                                                step="any" 
+                                        <input 
+                                            name="hub_lat" 
+                                            type="number" 
+                                            step="any" 
                                                 class="form-input"
-                                                placeholder="36.8065"
-                                                value="{{ old('hub_lat', $delivery->hub_lat) }}" 
-                                            />
+                                            placeholder="36.7989"
+                                            value="{{ old('hub_lat', $delivery->hub_lat) }}" 
+                                        />
                                             <i class="fa-solid fa-globe" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 0.8rem;"></i>
                                         </div>
                                         @error('hub_lat')
                                             <div class="error-message">
                                                 <i class="fa-solid fa-exclamation-circle"></i>
                                                 {{ $message }}
-                                            </div>
-                                        @enderror
                                     </div>
+                                        @enderror
+                                </div>
                                     <div class="form-group">
                                         <label class="form-label">Longitude</label>
                                         <div style="position: relative;">
-                                            <input 
-                                                name="hub_lng" 
-                                                type="number" 
-                                                step="any" 
+                                        <input 
+                                            name="hub_lng" 
+                                            type="number" 
+                                            step="any" 
                                                 class="form-input"
-                                                placeholder="10.1815"
-                                                value="{{ old('hub_lng', $delivery->hub_lng) }}" 
-                                            />
+                                            placeholder="10.1808"
+                                            value="{{ old('hub_lng', $delivery->hub_lng) }}" 
+                                        />
                                             <i class="fa-solid fa-globe" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 0.8rem;"></i>
                                         </div>
                                         @error('hub_lng')
                                             <div class="error-message">
                                                 <i class="fa-solid fa-exclamation-circle"></i>
                                                 {{ $message }}
-                                            </div>
-                                        @enderror
                                     </div>
+                                        @enderror
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        {{-- Current Status Badge --}}
+                    {{-- Current Status Badge --}}
                         <div style="background: rgba(248, 250, 252, 0.8); border: 1px solid rgba(226, 232, 240, 0.6); border-radius: 12px; padding: 1.5rem;">
                             <h3 style="color: #1e293b; font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.75rem;">
                                 <i class="fa-solid fa-info-circle" style="color: #3b82f6;"></i>
-                                Current Status
-                            </h3>
-                            
+                            Current Status
+                        </h3>
+                        
                             <div style="text-align: center; padding: 1rem;">
                                 <div style="color: #64748b; font-size: 0.85rem; margin-bottom: 1rem;">Current Delivery Status</div>
                                 <span style="display: inline-block; padding: 0.75rem 1.5rem; border-radius: 20px; font-weight: 600; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.5px;
@@ -621,32 +621,32 @@
                                     @elseif($delivery->status === 'failed') background: linear-gradient(135deg, #ef4444, #dc2626); color: white; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
                                     @elseif($delivery->status === 'cancelled') background: linear-gradient(135deg, #6b7280, #4b5563); color: white; box-shadow: 0 4px 15px rgba(107, 114, 128, 0.3);
                                     @else background: linear-gradient(135deg, #6b7280, #4b5563); color: white; box-shadow: 0 4px 15px rgba(107, 114, 128, 0.3); @endif">
-                                    {{ ucfirst(str_replace('_', ' ', $delivery->status)) }}
-                                </span>
-                                
-                                @if($delivery->courier)
+                                {{ ucfirst(str_replace('_', ' ', $delivery->status)) }}
+                            </span>
+                            
+                            @if($delivery->courier)
                                 <div style="margin-top: 1.5rem; color: #64748b; font-size: 0.9rem;">
                                     <div style="font-weight: 600; margin-bottom: 0.5rem;">Assigned Courier:</div>
                                     <div style="color: #1e293b; font-weight: 500;">{{ $delivery->courier->name }}</div>
                                     <div style="color: #64748b; font-size: 0.85rem;">{{ $delivery->courier->email }}</div>
-                                </div>
-                                @endif
                             </div>
+                            @endif
                         </div>
                     </div>
                 </div>
+            </div>
 
-                {{-- Form Actions --}}
+            {{-- Form Actions --}}
                 <div class="form-actions">
                     <a href="{{ url()->previous(route('admin.deliveries.index')) }}" class="btn btn-cancel-form">
                         <i class="fa-solid fa-xmark"></i> Cancel
                     </a>
                     <button type="submit" class="btn btn-save">
                         <i class="fa-solid fa-floppy-disk"></i> Save Changes
-                    </button>
-                </div>
-            </form>
-        </div>
+                </button>
+            </div>
+        </form>
+    </div>
     </div>
 </div>
 

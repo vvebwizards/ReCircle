@@ -2,8 +2,8 @@
 
 return [
     'hub' => [
-        'address' => env('HUB_ADDRESS', 'ReCircle Hub — 12 Rue , Tunis'),
-        'lat' => env('HUB_LAT', null),
-        'lng' => env('HUB_LNG', null),
+        'address' => env('HUB_ADDRESS', 'ReCircle Hub — Avenue Habib Bourguiba, Tunis'),
+        'lat' => env('HUB_LAT', 36.7989),
+        'lng' => env('HUB_LNG', 10.1808),
     ],
 ];

@@ -416,7 +416,7 @@
                     <div class="pickup-detail-value">
                         {{ optional($delivery->pickup->scheduled_pickup_window_end)->format('M d, Y H:i') ?? '—' }}
                     </div>
-                </div>
+            </div>
         </div>
     </div>
 
@@ -500,10 +500,10 @@
                         <i class="fa-solid fa-check"></i>
                         Save Changes
                     </button>
-                </div>
-            </form>
-        @endif
-    </div>
+            </div>
+        </form>
+    @endif
+</div>
 </div>
 
 <script>

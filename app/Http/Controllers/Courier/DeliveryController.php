@@ -78,9 +78,9 @@ class DeliveryController extends Controller
         }
 
         $defaults = [
-            'hub_address' => config('delivery.hub.address', 'ReCircle Hub — 12 Rue Tunis, Tunis'),
-            'hub_lat' => config('delivery.hub.lat', 36.8065),
-            'hub_lng' => config('delivery.hub.lng', 10.1815),
+            'hub_address' => config('logistics.hub.address', 'ReCircle Hub — Avenue Habib Bourguiba, Tunis'),
+            'hub_lat' => config('logistics.hub.lat', 36.7989),
+            'hub_lng' => config('logistics.hub.lng', 10.1808),
             'courier_phone' => $user->phone ?? '',
         ];
 

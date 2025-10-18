@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Pickup;
 use App\Models\WasteItem;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -36,9 +37,27 @@ class PickupController extends Controller
             $query->whereHas('wasteItem', fn ($q) => $q->where('generator_id', $user->id));
         }
 
+        // Filtre par statut
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filtre par recherche textuelle
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('pickup_address', 'like', "%{$search}%")
+                    ->orWhere('tracking_code', 'like', "%{$search}%")
+                    ->orWhereHas('wasteItem', fn ($w) => $w->where('title', 'like', "%{$search}%"));
+            });
+        }
+
         $pickups = $query->paginate(15)->withQueryString();
 
-        return view('pickups.index', compact('pickups'));
+        // Récupérer les statuts disponibles pour le filtre
+        $statuses = ['scheduled', 'assigned', 'in_transit', 'picked', 'failed', 'cancelled'];
+
+        return view('pickups.index', compact('pickups', 'statuses'));
     }
 
     public function store(Request $request)
@@ -55,7 +74,7 @@ class PickupController extends Controller
         $data['tracking_code'] = Str::upper(Str::random(12));
 
         // création
-        Pickup::create([
+        $pickup = Pickup::create([
             'waste_item_id' => $data['waste_item_id'],
             'pickup_address' => $data['pickup_address'],
             'scheduled_pickup_window_start' => $data['scheduled_pickup_window_start'] ?? null,
@@ -64,6 +83,9 @@ class PickupController extends Controller
             'notes' => $data['notes'] ?? null,
             'tracking_code' => $data['tracking_code'],
         ]);
+
+        // Envoyer une notification aux admins
+        NotificationService::notifyAdminsPickupCreated($pickup);
 
         // ➜ redirige vers la liste avec un flash
         return redirect()->route('pickups.index')

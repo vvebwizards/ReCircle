@@ -34,6 +34,160 @@
         gap: 1rem;
     }
     
+    .download-buttons {
+        display: flex;
+        gap: 10px;
+        margin-left: auto;
+    }
+    
+    .download-btn {
+        background: #059669;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 8px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .download-btn:hover {
+        background: #047857;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+    }
+    
+   
+    
+    
+    
+    .download-btn.excel {
+        background: #16a34a;
+    }
+    
+    .download-btn.excel:hover {
+        background: #15803d;
+    }
+    
+    .download-btn.chat {
+        background: #3b82f6;
+    }
+    
+    .download-btn.chat:hover {
+        background: #2563eb;
+    }
+    
+    .filters-section {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    }
+    
+    .filters-title {
+        color: #1e293b;
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .filters-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .filter-label {
+        color: #374151;
+        font-weight: 500;
+        font-size: 0.875rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .filter-input, .filter-select {
+        padding: 0.75rem 1rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        transition: all 0.3s ease;
+        background: white;
+    }
+    
+    .filter-input:focus, .filter-select:focus {
+        outline: none;
+        border-color: #059669;
+        box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+    }
+    
+    .filter-buttons {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        justify-content: flex-end;
+        padding-top: 1rem;
+        border-top: 1px solid #e5e7eb;
+    }
+    
+    .filter-btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .filter-btn.primary {
+        background: #059669;
+        color: white;
+    }
+    
+    .filter-btn.primary:hover {
+        background: #047857;
+        transform: translateY(-1px);
+    }
+    
+    .filter-btn.secondary {
+        background: #6b7280;
+        color: white;
+    }
+    
+    .filter-btn.secondary:hover {
+        background: #4b5563;
+        transform: translateY(-1px);
+    }
+    
+    .filter-btn.clear {
+        background: #ef4444;
+        color: white;
+    }
+    
+    .filter-btn.clear:hover {
+        background: #dc2626;
+        transform: translateY(-1px);
+    }
+    
     .title-icon {
         width: 50px;
         height: 50px;
@@ -252,6 +406,11 @@
         color: #ffffff;
     }
     
+    .btn-chat {
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        color: #ffffff;
+    }
+    
     .btn-action:hover {
         transform: translateY(-2px);
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
@@ -351,8 +510,88 @@
     </h1>
                     <p class="page-subtitle">Manage and track all your waste pickups</p>
                 </div>
+                
+                <div class="download-buttons">
+                    <a href="{{ route('chat.index') }}" class="download-btn chat">
+                        <i class="fa-solid fa-comments"></i>
+                        Chat
+                    </a>
+                    <a href="{{ route('pickups.download.pdf') }}" class="download-btn pdf">
+                        <i class="fa-solid fa-file-pdf"></i>
+                        PDF
+                    </a>
+                    <a href="{{ route('pickups.download.csv') }}" class="download-btn csv">
+                        <i class="fa-solid fa-file-csv"></i>
+                        CSV
+                    </a>
+                    <a href="{{ route('pickups.download.excel') }}" class="download-btn excel">
+                        <i class="fa-solid fa-file-excel"></i>
+                        Excel
+                    </a>
+                </div>
                
             </div>
+  </div>
+
+  <!-- Section des filtres -->
+  <div class="filters-section">
+      <h3 class="filters-title">
+          <i class="fa-solid fa-filter"></i>
+          Filtres de recherche
+      </h3>
+      
+      <form method="GET" action="{{ route('pickups.index') }}" id="filters-form">
+          <div class="filters-grid">
+              <!-- Recherche textuelle -->
+              <div class="filter-group">
+                  <label class="filter-label" for="search">
+                      <i class="fa-solid fa-search"></i>
+                      Recherche
+                  </label>
+                  <input type="text" 
+                         id="search" 
+                         name="search" 
+                         class="filter-input" 
+                         placeholder="Adresse, code de suivi, produit..."
+                         value="{{ request('search') }}">
+              </div>
+
+              <!-- Filtre par statut -->
+              <div class="filter-group">
+                  <label class="filter-label" for="status">
+                      <i class="fa-solid fa-circle-info"></i>
+                      Statut
+                  </label>
+                  <select id="status" name="status" class="filter-select">
+                      <option value="">Tous les statuts</option>
+                      @foreach($statuses as $status)
+                          <option value="{{ $status }}" 
+                                  {{ request('status') === $status ? 'selected' : '' }}>
+                              {{ ucfirst(str_replace('_', ' ', $status)) }}
+                          </option>
+                      @endforeach
+                  </select>
+              </div>
+
+          </div>
+
+          <div class="filter-buttons">
+              <button type="submit" class="filter-btn primary">
+                  <i class="fa-solid fa-search"></i>
+                  Filtrer
+              </button>
+              
+              <a href="{{ route('pickups.index') }}" class="filter-btn secondary">
+                  <i class="fa-solid fa-refresh"></i>
+                  Réinitialiser
+              </a>
+              
+              <button type="button" class="filter-btn clear" onclick="clearAllFilters()">
+                  <i class="fa-solid fa-times"></i>
+                  Effacer tout
+              </button>
+          </div>
+      </form>
   </div>
 
   @if($pickups->isEmpty())
@@ -410,6 +649,12 @@
                                     View Details
                                 </a>
                     @endif
+                            
+                            <!-- Bouton Chat pour chaque pickup -->
+                            <a href="{{ route('chat.index', ['pickup_id' => $p->id]) }}" class="btn-action btn-chat">
+                                <i class="fa-solid fa-comments"></i>
+                                Chat
+                            </a>
                         </div>
                     </div>
           @endforeach
@@ -421,4 +666,42 @@
   @endif
     </div>
 </div>
+
+<script>
+// Fonction pour effacer tous les filtres
+function clearAllFilters() {
+    // Effacer tous les champs de filtre
+    document.getElementById('search').value = '';
+    document.getElementById('status').value = '';
+    
+    // Soumettre le formulaire pour recharger la page
+    document.getElementById('filters-form').submit();
+}
+
+// Auto-submit du formulaire quand on change certains filtres
+document.addEventListener('DOMContentLoaded', function() {
+    const statusSelect = document.getElementById('status');
+    
+    // Auto-submit quand on change le statut
+    statusSelect.addEventListener('change', function() {
+        document.getElementById('filters-form').submit();
+    });
+    
+    
+    // Afficher le nombre de résultats filtrés
+    const resultsCount = {{ $pickups->total() }};
+    const hasFilters = {{ request()->hasAny(['search', 'status']) ? 'true' : 'false' }};
+    
+    if (hasFilters && resultsCount > 0) {
+        const filterInfo = document.createElement('div');
+        filterInfo.className = 'alert alert-info mt-3';
+        filterInfo.innerHTML = `
+            <i class="fa-solid fa-info-circle"></i>
+            <strong>Filtres actifs :</strong> ${resultsCount} pickup(s) trouvé(s) avec les critères sélectionnés.
+        `;
+        document.querySelector('.filters-section').appendChild(filterInfo);
+    }
+});
+</script>
+
 @endsection

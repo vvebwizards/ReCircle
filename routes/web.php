@@ -135,10 +135,13 @@ Route::middleware(['jwt.auth'])->group(function () {
     Route::get('/deliveries/pickups', [DeliveryController::class, 'availablePickups'])
         ->name('deliveries.pickups');
 
-    // Créer une delivery à partir d’un pickup disponible
+    // Créer une delivery à partir d'un pickup disponible
     Route::post('/deliveries/from-pickup/{pickup}', [DeliveryController::class, 'storeFromPickup'])
         ->name('deliveries.fromPickup.store');
 
+    // Carte des livreurs
+    Route::get('/map', [\App\Http\Controllers\Courier\CourierMapController::class, 'index'])
+        ->name('courier.map');
     /* Route::prefix('deliveries')->name('deliveries.')->middleware(['jwt.auth'])->group(function () {
         // Liste des courses pour le courier
         Route::get('/', [DeliveryController::class, 'index'])->name('index');
@@ -159,6 +162,17 @@ Route::middleware(['jwt.auth'])->group(function () {
          ->name('pickups.index');*/
 
     require __DIR__.'/waste_items.php';
+
+    // Routes pour téléchargement des pickups
+    Route::get('/pickups/download/pdf', [App\Http\Controllers\PickupDownloadController::class, 'downloadPDF'])->name('pickups.download.pdf');
+    Route::get('/pickups/download/csv', [App\Http\Controllers\PickupDownloadController::class, 'downloadCSV'])->name('pickups.download.csv');
+    Route::get('/pickups/download/excel', [App\Http\Controllers\PickupDownloadController::class, 'downloadExcel'])->name('pickups.download.excel');
+
+    // Routes pour le chat
+    Route::get('/chat', [App\Http\Controllers\ChatController::class, 'index'])->name('chat.index');
+    Route::post('/chat/send', [App\Http\Controllers\ChatController::class, 'sendMessage'])->name('chat.send');
+    Route::get('/chat/messages', [App\Http\Controllers\ChatController::class, 'getMessages'])->name('chat.messages');
+    Route::post('/chat/mark-read', [App\Http\Controllers\ChatController::class, 'markAsRead'])->name('chat.mark-read');
 });
 
 Route::middleware(['jwt.auth'])->patch(
@@ -180,3 +194,33 @@ require __DIR__.'/bids.php';
 require __DIR__.'/forum.php';
 
 require __DIR__.'/badges.php';
+
+// Routes pour les notifications
+Route::middleware('jwt.auth')->group(function () {
+    Route::prefix('notifications')->name('notifications.')->group(function () {
+        Route::get('/unread', [App\Http\Controllers\NotificationController::class, 'getUnreadNotifications'])->name('unread');
+        Route::get('/all', [App\Http\Controllers\NotificationController::class, 'getAllNotifications'])->name('all');
+        Route::get('/count', [App\Http\Controllers\NotificationController::class, 'getUnreadCount'])->name('count');
+        Route::post('/mark-read', [App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('mark.read');
+        Route::post('/mark-all-read', [App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('mark.all.read');
+        Route::delete('/delete', [App\Http\Controllers\NotificationController::class, 'delete'])->name('delete');
+    });
+});
+
+// Route de test pour vérifier l'authentification
+Route::get('/test-auth', function () {
+    $user = auth()->user();
+    if ($user) {
+        return response()->json([
+            'authenticated' => true,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role->value,
+            ],
+        ]);
+    } else {
+        return response()->json(['authenticated' => false], 401);
+    }
+});

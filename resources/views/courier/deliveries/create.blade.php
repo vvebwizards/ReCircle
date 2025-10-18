@@ -399,12 +399,12 @@
                     <div class="pickup-detail-value">
                         {{ optional($pickup->scheduled_pickup_window_end)->format('M d, Y H:i') ?? '—' }}
                     </div>
-                </div>
-            </div>
         </div>
+        </div>
+    </div>
 
         <form method="POST" action="{{ route('deliveries.storeFromPickup', $pickup) }}" class="form-container">
-            @csrf
+        @csrf
 
             <div class="form-section">
                 <h3 class="section-title">
@@ -414,7 +414,7 @@
                 
                 <div class="form-group">
                     <label class="form-label">Courier Phone *</label>
-                    <input type="text" name="courier_phone" value="{{ old('courier_phone', $defaults['courier_phone']) }}"
+            <input type="text" name="courier_phone" value="{{ old('courier_phone', $defaults['courier_phone']) }}"
                            class="form-input" placeholder="Enter courier phone number (8 digits)" 
                            required pattern="^\d{8}$" maxlength="8" minlength="8"
                            title="Please enter exactly 8 digits">
@@ -423,7 +423,7 @@
                     </small>
                     @error('courier_phone') <p class="error-message">{{ $message }}</p> @enderror
                 </div>
-            </div>
+        </div>
 
             <div class="form-section">
                 <h3 class="section-title">
@@ -433,24 +433,24 @@
                 
                 <div class="form-group">
                     <label class="form-label">Hub Address *</label>
-                    <input type="text" name="hub_address" value="{{ old('hub_address', $defaults['hub_address']) }}"
+            <input type="text" name="hub_address" value="{{ old('hub_address', $defaults['hub_address']) }}"
                            class="form-input" placeholder="Enter hub address" required>
                     @error('hub_address') <p class="error-message">{{ $message }}</p> @enderror
-                </div>
+        </div>
 
                 <div class="form-grid">
                     <div class="form-group">
                         <label class="form-label">Hub Latitude</label>
-                        <input type="number" step="0.0000001" name="hub_lat" value="{{ old('hub_lat', $defaults['hub_lat']) }}"
+                <input type="number" step="0.0000001" name="hub_lat" value="{{ old('hub_lat', $defaults['hub_lat']) }}"
                                class="form-input" placeholder="Latitude">
-                    </div>
+            </div>
                     <div class="form-group">
                         <label class="form-label">Hub Longitude</label>
-                        <input type="number" step="0.0000001" name="hub_lng" value="{{ old('hub_lng', $defaults['hub_lng']) }}"
+                <input type="number" step="0.0000001" name="hub_lng" value="{{ old('hub_lng', $defaults['hub_lng']) }}"
                                class="form-input" placeholder="Longitude">
                     </div>
-                </div>
             </div>
+        </div>
 
             <div class="form-section">
                 <h3 class="section-title">
@@ -467,13 +467,13 @@
                         Optional field - maximum 500 characters
                     </small>
                     @error('notes') <p class="error-message">{{ $message }}</p> @enderror
-                </div>
+        </div>
 
                 <div class="checkbox-container">
                     <input type="checkbox" name="start_now" value="1" class="checkbox-input" id="start_now">
                     <label for="start_now" class="checkbox-label">
                         Start delivery now (set status to <strong>in_transit</strong>)
-                    </label>
+        </label>
                 </div>
             </div>
 
@@ -486,9 +486,9 @@
                     <i class="fa-solid fa-check"></i>
                     Create Delivery
                 </button>
-            </div>
-        </form>
-    </div>
+        </div>
+    </form>
+</div>
 </div>
 
 <script>

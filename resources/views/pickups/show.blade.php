@@ -365,7 +365,7 @@
                     <div class="detail-item">
                         <div class="detail-label">Pickup Address</div>
                         <div class="detail-value">{{ $pickup->pickup_address }}</div>
-                    </div>
+            </div>
                     <div class="detail-item">
                         <div class="detail-label">Status</div>
                         <span class="status-badge status-{{ $pickup->status }}">
@@ -397,7 +397,7 @@
                     <div class="detail-item">
                         <div class="detail-label">Assigned Courier</div>
                         <div class="detail-value">{{ $pickup->courier_id ? '#'.$pickup->courier_id : '—' }}</div>
-                    </div>
+            </div>
             </div>
         </div>
 
@@ -416,32 +416,32 @@
                 <div class="timestamp-item">
                     <div class="timestamp-label">Last Updated</div>
                     <div class="timestamp-value">{{ $pickup->updated_at->format('M d, Y H:i') }}</div>
-                </div>
-            </div>
+        </div>
+    </div>
 
             <div class="action-buttons">
                 <a href="{{ route('pickups.edit', $pickup) }}" class="btn-action btn-edit">
                     <i class="fa-solid fa-pen"></i>
                     Edit Pickup
                 </a>
-                
-                <form method="POST" action="{{ route('pickups.destroy', $pickup) }}" 
+
+            <form method="POST" action="{{ route('pickups.destroy', $pickup) }}"
                       onsubmit="return confirm('Delete this pickup? This cannot be undone.');" 
                       style="display: inline;">
-                    @csrf
-                    @method('DELETE')
+                @csrf
+                @method('DELETE')
                     <button type="submit" class="btn-action btn-delete">
                         <i class="fa-solid fa-trash"></i>
                         Delete Pickup
-                    </button>
-                </form>
+                </button>
+            </form>
                 
                 <a href="{{ route('pickups.index') }}" class="btn-action btn-back">
                     <i class="fa-solid fa-arrow-left"></i>
                     Back to List
                 </a>
-            </div>
         </div>
+    </div>
     </div>
 </div>
 @endsection

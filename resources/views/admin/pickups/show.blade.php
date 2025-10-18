@@ -326,7 +326,7 @@
                         <span class="status-badge status-{{ $pickup->status }}">
                             {{ ucfirst(str_replace('_', ' ', $pickup->status)) }}
         </span>
-                    </div>
+      </div>
       </div>
 
                 <div class="detail-section">
@@ -372,8 +372,8 @@
                     <div class="timestamp-label">Last Updated</div>
                     <div class="timestamp-value">{{ $pickup->updated_at->format('M d, Y H:i') }}</div>
         </div>
+        </div>
       </div>
     </div>
   </div>
-</div>
 @endsection

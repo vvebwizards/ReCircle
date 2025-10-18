@@ -52,9 +52,9 @@
                             <form method="POST" action="{{ route('deliveries.fromPickup.store', $p) }}">
                                 @csrf
                                 <input type="hidden" name="courier_phone" value="{{ auth()->user()->phone ?? '' }}">
-                                <input type="hidden" name="hub_address" value="{{ config('delivery.hub.address','ReCircle Hub — 12 Rue Exemple, Tunis') }}">
-                                <input type="hidden" name="hub_lat" value="{{ config('delivery.hub.lat', 36.8065) }}">
-                                <input type="hidden" name="hub_lng" value="{{ config('delivery.hub.lng', 10.1815) }}">
+                                <input type="hidden" name="hub_address" value="{{ config('logistics.hub.address','ReCircle Hub — Avenue Habib Bourguiba, Tunis') }}">
+                                <input type="hidden" name="hub_lat" value="{{ config('logistics.hub.lat', 36.7989) }}">
+                                <input type="hidden" name="hub_lng" value="{{ config('logistics.hub.lng', 10.1808) }}">
                                 <button class="px-3 py-1 rounded bg-blue-600 text-white text-xs">
                                     Select delivery
                                 </button>

@@ -617,19 +617,19 @@
                     Manage Deliveries
                 </h1>
                 <p class="page-subtitle">View, filter, and manage all deliveries</p>
-            </div>
+    </div>
             
             <form method="GET" action="{{ route('admin.deliveries.index') }}" class="search-container">
                 <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                <input
-                    type="search"
-                    name="q"
+            <input
+                type="search"
+                name="q"
                     placeholder="Search deliveries..."
-                    value="{{ request('q') }}"
-                    class="search-input"
-                />
-            </form>
-        </div>
+                value="{{ request('q') }}"
+                class="search-input"
+            />
+        </form>
+    </div>
 
         <div class="deliveries-card">
             <div class="card-title">
@@ -637,33 +637,33 @@
                     <i class="fa-solid fa-list"></i>
                 </div>
                 All Deliveries
-            </div>
-            
-            <div class="tabs-container">
-                <a href="{{ route('admin.deliveries.index') }}"
-                   class="tab-link {{ $tab==='active' ? 'active' : 'inactive' }}">
-                    Active
-                </a>
-                <a href="{{ route('admin.deliveries.completed') }}"
-                   class="tab-link {{ $tab==='completed' ? 'active' : 'inactive' }}">
-                    Completed
-                </a>
-            </div>
+</div>
 
-            @if(session('ok'))
+            <div class="tabs-container">
+            <a href="{{ route('admin.deliveries.index') }}"
+                   class="tab-link {{ $tab==='active' ? 'active' : 'inactive' }}">
+                Active
+            </a>
+            <a href="{{ route('admin.deliveries.completed') }}"
+                   class="tab-link {{ $tab==='completed' ? 'active' : 'inactive' }}">
+                Completed
+            </a>
+        </div>
+
+        @if(session('ok'))
                 <div class="alert alert-success" style="background: rgba(16, 185, 129, 0.1); color: #059669; padding: 0.5rem; border-radius: 6px; font-size: 0.8rem; margin-bottom: 1rem;">
                     {{ session('ok') }}
                 </div>
-            @endif
+        @endif
 
-            @if($deliveries->isEmpty())
+        @if($deliveries->isEmpty())
                 <div class="empty-state">
                     <i class="fa-solid fa-box-open" style="font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.5;"></i>
                     <p>No deliveries found.</p>
                 </div>
-            @else
+        @else
                 <div class="deliveries-grid">
-                    @foreach($deliveries as $d)
+                        @foreach($deliveries as $d)
                         <div class="delivery-card" id="row-{{ $d->id }}">
                             <div class="delivery-header">
                                 <div style="display: flex; align-items: center; gap: 0.5rem;">
@@ -686,22 +686,22 @@
                                 <div class="delivery-section">
                                     <div class="section-label">Waste Item Title</div>
                                     <div class="section-content">
-                                        @php
-                                            $title = optional(optional($d->pickup)->wasteItem)->title ?? '—';
-                                            $seed  = (optional($d->pickup)->waste_item_id ?? 1) * 47 % 360;
-                                        @endphp
+                                    @php
+                                        $title = optional(optional($d->pickup)->wasteItem)->title ?? '—';
+                                        $seed  = (optional($d->pickup)->waste_item_id ?? 1) * 47 % 360;
+                                    @endphp
                                         <div class="listing-info">
                                             <div class="listing-avatar" style="background: hsl({{ $seed }}, 70%, 50%);">
-                                                {{ strtoupper(substr($title, 0, 2)) }}
+                                            {{ strtoupper(substr($title, 0, 2)) }}
                                             </div>
                                             <div class="listing-details">
                                                 <div class="listing-title" title="{{ $title }}">
-                                                    {{ $title }}
-                                                </div>
+                                                {{ $title }}
+                                            </div>
+                                            </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
 
                                 <div class="delivery-section">
                                     <div class="section-label">Schedule</div>
@@ -719,9 +719,9 @@
                                         @else
                                             <span style="color: #9ca3af;">—</span>
                                         @endif
-                                    </div>
-                                </div>
-
+                                            </div>
+                                        </div>
+                                        
                                 <div class="delivery-section">
                                     <div class="section-content">
                                         <div class="address-info">
@@ -730,37 +730,37 @@
                                                 {{ optional($d->pickup)->pickup_address ?? '—' }}
                                             </div>
                                             
-                                            @if($d->hub_address)
+                                        @if($d->hub_address)
                                                 <div class="address-label" style="margin-top: 0.3rem;">To Hub:</div>
                                                 <div title="{{ $d->hub_address }}">
-                                                    {{ $d->hub_address }}
-                                                </div>
-                                            @endif
+                                                {{ $d->hub_address }}
                                         </div>
-                                        
-                                        @if($d->notes)
+                                        @endif
+                                    </div>
+                                    
+                                    @if($d->notes)
                                             <div class="notes-section" style="margin-top: 0.8rem;">
                                                 <div class="address-label">Notes:</div>
                                                 <div class="notes-content" style="background: rgba(59, 130, 246, 0.1); padding: 0.5rem; border-radius: 6px; font-size: 0.85rem; color: #1e293b; border-left: 3px solid #3b82f6;">
                                                     {{ $d->notes }}
-                                                </div>
-                                            </div>
-                                        @endif
+                                        </div>
                                     </div>
-                                </div>
+                                    @endif
+                                        </div>
+                                        </div>
 
                                 <div class="delivery-section">
                                     <div class="section-label">Courier </div>
                                     <div class="section-content">
-                                        @php $c = $d->courier ?? null; @endphp
-                                        @if($c)
+                                    @php $c = $d->courier ?? null; @endphp
+                                    @if($c)
                                             <div class="courier-info">
                                                 <div class="courier-name">{{ $c->name }}</div>
                                                 <div class="courier-email" title="{{ $c->email }}">
-                                                    {{ $c->email }}
+                                            {{ $c->email }}
                                                 </div>
-                                            </div>
-                                        @else
+                                        </div>
+                                    @else
                                             <span style="color: #9ca3af;">—</span>
                                         @endif
                                         
@@ -776,7 +776,7 @@
                                                 <div class="address-label" style="color: #1e40af; font-size: 0.65rem; margin-bottom: 0.2rem;">Arrived Hub At:</div>
                                                 <span style="color: #1e40af; font-size: 0.8rem; font-weight: 600;">{{ $d->arrived_hub_at->format('M d, H:i') }}</span>
                                             </div>
-                                        @endif
+                                    @endif
                                         
                                         @if($d->courier_numero)
                                             <div style="margin-top: 0.5rem;">
@@ -786,41 +786,41 @@
                                                 </div>
                                             </div>
                                         @endif
-                                        
-                                        @if($d->status === 'delivered' && $d->arrived_hub_at)
+
+                                    @if($d->status === 'delivered' && $d->arrived_hub_at)
                                             <div style="color: #059669; font-size: 0.7rem; margin-top: 0.5rem; background: rgba(16, 185, 129, 0.1); padding: 0.4rem; border-radius: 6px; border-left: 3px solid #10b981;">
                                                 <strong>Delivered:</strong> {{ $d->arrived_hub_at->format('M d, H:i') }}
-                                            </div>
-                                        @endif
+                                        </div>
+                                    @endif
                                     </div>
                                 </div>
                             </div>
 
                             <div class="delivery-actions">
-                                <a href="{{ route('admin.deliveries.show', $d) }}"
+                                        <a href="{{ route('admin.deliveries.show', $d) }}"
                                    class="action-btn view" title="View">
-                                    <i class="fa-solid fa-eye"></i>
-                                </a>
-                                <a href="{{ route('admin.deliveries.edit', $d) }}"
+                                            <i class="fa-solid fa-eye"></i>
+                                        </a>
+                                        <a href="{{ route('admin.deliveries.edit', $d) }}"
                                    class="action-btn edit" title="Edit">
-                                    <i class="fa-solid fa-pen"></i>
-                                </a>
+                                            <i class="fa-solid fa-pen"></i>
+                                        </a>
                                 <button class="action-btn delete js-del"
-                                        title="Delete"
-                                        data-url="{{ route('admin.deliveries.destroy', $d) }}"
-                                        data-row="#row-{{ $d->id }}">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-                            </div>
+                                                title="Delete"
+                                                data-url="{{ route('admin.deliveries.destroy', $d) }}"
+                                                data-row="#row-{{ $d->id }}">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </div>
                         </div>
-                    @endforeach
-                </div>
+                        @endforeach
+            </div>
 
                 <div class="pagination-container">
-                    {{ $deliveries->onEachSide(1)->links('pagination::simple-tailwind') }}
-                </div>
-            @endif
-        </div>
+                {{ $deliveries->onEachSide(1)->links('pagination::simple-tailwind') }}
+            </div>
+        @endif
+    </div>
     </div>
 </div>
 
