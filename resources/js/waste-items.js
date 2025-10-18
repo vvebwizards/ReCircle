@@ -621,9 +621,13 @@
       }
       if(!res.ok) throw new Error('Create failed');
       await res.json();
-      if(usingNewFilters && window.WasteItemsUI){
-        // Refresh sections so new item appears with consistent markup
+      // Debug log
+      console.log('[WasteItems] AJAX create success, refreshing grid...');
+      // Force grid refresh
+      if(window.WasteItemsUI && WasteItemsUI.updateContent){
         await window.WasteItemsUI.updateContent(window.location.href, { pushState:false });
+      } else {
+        window.location.reload();
       }
       showToast('Created successfully','success');
       closeModal(createModal);

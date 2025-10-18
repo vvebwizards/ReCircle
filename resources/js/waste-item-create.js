@@ -196,12 +196,51 @@ document.addEventListener('DOMContentLoaded', () => {
             return valid;
         }
 
-        form.addEventListener('submit', (e) => {
+        form.addEventListener('submit', async (e) => {
             if (!validate()) {
                 e.preventDefault();
                 // focus first error
                 const firstErr = form.querySelector('.has-error input, .has-error select, .has-error textarea, #imageDropzone');
                 if (firstErr && firstErr.focus) firstErr.focus();
+                return;
+            }
+            e.preventDefault();
+            // AJAX submit
+            const formData = new FormData(form);
+            try {
+                const resp = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                });
+                if (!resp.ok) {
+                    const data = await resp.json();
+                    if (data.errors) {
+                        Object.entries(data.errors).forEach(([field, messages]) => {
+                            const input = form.querySelector(`[name="${field}"]`);
+                            showError(input, messages[0]);
+                        });
+                    } else {
+                        alert('Error creating waste item.');
+                    }
+                    return;
+                }
+                // Success: close modal/page, refresh grid
+                if (window.WasteItemsUI && WasteItemsUI.updateContent) {
+                    // Show success message then redirect
+                    const msg = document.createElement('div');
+                    msg.className = 'alert alert-success';
+                    msg.textContent = 'Waste item created successfully!';
+                    form.parentNode.insertBefore(msg, form);
+                    setTimeout(() => {
+                        window.location.href = '/waste-items';
+                    }, 1500);
+                }
+            } catch (err) {
+                alert('Network error. Please try again.');
             }
         });
 

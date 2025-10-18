@@ -1,0 +1,53 @@
+# Python virtual environments
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Byte-compiled / optimized / DLL files
+*.so
+*.dylib
+
+# Distribution / packaging
+.build/
+dist/
+*.egg-info/
+.eggs/
+
+# pip cache
+pip-log.txt
+pip-delete-this-directory.txt
+
+# PyTorch / model weights
+models/
+*.pt
+*.pth
+*.ckpt
+
+# Temporary files
+*.log
+*.tmp
+*.cache
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE/editor
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Uvicorn reload file
+*.reload
+
+# data downloads
+data/
+
+# keep requirements generated, not the venv
+requirements.txt

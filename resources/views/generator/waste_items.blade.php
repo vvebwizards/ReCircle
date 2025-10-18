@@ -39,6 +39,16 @@
                         @endif
                     </div>
                     <div class="ft-select">
+                        <label for="tag" class="sr-only">Filter by Tag</label>
+                        <i class="fa-solid fa-tag"></i>
+                        <select name="tag" id="tag" class="modern-select">
+                            <option value="">All Tags</option>
+                            @foreach(\App\Models\Tag::orderBy('display_name')->get() as $tag)
+                                <option value="{{ $tag->name }}" {{ request('tag') == $tag->name ? 'selected' : '' }}>#{{ $tag->display_name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="ft-select">
                         <label for="condition" class="sr-only">Filter by Condition</label>
                         <i class="fa-solid fa-filter-circle-xmark"></i>
                         <select name="condition" id="condition" class="modern-select">
@@ -113,6 +123,13 @@
         </div>
 
         @include('generator.partials.waste_items_grid')
+
+        @if(session('object_detection_debug'))
+            <div class="debug-panel">
+                <h3>Object Detection Debug</h3>
+                <pre style="white-space:pre-wrap;background:#111;color:#0f0;padding:1rem;border-radius:6px;">{{ json_encode(session('object_detection_debug'), JSON_PRETTY_PRINT) }}</pre>
+            </div>
+        @endif
 
         @if($wasteItems->hasPages())
             <div class="pagination">

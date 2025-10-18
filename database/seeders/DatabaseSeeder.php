@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             ForumCategoriesTableSeeder::class,
             BadgesTableSeeder::class,
+            TagSeeder::class,
         ]);
 
         User::factory()->create([

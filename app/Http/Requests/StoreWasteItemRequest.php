@@ -23,6 +23,7 @@ class StoreWasteItemRequest extends FormRequest
             'location.lat' => ['required', 'numeric', 'between:-90,90'],
             'location.lng' => ['required', 'numeric', 'between:-180,180'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'tags' => ['nullable', 'string', 'max:500'],
         ];
     }
 
@@ -52,6 +53,7 @@ class StoreWasteItemRequest extends FormRequest
             'location.lng.numeric' => 'Longitude must be numeric.',
             'location.lng.between' => 'Longitude must be between -180 and 180.',
             'notes.max' => 'Notes may not exceed :max characters.',
+            'tags.max' => 'Tags may not exceed :max characters.',
         ];
     }
 }
