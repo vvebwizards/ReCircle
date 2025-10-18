@@ -263,7 +263,6 @@ class User extends Authenticatable implements MustVerifyEmail
             ->withTimestamps();
     }
 
-    // Follow helper methods
     public function isFollowing(User $user): bool
     {
         return $this->following()->where('following_id', $user->id)->exists();
@@ -286,7 +285,6 @@ class User extends Authenticatable implements MustVerifyEmail
         $this->following()->detach($user->id);
     }
 
-    // Follow counts
     public function getFollowersCountAttribute(): int
     {
         return $this->followers()->count();
@@ -297,7 +295,6 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->following()->count();
     }
 
-    // Scope for users that the current user follows
     public function scopeFollowedBy($query, User $user)
     {
         return $query->whereHas('followers', function ($q) use ($user) {
@@ -316,108 +313,55 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     public function sentMessages()
-{
-    return $this->hasMany(Message::class, 'sender_id');
-}
-
-public function receivedMessages()
-{
-    return $this->hasMany(Message::class, 'receiver_id');
-}
-
-public function conversationsAsUserOne()
-{
-    return $this->hasMany(Conversation::class, 'user_one_id');
-}
-
-public function conversationsAsUserTwo()
-{
-    return $this->hasMany(Conversation::class, 'user_two_id');
-}
-
-public function conversations()
-{
-    return $this->conversationsAsUserOne->merge($this->conversationsAsUserTwo);
-}
-
-// Helper methods for messaging
-public function getConversationWith(User $otherUser): ?Conversation
-{
-    return Conversation::where(function ($query) use ($otherUser) {
-        $query->where('user_one_id', $this->id)
-              ->where('user_two_id', $otherUser->id);
-    })->orWhere(function ($query) use ($otherUser) {
-        $query->where('user_one_id', $otherUser->id)
-              ->where('user_two_id', $this->id);
-    })->first();
-}
-
-public function unreadMessagesCount(): int
-{
-    return $this->receivedMessages()->unread()->count();
-}
-
-public function hasUnreadConversationWith(User $user): bool
-{
-    $conversation = $this->getConversationWith($user);
-    return $conversation ? $conversation->getUnreadCountForUser($this) > 0 : false;
-}
-
-public function canMessage(User $user): bool
-{
-    // Add any business logic here (e.g., blocking users, privacy settings)
-    return $this->id !== $user->id && !$user->isBlocked();
-}
-
-    // Follow helper methods
-    public function isFollowing(User $user): bool
     {
-        return $this->following()->where('following_id', $user->id)->exists();
+        return $this->hasMany(Message::class, 'sender_id');
     }
 
-    public function isFollowedBy(User $user): bool
+    public function receivedMessages()
     {
-        return $this->followers()->where('follower_id', $user->id)->exists();
+        return $this->hasMany(Message::class, 'receiver_id');
     }
 
-    public function follow(User $user): void
+    public function conversationsAsUserOne()
     {
-        if (! $this->isFollowing($user) && $this->id !== $user->id) {
-            $this->following()->attach($user->id);
-        }
+        return $this->hasMany(Conversation::class, 'user_one_id');
     }
 
-    public function unfollow(User $user): void
+    public function conversationsAsUserTwo()
     {
-        $this->following()->detach($user->id);
+        return $this->hasMany(Conversation::class, 'user_two_id');
     }
 
-    // Follow counts
-    public function getFollowersCountAttribute(): int
+    public function conversations()
     {
-        return $this->followers()->count();
+        return $this->conversationsAsUserOne->merge($this->conversationsAsUserTwo);
     }
 
-    public function getFollowingCountAttribute(): int
+    public function getConversationWith(User $otherUser): ?Conversation
     {
-        return $this->following()->count();
+        return Conversation::where(function ($query) use ($otherUser) {
+            $query->where('user_one_id', $this->id)
+                ->where('user_two_id', $otherUser->id);
+        })->orWhere(function ($query) use ($otherUser) {
+            $query->where('user_one_id', $otherUser->id)
+                ->where('user_two_id', $this->id);
+        })->first();
     }
 
-    // Scope for users that the current user follows
-    public function scopeFollowedBy($query, User $user)
+    public function unreadMessagesCount(): int
     {
-        return $query->whereHas('followers', function ($q) use ($user) {
-            $q->where('follower_id', $user->id);
-        });
+        return $this->receivedMessages()->unread()->count();
     }
 
-    public function discussions()
+    public function hasUnreadConversationWith(User $user): bool
     {
-        return $this->hasMany(ForumDiscussion::class, 'user_id');
+        $conversation = $this->getConversationWith($user);
+
+        return $conversation ? $conversation->getUnreadCountForUser($this) > 0 : false;
     }
 
-    public function replies()
+    public function canMessage(User $user): bool
     {
-        return $this->hasMany(ForumReply::class, 'user_id');
+        return $this->id !== $user->id && ! $user->isBlocked();
     }
 }

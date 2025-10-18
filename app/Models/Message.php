@@ -1,4 +1,5 @@
 <?php
+
 // app/Models/Message.php
 
 namespace App\Models;
@@ -57,17 +58,17 @@ class Message extends Model
     {
         return $query->where(function ($q) use ($user1, $user2) {
             $q->where('sender_id', $user1->id)
-              ->where('receiver_id', $user2->id);
+                ->where('receiver_id', $user2->id);
         })->orWhere(function ($q) use ($user1, $user2) {
             $q->where('sender_id', $user2->id)
-              ->where('receiver_id', $user1->id);
+                ->where('receiver_id', $user1->id);
         });
     }
 
     // Helper methods
     public function markAsRead(): void
     {
-        if (!$this->is_read) {
+        if (! $this->is_read) {
             $this->update([
                 'is_read' => true,
                 'read_at' => now(),

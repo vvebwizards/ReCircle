@@ -1,4 +1,5 @@
 <?php
+
 // app/Models/Conversation.php
 
 namespace App\Models;

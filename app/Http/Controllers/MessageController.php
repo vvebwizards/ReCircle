@@ -1,4 +1,5 @@
 <?php
+
 // app/Http/Controllers/MessageController.php
 
 namespace App\Http\Controllers;
@@ -35,7 +36,7 @@ class MessageController extends Controller
     {
         $conversation = auth()->user()->getConversationWith($user);
 
-        if (!$conversation) {
+        if (! $conversation) {
             // Create a new conversation if it doesn't exist
             $conversation = Conversation::create([
                 'user_one_id' => min(auth()->id(), $user->id),
@@ -63,13 +64,13 @@ class MessageController extends Controller
         ]);
 
         // Check if users can message each other
-        if (!auth()->user()->canMessage($user)) {
+        if (! auth()->user()->canMessage($user)) {
             return back()->with('error', 'You cannot message this user.');
         }
 
         $conversation = auth()->user()->getConversationWith($user);
 
-        if (!$conversation) {
+        if (! $conversation) {
             $conversation = Conversation::create([
                 'user_one_id' => min(auth()->id(), $user->id),
                 'user_two_id' => max(auth()->id(), $user->id),
@@ -124,10 +125,10 @@ class MessageController extends Controller
         $unreadCount = auth()->user()->unreadMessagesCount();
         $conversationsWithUnread = Conversation::where(function ($query) {
             $query->where('user_one_id', auth()->id())
-                  ->orWhere('user_two_id', auth()->id());
+                ->orWhere('user_two_id', auth()->id());
         })->where(function ($query) {
             $query->where('unread_count_user_one', '>', 0)
-                  ->orWhere('unread_count_user_two', '>', 0);
+                ->orWhere('unread_count_user_two', '>', 0);
         })->count();
 
         return response()->json([
