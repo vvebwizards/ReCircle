@@ -4,6 +4,7 @@
 @section('title', 'Badges & Achievements - ReCircle')
 
 @section('content')
+<div class="min-h-screen" style="background-color: #1a202c; padding-top: 50px; padding-bottom: 100px;">
 <div class="container mx-auto px-4 pt-20">
     <!-- Header -->
     <div class="text-center mb-8">
@@ -92,5 +93,6 @@
             </a>
         </div>
     </div>
+</div>
 </div>
 @endsection
