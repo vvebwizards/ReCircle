@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Bid;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class DashboardBidController extends Controller
@@ -68,4 +70,28 @@ class DashboardBidController extends Controller
             'filters' => $filters,
         ]);
     }
+    /*
+        //bid accept function
+        public function accept(Request $request, Bid $bid)
+    {
+        // Tu peux mettre une policy si tu veux : $this->authorize('accept', $bid);
+
+        DB::transaction(function () use ($bid) {
+            // 1) Accepter ce bid
+            $bid->status = 'accepted';
+            $bid->save();
+
+            // 2) Rejeter tous les autres bids en attente du même waste item
+            Bid::where('waste_item_id', $bid->waste_item_id)
+                ->where('id', '!=', $bid->id)
+                ->where('status', 'pending')
+                ->update(['status' => 'rejected']);
+        });
+
+        // 3) Rediriger vers le formulaire Pickup en pré-sélectionnant l’article
+        return redirect()->route('pickups.create', [
+            'waste_item_id' => $bid->waste_item_id,
+        ])->with('ok', 'Bid accepted. Please schedule a pickup.');
+    }*/
+
 }

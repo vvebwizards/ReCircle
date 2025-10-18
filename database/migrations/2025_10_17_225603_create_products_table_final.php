@@ -35,6 +35,8 @@ return new class extends Migration
             $table->index('maker_id');
             $table->index('status');
             $table->index('sku');
+
+            $table->softDeletes();
         });
     }
 

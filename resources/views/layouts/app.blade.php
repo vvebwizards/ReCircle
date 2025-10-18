@@ -80,34 +80,41 @@
 <body class="bg-gray-100 min-h-screen">
     {{-- Navbar (shared) --}}
     <nav class="navbar">
+    <div class="nav-container">
+        <div class="nav-logo">
+            <h2><a href="{{ route('home') }}" class="nav-link" style="text-decoration:none;">ReCircle</a></h2>
         <div class="nav-container">
             <div class="nav-logo">
                 <h2><a href="{{ route('home') }}" class="nav-link" style="text-decoration:none;">ReCircle</a></h2>
             </div>
             <ul class="nav-menu">
-                @auth
-                    {{-- Dashboard link is added by JavaScript --}}
-                    <li class="nav-item">
-                        <a href="{{ route('forum.index') }}" class="nav-link">
-                            <i class="fa-solid fa-comments mr-1"></i>
-                            Community Forum
-                        </a>
-                    </li>
-                    {{-- Other authenticated user links could go here --}}
-                @else
-                    {{-- Links for guest users --}}
-                    <li class="nav-item"><a href="{{ route('home') }}#home" class="nav-link">Home</a></li>
-                    <li class="nav-item"><a href="{{ route('home') }}#how-it-works" class="nav-link">How It Works</a></li>
-                    <li class="nav-item"><a href="{{ route('home') }}#roles" class="nav-link">Roles</a></li>
-                    <li class="nav-item"><a href="{{ route('home') }}#impact" class="nav-link">Impact</a></li>
-                    <li class="nav-item">
-                        <a href="{{ route('forum.index') }}" class="nav-link">
-                            <i class="fa-solid fa-comments mr-1"></i>
-                            Community Forum
-                        </a>
-                    </li>
-                    <li class="nav-item"><a href="{{ route('auth') }}" class="nav-cta" aria-label="Sign in">Sign In</a></li>
-                @endauth
+                <li class="nav-item"><a href="{{ route('home') }}#home" class="nav-link">Home</a></li>
+                <li class="nav-item"><a href="{{ route('home') }}#how-it-works" class="nav-link">How It Works</a></li>
+                <li class="nav-item"><a href="{{ route('home') }}#roles" class="nav-link">Roles</a></li>
+                <li class="nav-item"><a href="{{ route('home') }}#impact" class="nav-link">Impact</a></li>
+<li class="nav-item">
+    <a href="{{ route('forum.index') }}" class="nav-link">
+        <i class="fa-solid fa-comments mr-1"></i>
+        Community Forum
+    </a>
+</li>
+
+<li class="nav-item">
+@if(auth()->check() && auth()->user()->role->value === 'courier')
+  <a href="{{ route('deliveries.index') }}" class="nav-link">Deliveries</a>
+@endif
+</li>
+
+<li class="nav-item">
+@if(auth()->check() && auth()->user()->role->value === 'courier')
+  <a href="{{ route('courier.map') }}" class="nav-link">
+    <i class="fa-solid fa-map mr-1"></i>
+    Maps
+  </a>
+@endif
+</li>
+
+                <li class="nav-item"><a href="{{ route('auth') }}" class="nav-cta" aria-label="Sign in">Sign In</a></li>
             </ul>
             <div class="hamburger" aria-label="Toggle navigation" aria-expanded="false" role="button" tabindex="0">
                 <span class="bar"></span>
@@ -115,7 +122,47 @@
                 <span class="bar"></span>
             </div>
         </div>
-    </nav>
+        <ul class="nav-menu">
+            @auth
+                <li class="nav-item">
+                    <a href="{{ route('forum.index') }}" class="nav-link">
+                        <i class="fa-solid fa-comments mr-1"></i>
+                        Community Forum
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('messages.index') }}" class="nav-link">
+                        <i class="fa-solid fa-envelope mr-1"></i>
+                        Messages
+                        @if(auth()->user()->unreadMessagesCount() > 0)
+                            <span class="message-badge">
+                                {{ auth()->user()->unreadMessagesCount() }}
+                            </span>
+                        @endif
+                    </a>
+                </li>
+            @else
+                {{-- Links for guest users --}}
+                <li class="nav-item"><a href="{{ route('home') }}#home" class="nav-link">Home</a></li>
+                <li class="nav-item"><a href="{{ route('home') }}#how-it-works" class="nav-link">How It Works</a></li>
+                <li class="nav-item"><a href="{{ route('home') }}#roles" class="nav-link">Roles</a></li>
+                <li class="nav-item"><a href="{{ route('home') }}#impact" class="nav-link">Impact</a></li>
+                <li class="nav-item">
+                    <a href="{{ route('forum.index') }}" class="nav-link">
+                        <i class="fa-solid fa-comments mr-1"></i>
+                        Community Forum
+                    </a>
+                </li>
+                <li class="nav-item"><a href="{{ route('auth') }}" class="nav-cta" aria-label="Sign in">Sign In</a></li>
+            @endauth
+        </ul>
+        <div class="hamburger" aria-label="Toggle navigation" aria-expanded="false" role="button" tabindex="0">
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+        </div>
+    </div>
+</nav>
 
     {{-- Page content --}}
     @yield('content')

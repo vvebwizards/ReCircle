@@ -212,6 +212,35 @@ class User extends Authenticatable implements MustVerifyEmail
         };
     }
 
+    public function deliveriesAsCourier()
+    {
+        return $this->hasMany(\App\Models\Delivery::class, 'courier_id');
+    }
+
+    /**
+     * Notifications reçues par cet utilisateur
+     */
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(\App\Models\Notification::class);
+    }
+
+    /**
+     * Notifications non lues
+     */
+    public function unreadNotifications(): HasMany
+    {
+        return $this->notifications()->whereNull('read_at');
+    }
+
+    /**
+     * Vérifier si l'utilisateur est admin
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === UserRole::ADMIN;
+    }
+
     public function reclamations(): HasMany
     {
         return $this->hasMany(Reclamation::class);
@@ -220,5 +249,175 @@ class User extends Authenticatable implements MustVerifyEmail
     public function reclamationResponses(): HasMany
     {
         return $this->hasMany(ReclamationResponse::class, 'admin_id');
+    }
+
+    public function followers()
+    {
+        return $this->belongsToMany(User::class, 'follows', 'following_id', 'follower_id')
+            ->withTimestamps();
+    }
+
+    public function following()
+    {
+        return $this->belongsToMany(User::class, 'follows', 'follower_id', 'following_id')
+            ->withTimestamps();
+    }
+
+    // Follow helper methods
+    public function isFollowing(User $user): bool
+    {
+        return $this->following()->where('following_id', $user->id)->exists();
+    }
+
+    public function isFollowedBy(User $user): bool
+    {
+        return $this->followers()->where('follower_id', $user->id)->exists();
+    }
+
+    public function follow(User $user): void
+    {
+        if (! $this->isFollowing($user) && $this->id !== $user->id) {
+            $this->following()->attach($user->id);
+        }
+    }
+
+    public function unfollow(User $user): void
+    {
+        $this->following()->detach($user->id);
+    }
+
+    // Follow counts
+    public function getFollowersCountAttribute(): int
+    {
+        return $this->followers()->count();
+    }
+
+    public function getFollowingCountAttribute(): int
+    {
+        return $this->following()->count();
+    }
+
+    // Scope for users that the current user follows
+    public function scopeFollowedBy($query, User $user)
+    {
+        return $query->whereHas('followers', function ($q) use ($user) {
+            $q->where('follower_id', $user->id);
+        });
+    }
+
+    public function discussions()
+    {
+        return $this->hasMany(ForumDiscussion::class, 'user_id');
+    }
+
+    public function replies()
+    {
+        return $this->hasMany(ForumReply::class, 'user_id');
+    }
+
+    public function sentMessages()
+{
+    return $this->hasMany(Message::class, 'sender_id');
+}
+
+public function receivedMessages()
+{
+    return $this->hasMany(Message::class, 'receiver_id');
+}
+
+public function conversationsAsUserOne()
+{
+    return $this->hasMany(Conversation::class, 'user_one_id');
+}
+
+public function conversationsAsUserTwo()
+{
+    return $this->hasMany(Conversation::class, 'user_two_id');
+}
+
+public function conversations()
+{
+    return $this->conversationsAsUserOne->merge($this->conversationsAsUserTwo);
+}
+
+// Helper methods for messaging
+public function getConversationWith(User $otherUser): ?Conversation
+{
+    return Conversation::where(function ($query) use ($otherUser) {
+        $query->where('user_one_id', $this->id)
+              ->where('user_two_id', $otherUser->id);
+    })->orWhere(function ($query) use ($otherUser) {
+        $query->where('user_one_id', $otherUser->id)
+              ->where('user_two_id', $this->id);
+    })->first();
+}
+
+public function unreadMessagesCount(): int
+{
+    return $this->receivedMessages()->unread()->count();
+}
+
+public function hasUnreadConversationWith(User $user): bool
+{
+    $conversation = $this->getConversationWith($user);
+    return $conversation ? $conversation->getUnreadCountForUser($this) > 0 : false;
+}
+
+public function canMessage(User $user): bool
+{
+    // Add any business logic here (e.g., blocking users, privacy settings)
+    return $this->id !== $user->id && !$user->isBlocked();
+}
+
+    // Follow helper methods
+    public function isFollowing(User $user): bool
+    {
+        return $this->following()->where('following_id', $user->id)->exists();
+    }
+
+    public function isFollowedBy(User $user): bool
+    {
+        return $this->followers()->where('follower_id', $user->id)->exists();
+    }
+
+    public function follow(User $user): void
+    {
+        if (! $this->isFollowing($user) && $this->id !== $user->id) {
+            $this->following()->attach($user->id);
+        }
+    }
+
+    public function unfollow(User $user): void
+    {
+        $this->following()->detach($user->id);
+    }
+
+    // Follow counts
+    public function getFollowersCountAttribute(): int
+    {
+        return $this->followers()->count();
+    }
+
+    public function getFollowingCountAttribute(): int
+    {
+        return $this->following()->count();
+    }
+
+    // Scope for users that the current user follows
+    public function scopeFollowedBy($query, User $user)
+    {
+        return $query->whereHas('followers', function ($q) use ($user) {
+            $q->where('follower_id', $user->id);
+        });
+    }
+
+    public function discussions()
+    {
+        return $this->hasMany(ForumDiscussion::class, 'user_id');
+    }
+
+    public function replies()
+    {
+        return $this->hasMany(ForumReply::class, 'user_id');
     }
 }
