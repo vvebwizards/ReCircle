@@ -31,7 +31,8 @@ export default defineConfig({
                 'resources/js/bidSocket.js',
                 'resources/js/marketplace.js',
                 'resources/js/dashboardBids.js',
-                'resources/js/admin-materials.js'
+                'resources/js/admin-materials.js',
+                 'resources/js/admin-products.js',
             ],
             refresh: true,
         }),

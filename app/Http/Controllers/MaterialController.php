@@ -52,7 +52,6 @@ class MaterialController extends Controller
             'image_path.*.max' => 'Each image may not be greater than 2MB.',
         ];
 
-        // FIRST: Run Laravel validation to catch all field errors
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'category' => 'required|in:'.implode(',', Material::CATEGORIES),
@@ -66,7 +65,6 @@ class MaterialController extends Controller
             'image_path.*' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
         ], $messages);
 
-        // SECOND: Check if waste item belongs to the current maker
         $wasteItem = WasteItem::where('maker_id', Auth::id())
             ->find($validated['waste_item_id']);
 
@@ -76,14 +74,12 @@ class MaterialController extends Controller
             ])->withInput();
         }
 
-        // THIRD: Validate quantity against waste item weight
         if ($wasteItem->estimated_weight && $validated['quantity'] > $wasteItem->estimated_weight) {
             return back()->withErrors([
                 'quantity' => "Quantity cannot exceed the available waste item weight ({$wasteItem->estimated_weight}kg).",
             ])->withInput();
         }
 
-        // FOURTH: Additional business logic validations
         if ($validated['price'] > 100000) {
             return back()->withErrors([
                 'price' => 'Price seems too high. Please verify the amount.',
@@ -97,7 +93,6 @@ class MaterialController extends Controller
         }
 
         try {
-            // Create the material
             $material = Material::create([
                 'name' => $validated['name'],
                 'category' => $validated['category'],
@@ -110,7 +105,6 @@ class MaterialController extends Controller
                 'maker_id' => Auth::id(),
             ]);
 
-            // Handle image uploads
             $order = 0;
             $uploadedImagesCount = 0;
 
@@ -120,7 +114,6 @@ class MaterialController extends Controller
                         $imageName = time().'_'.uniqid().'_'.$order.'.'.$image->getClientOriginalExtension();
                         $imagePath = 'images/materials/'.$imageName;
 
-                        // Ensure directory exists
                         if (! file_exists(public_path('images/materials'))) {
                             mkdir(public_path('images/materials'), 0755, true);
                         }
@@ -140,7 +133,6 @@ class MaterialController extends Controller
             }
 
             if ($uploadedImagesCount === 0) {
-                // If no images were uploaded, delete the material and return error
                 $material->delete();
 
                 return back()->withErrors([
@@ -211,6 +203,20 @@ class MaterialController extends Controller
         $material = Material::where('maker_id', Auth::id())->findOrFail($materialId);
 
         try {
+            $products = $material->products;
+
+            foreach ($products as $product) {
+                foreach ($product->images as $image) {
+                    $imagePath = public_path($image->image_path);
+                    if (file_exists($imagePath)) {
+                        unlink($imagePath);
+                    }
+                    $image->delete();
+                }
+
+                $product->delete();
+            }
+
             foreach ($material->images as $image) {
                 $imagePath = public_path($image->image_path);
                 if (file_exists($imagePath)) {
@@ -222,7 +228,7 @@ class MaterialController extends Controller
             $material->delete();
 
             return redirect()->route('maker.materials.index')
-                ->with('success', 'Material deleted successfully!');
+                ->with('success', 'Material and associated products deleted successfully!');
 
         } catch (\Exception $e) {
             \Log::error('Material deletion failed: '.$e->getMessage());
@@ -277,7 +283,6 @@ class MaterialController extends Controller
             'remove_images.*' => 'sometimes|numeric',
         ], $messages);
 
-        // Check if waste item belongs to the current maker
         $wasteItem = WasteItem::where('maker_id', Auth::id())
             ->find($validated['waste_item_id']);
 
@@ -287,7 +292,6 @@ class MaterialController extends Controller
             ])->withInput();
         }
 
-        // Validate quantity against waste item weight
         if ($wasteItem->estimated_weight && $validated['quantity'] > $wasteItem->estimated_weight) {
             return back()->withErrors([
                 'quantity' => "Quantity cannot exceed the available waste item weight ({$wasteItem->estimated_weight}kg).",
@@ -305,7 +309,6 @@ class MaterialController extends Controller
                 'waste_item_id' => $validated['waste_item_id'],
             ]);
 
-            // Handle removed images
             if ($request->has('remove_images')) {
                 foreach ($request->remove_images as $imageId) {
                     $image = MaterialImage::where('material_id', $material->id)
@@ -322,7 +325,6 @@ class MaterialController extends Controller
                 }
             }
 
-            // Handle new image uploads
             if ($request->hasFile('image_path')) {
                 $existingImagesCount = $material->images()->count();
                 $order = $existingImagesCount;
@@ -332,7 +334,6 @@ class MaterialController extends Controller
                         $imageName = time().'_'.uniqid().'_'.$order.'.'.$image->getClientOriginalExtension();
                         $imagePath = 'images/materials/'.$imageName;
 
-                        // Ensure directory exists
                         if (! file_exists(public_path('images/materials'))) {
                             mkdir(public_path('images/materials'), 0755, true);
                         }
