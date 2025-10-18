@@ -1,11 +1,11 @@
 <?php
+
 // app/Http/Controllers/ProfileController.php
 
 namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
@@ -13,9 +13,9 @@ class ProfileController extends Controller
     public function show(User $user): View
     {
         $user->loadCount(['followers', 'following', 'badges']);
-        
+
         $isFollowing = auth()->check() && auth()->user()->isFollowing($user);
-        
+
         // Get user's recent discussions
         $recentDiscussions = $user->discussions()
             ->with('category')
@@ -31,9 +31,9 @@ class ProfileController extends Controller
             ->get();
 
         return view('profiles.show', compact(
-            'user', 
-            'isFollowing', 
-            'recentDiscussions', 
+            'user',
+            'isFollowing',
+            'recentDiscussions',
             'recentReplies'
         ));
     }
@@ -95,12 +95,12 @@ class ProfileController extends Controller
         return view('profiles.activity', compact('user', 'discussions', 'replies'));
     }
 
-        // Alternative approach: Combined activity with manual pagination
+    // Alternative approach: Combined activity with manual pagination
     public function activityCombined(User $user): View
     {
         $perPage = 15;
         $currentPage = request()->get('page', 1);
-        
+
         // Get all activities (discussions and replies)
         $discussions = $user->discussions()
             ->with('category')

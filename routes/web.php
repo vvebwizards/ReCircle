@@ -2,12 +2,12 @@
 
 use App\Http\Controllers\Admin\AdminDeliveryController;
 use App\Http\Controllers\Admin\AdminPickupController;
-use App\Http\Controllers\BidController;
+use App\Http\Controllers\AnalyticsController;
 // si tu l’utilises dans bids.php aussi
+use App\Http\Controllers\BidController;
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\Courier\DeliveryController;
 use App\Http\Controllers\PickupController;
-use App\Http\Controllers\AnalyticsController;
-use App\Http\Controllers\CartController;
 use App\Http\Controllers\UserManagementController;
 use Illuminate\Support\Facades\Route;
 

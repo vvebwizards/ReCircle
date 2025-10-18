@@ -70,77 +70,76 @@ class BidController extends Controller
     }
 
     public function updateStatus(UpdateBidStatusRequest $request, Bid $bid)
-{
-    $this->authorize('updateStatus', $bid);
+    {
+        $this->authorize('updateStatus', $bid);
 
-    $data = $request->validated();
+        $data = $request->validated();
 
-    if ($bid->status !== Bid::STATUS_PENDING) {
-        if ($request->expectsJson()) {
-            return response()->json(['message' => 'Only pending bids can transition'], 422);
-        }
-        return back()->with('error', 'Bid is not pending.');
-    }
-
-    if ($data['status'] === Bid::STATUS_ACCEPTED) {
-        DB::transaction(function () use ($bid, $request) {
-            // 1) accept this bid
-            $bid->markAccepted();
-
-            // 2) reject other pending bids for same waste item
-            $bid->wasteItem
-                ->bids()
-                ->where('id', '!=', $bid->id)
-                ->where('status', Bid::STATUS_PENDING)
-                ->get()
-                ->each(function ($other) {
-                    $other->markRejected();
-                    event(new BidSubmitted($other));
-                });
-
-            // 3) add accepted bid to buyer's cart
-            $buyerId = $bid->maker_id;
-            if ($buyerId) {
-                $cart = \App\Models\Cart::firstOrCreate([
-                    'user_id' => $buyerId,
-                    'status' => 'pending',
-                ]);
-
-                \App\Models\CartItem::create([
-                    'cart_id' => $cart->id,
-                    'bid_id' => $bid->id,
-                    'price' => $bid->amount,
-                    'quantity' => 1,
-                    'type' => 'bid',
-                ]);
+        if ($bid->status !== Bid::STATUS_PENDING) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Only pending bids can transition'], 422);
             }
 
-            // 4) update waste item maker
-            $bid->wasteItem()->update(['maker_id' => $bid->maker_id]);
-
-            // 5) broadcast accepted bid
-            event(new BidSubmitted($bid));
-        });
-
-        if (! $request->expectsJson()) {
-            return redirect()->route('pickups.create', [
-                'waste_item_id' => $bid->waste_item_id,
-            ])->with('ok', 'Bid accepted. Please schedule a pickup.');
+            return back()->with('error', 'Bid is not pending.');
         }
 
-        return response()->json($bid->fresh()->load('maker:id,name'));
+        if ($data['status'] === Bid::STATUS_ACCEPTED) {
+            DB::transaction(function () use ($bid) {
+                // 1) accept this bid
+                $bid->markAccepted();
+
+                // 2) reject other pending bids for same waste item
+                $bid->wasteItem
+                    ->bids()
+                    ->where('id', '!=', $bid->id)
+                    ->where('status', Bid::STATUS_PENDING)
+                    ->get()
+                    ->each(function ($other) {
+                        $other->markRejected();
+                        event(new BidSubmitted($other));
+                    });
+
+                // 3) add accepted bid to buyer's cart
+                $buyerId = $bid->maker_id;
+                if ($buyerId) {
+                    $cart = \App\Models\Cart::firstOrCreate([
+                        'user_id' => $buyerId,
+                        'status' => 'pending',
+                    ]);
+
+                    \App\Models\CartItem::create([
+                        'cart_id' => $cart->id,
+                        'bid_id' => $bid->id,
+                        'price' => $bid->amount,
+                        'quantity' => 1,
+                        'type' => 'bid',
+                    ]);
+                }
+
+                // 4) update waste item maker
+                $bid->wasteItem()->update(['maker_id' => $bid->maker_id]);
+
+            });
+
+            if (! $request->expectsJson()) {
+                return redirect()->route('pickups.create', [
+                    'waste_item_id' => $bid->waste_item_id,
+                ])->with('ok', 'Bid accepted. Please schedule a pickup.');
+            }
+
+            return response()->json($bid->fresh()->load('maker:id,name'));
+        }
+
+        // If status is rejected
+        $bid->markRejected();
+        event(new BidSubmitted($bid));
+
+        if ($request->expectsJson()) {
+            return response()->json($bid->fresh()->load('maker:id,name'));
+        }
+
+        return back()->with('ok', 'Bid rejected.');
     }
-
-    // If status is rejected
-    $bid->markRejected();
-    event(new BidSubmitted($bid));
-
-    if ($request->expectsJson()) {
-        return response()->json($bid->fresh()->load('maker:id,name'));
-    }
-
-    return back()->with('ok', 'Bid rejected.');
-}
 
     /*
         // PATCH /bids/{bid}/status

@@ -1,4 +1,5 @@
 <?php
+
 // database/migrations/2024_01_01_000000_create_follows_table.php
 
 use Illuminate\Database\Migrations\Migration;
@@ -14,7 +15,7 @@ return new class extends Migration
             $table->foreignId('follower_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('following_id')->constrained('users')->onDelete('cascade');
             $table->timestamps();
-            
+
             $table->unique(['follower_id', 'following_id']);
         });
     }

@@ -20,11 +20,6 @@
 
     <a href="{{ route('admin.audit-logs.index') }}" class="side-link"><i class="fa-solid fa-clipboard-list"></i><span>Audit Logs</span></a>
     <a href="{{ route('admin.users') }}" class="side-link {{ request()->routeIs('admin.users') ? 'active' : '' }}"><i class="fa-solid fa-users"></i><span>Users</span></a>
-    <a href="{{ route('admin.notifications.index') }}" class="side-link {{ request()->routeIs('admin.notifications.*') ? 'active' : '' }}">
-        <i class="fa-solid fa-bell"></i>
-        <span>Notifications</span>
-        <span id="notification-badge" class="notif-pill" aria-label="Unread notifications" style="display:none"></span>
-    </a>
     <a href="{{ route('admin.reclamations.index') }}" class="side-link {{ request()->routeIs('admin.reclamations.*') ? 'active' : '' }}">
         <i class="fa-solid fa-flag"></i>
         <span>Reclamations</span>
@@ -42,9 +37,6 @@
         </div>
     </a>
     <a href="#" class="side-link"><i class="fa-solid fa-chart-line"></i><span>Reports</span></a>
-    <a href="{{ route('chat.index') }}" class="side-link {{ request()->routeIs('chat.*') ? 'active' : '' }}">
-        <i class="fa-solid fa-comments"></i><span>Chat</span>
-    </a>
         <div class="side-sep"></div>
     <a href="#" class="side-link"><i class="fa-solid fa-gears"></i><span>Settings</span></a>
     <a href="#" class="side-link danger" data-signout><i class="fa-solid fa-right-from-bracket"></i><span>Sign Out</span></a>
