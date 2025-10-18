@@ -297,3 +297,5 @@ Route::post('/broadcast-test', function (Illuminate\Http\Request $request) {
 require __DIR__.'/reclamation.php';
 
 require __DIR__.'/admin_reclamations.php';
+
+require __DIR__.'/profiles.php';
