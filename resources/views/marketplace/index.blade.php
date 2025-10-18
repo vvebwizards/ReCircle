@@ -6,7 +6,8 @@
     'resources/css/waste-items.css',
     'resources/css/marketplace-lightbox.css',
     'resources/js/waste-items-filters.js',
-    'resources/js/marketplace.js'
+    'resources/js/marketplace.js',
+    'resources/js/bidSocket.js'
 ])
 @endpush
 

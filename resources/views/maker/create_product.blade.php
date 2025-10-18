@@ -151,11 +151,6 @@
             </div>
 
             <div class="form-group">
-                <label for="weight">Weight (kg)</label>
-                <input type="number" name="weight" id="weight" step="0.1" min="0" value="{{ old('weight') }}">
-            </div>
-
-            <div class="form-group">
                 <label for="warranty_months">Warranty (months)</label>
                 <input type="number" name="warranty_months" id="warranty_months" min="0" value="{{ old('warranty_months') }}">
             </div>
@@ -256,10 +251,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Filter materials on search
         materialsSearch.addEventListener('input', filterMaterials);
 
-        // Handle material selection
         materialsDropdown.addEventListener('click', function(e) {
             const materialOption = e.target.closest('.material-option');
             if (materialOption) {
@@ -270,7 +263,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     selectedMaterials.add(materialId);
                 }
                 
-                // Clear search and hide dropdown
                 materialsSearch.value = '';
                 materialsDropdown.style.display = 'none';
             }
@@ -325,7 +317,6 @@ document.addEventListener('DOMContentLoaded', function() {
         button.closest('.material-row').remove();
     };
 
-    // Smart Pricing Assistant JavaScript
     const pricingBtn = document.getElementById('getPricingSuggestions');
     const loadingSpinner = document.getElementById('pricingLoading');
     const resultsDiv = document.getElementById('pricingResults');

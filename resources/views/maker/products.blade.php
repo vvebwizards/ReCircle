@@ -272,6 +272,7 @@
 
 @push('scripts')
 <script>
+let pendingForm = null;
 const productImagePositions = {};
 
 function nextProductImage(productId, totalImages) {
@@ -323,8 +324,55 @@ function preloadAllProductImages() {
         @endif
     @endforeach
 }
+function initModal() {
+    const modal = document.getElementById('genericConfirmPopup');
+    const messageEl = modal.querySelector('.popup-message');
+    const confirmBtn = modal.querySelector('.btn-confirm');
+    const cancelBtn = modal.querySelector('.btn-cancel');
+    
+    confirmBtn.addEventListener('click', () => {
+        if (pendingForm) {
+            console.log('Confirm clicked, submitting form');
+            pendingForm.submit();
+        }
+        closeModal();
+    });
+    
+    cancelBtn.addEventListener('click', () => {
+        console.log('Cancel clicked');
+        closeModal();
+    });
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeModal();
+        }
+    });
+    
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+            closeModal();
+        }
+    });
+    
+    function closeModal() {
+        modal.classList.add('hidden');
+        pendingForm = null;
+    }
+    
+    return {
+        open: (message, form) => {
+            messageEl.textContent = message;
+            pendingForm = form;
+            modal.classList.remove('hidden');
+            cancelBtn.focus(); // Better UX
+            console.log('Modal opened');
+        }
+    };
+}
 
 document.addEventListener('DOMContentLoaded', function() {
+    const modal = initModal();
     preloadAllProductImages();
     
     @foreach($products as $product)
@@ -333,54 +381,23 @@ document.addEventListener('DOMContentLoaded', function() {
         @endif
     @endforeach
 
-    const deleteBtns = document.querySelectorAll('.delete-product-btn');
-    
-    deleteBtns.forEach(btn => {
-        btn.addEventListener('click', function(e) {
+    document.body.addEventListener('click', function(e) {
+        if (e.target.matches('.delete-product-btn') || e.target.closest('.delete-product-btn')) {
             e.preventDefault();
-            const productName = this.dataset.productName;
-            const form = this.closest('.delete-product-form');
+            e.stopPropagation();
             
-            openDeleteConfirmation(productName, form);
-        });
-    });
-
-    function openDeleteConfirmation(productName, form) {
-        const popup = document.getElementById('genericConfirmPopup');
-        const messageEl = popup.querySelector('.popup-message');
-        const confirmBtn = popup.querySelector('.btn-confirm');
-        const cancelBtn = popup.querySelector('.btn-cancel');
-
-        messageEl.textContent = `Are you sure you want to delete "${productName}"? This action cannot be undone.`;
-        popup.classList.remove('hidden');
-
-        const newConfirmBtn = confirmBtn.cloneNode(true);
-        const newCancelBtn = cancelBtn.cloneNode(true);
-        
-        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
-        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
-
-        newConfirmBtn.addEventListener('click', () => {
-            if (form) form.submit();
-            popup.classList.add('hidden');
-        });
-
-        newCancelBtn.addEventListener('click', () => {
-            popup.classList.add('hidden');
-        });
-    }
-
-    const statusSelect = document.getElementById('status');
-    const categorySelect = document.getElementById('category');
-    const sortSelect = document.getElementById('sort');
-    
-    [statusSelect, categorySelect, sortSelect].forEach(select => {
-        if (select) {
-            select.addEventListener('change', function() {
-                document.getElementById('filterForm').submit();
-            });
+            const deleteBtn = e.target.matches('.delete-product-btn') ? e.target : e.target.closest('.delete-product-btn');
+            const productName = deleteBtn.dataset.productName;
+            const form = deleteBtn.closest('.delete-product-form');
+            
+            console.log('Delete button clicked for:', productName);
+            
+            const message = `Are you sure you want to delete "${productName}"? This action cannot be undone.`;
+            modal.open(message, form);
         }
     });
+    
+    preloadAllProductImages();
 });
 </script>
 @endpush

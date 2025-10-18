@@ -29,7 +29,10 @@ jobs:
           restore-keys: composer-${{ runner.os }}-
 
       - name: Install PHP deps
-        run: composer install --prefer-dist --no-progress --no-interaction
+        run: |
+          composer install --prefer-dist --no-progress --no-interaction
+          # Install Pusher package to fix the broadcast provider issue
+          composer require pusher/pusher-php-server --no-progress --no-interaction
 
       - name: Prepare .env + key
         run: |
@@ -62,6 +65,7 @@ jobs:
           CACHE_STORE: array
           QUEUE_CONNECTION: sync
           MAIL_MAILER: array
+          BROADCAST_DRIVER: log
           CI: true
         run: |
           mkdir -p coverage-reports

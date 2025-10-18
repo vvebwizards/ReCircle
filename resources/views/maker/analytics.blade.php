@@ -265,13 +265,12 @@
                 <div class="summary-content">
                     <h3>{{ $stats['total_materials'] }}</h3>
                     <p>Materials Created</p>
-                    <span class="trend">{{ number_format($stats['material_stock'], 1) }} total stock</span>
+                   
                 </div>
             </div>
         </div>
 
         <div class="charts-grid">
-            <!-- Graphique Camembert Product Status -->
             <div class="chart-card">
                 <div class="chart-header">
                     <h3><i class="fa-solid fa-chart-pie"></i> Product Status</h3>
@@ -489,50 +488,7 @@
                 </div>
             </div>
 
-            <div class="chart-card">
-                <div class="chart-header">
-                    <h3><i class="fa-solid fa-trash-arrow-up"></i> Waste Conversion</h3>
-                </div>
-                <div class="chart-container">
-                    @if($stats['waste_items_purchased'] > 0 || $stats['waste_items_converted'] > 0)
-                        <div class="conversion-metrics">
-                            <div class="metric-item">
-                                <div class="metric-icon">
-                                    <i class="fa-solid fa-box-open"></i>
-                                </div>
-                                <div class="metric-content">
-                                    <h4>{{ $stats['waste_items_purchased'] }}</h4>
-                                    <p>Waste Items</p>
-                                </div>
-                            </div>
-                            <div class="metric-item">
-                                <div class="metric-icon">
-                                    <i class="fa-solid fa-gears"></i>
-                                </div>
-                                <div class="metric-content">
-                                    <h4>{{ $stats['waste_items_converted'] }}</h4>
-                                    <p>Materials Created</p>
-                                </div>
-                            </div>
-                            <div class="metric-item">
-                                <div class="metric-icon">
-                                    <i class="fa-solid fa-percentage"></i>
-                                </div>
-                                <div class="metric-content">
-                                    <h4>{{ $stats['waste_items_purchased'] > 0 ? round(($stats['waste_items_converted'] / $stats['waste_items_purchased']) * 100) : 0 }}%</h4>
-                                    <p>Conversion Rate</p>
-                                </div>
-                            </div>
-                        </div>
-                    @else
-                        <div class="no-data">
-                            <i class="fa-solid fa-recycle"></i>
-                            <p>No waste conversion data</p>
-                            <small>Start by purchasing waste items and converting them to materials</small>
-                        </div>
-                    @endif
-                </div>
-            </div>
+           
         </div>
     </div>
 </main>

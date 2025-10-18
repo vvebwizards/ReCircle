@@ -24,10 +24,39 @@
 .bid-row .maker { font-size:.48rem; color:#374151; }
 .bid-row .row-meta { display:flex; justify-content:space-between; align-items:center; font-size:.45rem; }
 .bid-row .time { color:#64748b; }
+/* Modal overlay (plein écran) */
+.ac-overlay{
+  position: fixed;
+  inset: 0;
+  z-index: 1000;            /* au-dessus du reste quand ouvert */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,.45);
+}
 
+/* Très important : quand [hidden] est présent, l’overlay ne doit plus exister dans le flow,
+   sinon il bloque les clics en dessous. */
+.ac-overlay[hidden]{
+  display: none !important;}
 /* Accept button */
 .row-actions { margin-top:.15rem; display:flex; justify-content:flex-end; }
 .btn-accept-bid { border:none; background:linear-gradient(90deg,#059669,#047857); color:#fff; font-size:.48rem; font-weight:600; padding:.3rem .55rem; border-radius:6px; cursor:pointer; letter-spacing:.5px; text-transform:uppercase; }
+
+/* New bid animation */
+@keyframes bidPulse {
+  0% { background-color: #f8fafc; }
+  20% { background-color: #dcfce7; }
+  100% { background-color: #f8fafc; }
+}
+
+.bid-new-animation {
+  animation: bidPulse 2s ease;
+}
+
+.card-updated {
+  animation: bidPulse 1.5s ease;
+}
 .btn-accept-bid:hover:not(:disabled) { background:linear-gradient(90deg,#10b981,#059669); }
 .btn-accept-bid:disabled { opacity:.6; cursor:not-allowed; }
 
