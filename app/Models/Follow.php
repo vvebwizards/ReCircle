@@ -1,4 +1,5 @@
 <?php
+
 // app/Models/Follow.php
 
 namespace App\Models;
