@@ -6,43 +6,7 @@
 @section('content')
 <div class="min-h-screen" style="background-color: #1a202c; padding-top: 50px; padding-bottom: 100px;">
     <div class="container mx-auto px-4 pt-20">
-        <!-- User Header -->
-        <div class="bg-gray-800 rounded-2xl shadow-lg border border-gray-700 p-6 mb-8 transition-all duration-300 hover:shadow-xl hover:border-emerald-500/30">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-6">
-                    <div class="w-20 h-20 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 flex items-center justify-center text-white text-2xl font-bold transition-transform duration-300 hover:scale-110">
-                        {{ strtoupper(substr($user->name, 0, 2)) }}
-                    </div>
-                    <div>
-                        <h1 class="text-3xl font-bold text-white">{{ $user->name }}</h1>
-                        <p class="text-gray-400">{{ $user->rank }}</p>
-                        <div class="flex items-center space-x-4 mt-2 text-sm text-gray-500">
-                            <span>Member since {{ $user->created_at->format('M Y') }}</span>
-                            <span class="text-gray-600">•</span>
-                            <span>{{ $stats->days_active ?? 0 }} days active</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="text-right">
-                    <div class="text-2xl font-bold text-emerald-400">{{ $stats->total_points ?? 0 }}</div>
-                    <div class="text-sm text-gray-400">Total Points</div>
-                </div>
-            </div>
 
-            <!-- Level Progress -->
-            @if($stats)
-            <div class="mt-6">
-                <div class="flex justify-between text-sm text-gray-400 mb-2">
-                    <span>Level {{ $stats->level }}</span>
-                    <span>{{ $stats->points_to_next_level }} points to level {{ $stats->level + 1 }}</span>
-                </div>
-                <div class="w-full bg-gray-700 rounded-full h-3">
-                    <div class="bg-gradient-to-r from-emerald-400 to-teal-500 h-3 rounded-full transition-all duration-1000 ease-out" 
-                         style="width: {{ $stats->level_progress }}%"></div>
-                </div>
-            </div>
-            @endif
-        </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- Earned Badges -->

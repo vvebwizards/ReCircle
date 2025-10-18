@@ -91,9 +91,9 @@
                                             {{ $index > 2 ? 'bg-emerald-500' : '' }} transition-transform duration-200 group-hover:scale-110">
                                             {{ $index + 1 }}
                                         </div>
-                                        <div class="w-8 h-8 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 flex items-center justify-center text-white text-xs font-bold transition-transform duration-200 group-hover:scale-110">
-                                            {{ strtoupper(substr($user->name, 0, 2)) }}
-                                        </div>
+<a href="{{ route('profiles.show', $user) }}" class="font-medium text-white group-hover:text-amber-300 transition-colors duration-200">
+    {{ $user->name }}
+</a>
                                         <div>
                                             <div class="font-medium text-white group-hover:text-amber-300 transition-colors duration-200">{{ $user->name }}</div>
                                             <div class="text-xs text-gray-400">{{ $user->stats->total_points }} pts</div>
@@ -166,12 +166,9 @@
                                                 {{ $discussion->title }}
                                             </a>
                                             <div class="flex items-center space-x-4 text-sm text-gray-400">
-                                                <span class="flex items-center">
-                                                    <div class="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center text-xs font-medium text-gray-300 mr-2 transition-transform duration-200 group-hover:scale-110">
-                                                        {{ strtoupper(substr($discussion->user->name, 0, 2)) }}
-                                                    </div>
-                                                    {{ $discussion->user->name }}
-                                                </span>
+<a href="{{ route('profiles.show', $discussion->user) }}" class="text-gray-300 hover:text-emerald-300 transition-colors duration-200">
+    {{ $discussion->user->name }}
+</a>
                                                 <span class="text-gray-600">•</span>
                                                 <span>{{ $discussion->created_at->diffForHumans() }}</span>
                                                 <span class="text-gray-600">•</span>
@@ -254,7 +251,7 @@
                                              style="width: {{ $progress }}%"></div>
                                     </div>
                                     <div class="text-center mt-3">
-                                        <a href="{{ route('badges.user-profile', auth()->user()) }}" 
+                                        <a href="{{ route('profiles.show', auth()->user()) }}" 
                                            class="inline-flex items-center text-sm text-emerald-400 hover:text-emerald-300 font-medium transition-colors duration-200">
                                             <i class="fa-solid fa-trophy mr-2"></i>
                                             View Your Achievements

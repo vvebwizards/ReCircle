@@ -221,4 +221,68 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(ReclamationResponse::class, 'admin_id');
     }
+
+    public function followers()
+{
+    return $this->belongsToMany(User::class, 'follows', 'following_id', 'follower_id')
+        ->withTimestamps();
+}
+
+public function following()
+{
+    return $this->belongsToMany(User::class, 'follows', 'follower_id', 'following_id')
+        ->withTimestamps();
+}
+
+// Follow helper methods
+public function isFollowing(User $user): bool
+{
+    return $this->following()->where('following_id', $user->id)->exists();
+}
+
+public function isFollowedBy(User $user): bool
+{
+    return $this->followers()->where('follower_id', $user->id)->exists();
+}
+
+public function follow(User $user): void
+{
+    if (!$this->isFollowing($user) && $this->id !== $user->id) {
+        $this->following()->attach($user->id);
+    }
+}
+
+public function unfollow(User $user): void
+{
+    $this->following()->detach($user->id);
+}
+
+// Follow counts
+public function getFollowersCountAttribute(): int
+{
+    return $this->followers()->count();
+}
+
+public function getFollowingCountAttribute(): int
+{
+    return $this->following()->count();
+}
+
+// Scope for users that the current user follows
+public function scopeFollowedBy($query, User $user)
+{
+    return $query->whereHas('followers', function ($q) use ($user) {
+        $q->where('follower_id', $user->id);
+    });
+}
+public function discussions()
+{
+    return $this->hasMany(ForumDiscussion::class, 'user_id');
+}
+
+public function replies()
+{
+    return $this->hasMany(ForumReply::class, 'user_id');
+}
+
 }

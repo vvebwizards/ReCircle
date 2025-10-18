@@ -119,3 +119,5 @@ require __DIR__.'/badges.php';
 require __DIR__.'/reclamation.php';
 
 require __DIR__.'/admin_reclamations.php';
+
+require __DIR__.'/profiles.php';
