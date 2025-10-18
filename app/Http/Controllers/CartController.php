@@ -238,7 +238,7 @@ class CartController extends Controller
             return back()->with('error', 'Unauthorized access or item is not in a pending cart.');
         }
 
-        // 3. Status Check: Ensure only 'pending' items (within the cart) can be removed.
+        // 3. Status Check: Ensure only 'pending' items can be removed.
         // The cart status check above covers this, but we keep the item status check for robustness.
         if ($cartItem->status !== 'pending') {
             return back()->with('error', 'Cannot remove an item that is already processed (e.g., paid or delivered).');
