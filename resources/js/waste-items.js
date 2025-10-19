@@ -138,6 +138,7 @@
     overlay.classList.add('active');
     modal.classList.remove('hidden');
     modal.focus?.();
+    try{ document.dispatchEvent(new CustomEvent('modalOpened', { detail: { id: modal.id } })); }catch(e){}
   }
   function closeModal(modal){
     modal.classList.add('hidden');

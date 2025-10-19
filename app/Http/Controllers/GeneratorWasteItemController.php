@@ -88,6 +88,32 @@ class GeneratorWasteItemController extends Controller
         $images = $request->file('images');
         unset($data['images']);
 
+        // Normalize location input: accept bracket-style input or separate keys and ensure lat/lng order
+        if ($request->has('location')) {
+            $loc = $request->input('location');
+            $normalized = [
+                'lat' => isset($loc['lat']) ? (float) $loc['lat'] : null,
+                'lng' => isset($loc['lng']) ? (float) $loc['lng'] : null,
+            ];
+            if (isset($loc['address'])) {
+                $normalized['address'] = $loc['address'];
+            }
+            $data['location'] = $normalized;
+        } else {
+            // fallback: individual inputs like locationLat / locationLng or lat/lng
+            $lat = $request->input('locationLat') ?? $request->input('lat');
+            $lng = $request->input('locationLng') ?? $request->input('lng');
+            if ($lat !== null || $lng !== null) {
+                $data['location'] = [
+                    'lat' => $lat !== null ? (float) $lat : null,
+                    'lng' => $lng !== null ? (float) $lng : null,
+                ];
+                if ($request->filled('locationAddress')) {
+                    $data['location']['address'] = $request->input('locationAddress');
+                }
+            }
+        }
+
         $wasteItem = WasteItem::create($data);
 
         // Object detection and auto-tagging
