@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use App\Models\UserFaceDescriptor;
 use App\Services\JwtService;
 use Illuminate\Http\Request;
@@ -28,7 +29,12 @@ class FaceAuthController extends Controller
         );
 
         // Mark user as having facial recognition registered
-        User::where('id', $request->userId)->update(['is_facial_registered' => true]);
+        try {
+            User::where('id', $request->userId)->update(['is_facial_registered' => true]);
+        } catch (\Throwable $e) {
+            // Log but don't fail the enrollment if the flag can't be written for some reason
+            \Log::error('[FaceAuth] Failed to set is_facial_registered flag', ['error' => $e->getMessage(), 'user_id' => $request->userId]);
+        }
 
         return response()->json(['success' => true]);
     }
