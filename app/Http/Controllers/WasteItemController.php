@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreWasteItemRequest;
 use App\Http\Requests\UpdateWasteItemRequest;
 use App\Models\WasteItem;
+use App\Services\ObjectDetectionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -41,18 +42,35 @@ class WasteItemController extends Controller
         ]);
     }
 
-    public function store(StoreWasteItemRequest $request): JsonResponse
+    public function store(StoreWasteItemRequest $request, ObjectDetectionService $objectDetectionService): JsonResponse
     {
+        \Log::info('STORE METHOD CALLED');
         $data = $request->validated();
         $data['generator_id'] = $request->user()->id;
 
         $images = $request->file('images');
         unset($data['images']);
 
+        // Get manual tags from request
+        $manualTags = [];
+        if ($request->filled('tags')) {
+            $manualTags = explode(',', $request->input('tags'));
+            $manualTags = array_map('trim', $manualTags);
+            $manualTags = array_filter($manualTags);
+        }
+
         $wasteItem = WasteItem::create($data);
 
+        // Process and store images
         if ($images) {
             $order = 0;
+            // Detect materials from the first image
+            $firstImage = $images[0];
+            $detectedMaterials = null;
+            if ($firstImage->isValid()) {
+                $detectedMaterials = $objectDetectionService->detectMaterials($firstImage);
+            }
+            // Store all images
             foreach ($images as $uploaded) {
                 if (! $uploaded->isValid()) {
                     continue;
@@ -64,6 +82,25 @@ class WasteItemController extends Controller
                     'order' => $order++,
                 ]);
             }
+            // Process detected materials as tags
+            if ($detectedMaterials) {
+                $materialTags = $objectDetectionService->materialsToTags($detectedMaterials);
+                // Dump detected materials and tags for debugging
+                dd([
+                    'detectedMaterials' => $detectedMaterials,
+                    'materialTags' => $materialTags,
+                ]);
+                foreach ($materialTags as $tag) {
+                    $wasteItem->attachTags([$tag['name']], true, $tag['confidence']);
+                }
+            }
+        }
+
+        // Add manual tags if any
+        if (! empty($manualTags)) {
+            // Log the manual tags being attached for debugging
+            \Log::info('Attaching manual tags: '.implode(', ', $manualTags));
+            $wasteItem->attachTags($manualTags);
         }
 
         return response()->json([
@@ -128,6 +165,15 @@ class WasteItemController extends Controller
             'location' => $wasteItem->location,
             'notes' => $wasteItem->notes,
             'generator_id' => $wasteItem->generator_id,
+            'tags' => $wasteItem->tags->map(function ($tag) {
+                return [
+                    'id' => $tag->id,
+                    'name' => $tag->name,
+                    'display_name' => $tag->display_name,
+                    'is_auto_generated' => (bool) $tag->pivot->is_auto_generated,
+                    'confidence' => $tag->pivot->is_auto_generated ? round($tag->pivot->confidence * 100) : null,
+                ];
+            })->all(),
             'created_at' => $wasteItem->created_at?->toIso8601String(),
             'updated_at' => $wasteItem->updated_at?->toIso8601String(),
         ];

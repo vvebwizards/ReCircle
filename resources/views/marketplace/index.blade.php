@@ -35,6 +35,26 @@
                         @endif
                     </div>
                     <div class="ft-select">
+                        <label for="tag" class="sr-only">Filter by Tag</label>
+                        <i class="fa-solid fa-tag"></i>
+                        <select name="tag" id="tag" class="modern-select">
+                            <option value="">All Tags</option>
+                            @foreach(\App\Models\Tag::orderBy('display_name')->get() as $tag)
+                                <option value="{{ $tag->name }}" {{ request('tag') == $tag->name ? 'selected' : '' }}>#{{ $tag->display_name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="ft-select">
+                        <label for="tag" class="sr-only">Filter by Tag</label>
+                        <i class="fa-solid fa-tag"></i>
+                        <select name="tag" id="tag" class="modern-select">
+                            <option value="">All Tags</option>
+                            @foreach(\App\Models\Tag::orderBy('display_name')->get() as $tag)
+                                <option value="{{ $tag->name }}" {{ request('tag') == $tag->name ? 'selected' : '' }}>#{{ $tag->display_name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="ft-select">
                         <label for="condition" class="sr-only">Filter by Condition</label>
                         <i class="fa-solid fa-filter-circle-xmark"></i>
                         <select name="condition" id="condition" class="modern-select">

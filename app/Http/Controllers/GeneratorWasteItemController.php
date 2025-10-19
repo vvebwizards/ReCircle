@@ -6,13 +6,14 @@ use App\Http\Requests\StoreWasteItemRequest;
 use App\Models\WasteItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 class GeneratorWasteItemController extends Controller
 {
     public function index(Request $request): View|\Illuminate\Http\JsonResponse
     {
-        $query = WasteItem::with('photos')
+        $query = WasteItem::with(['photos', 'tags'])
             ->where('generator_id', Auth::id())
             ->whereNull('maker_id'); // Only show waste items that aren't assigned to a maker
 
@@ -22,6 +23,13 @@ class GeneratorWasteItemController extends Controller
 
         if ($request->filled('condition')) {
             $query->where('condition', $request->condition);
+        }
+
+        if ($request->filled('tag')) {
+            $tag = $request->input('tag');
+            $query->whereHas('tags', function ($q) use ($tag) {
+                $q->where('name', $tag);
+            });
         }
 
         switch ($request->get('sort', 'newest')) {
@@ -72,6 +80,7 @@ class GeneratorWasteItemController extends Controller
 
     public function store(StoreWasteItemRequest $request)
     {
+        Log::info('[WasteItem] Store method called', ['user_id' => Auth::id(), 'request' => $request->all()]);
         $data = $request->validated();
         $data['generator_id'] = Auth::id();
 
@@ -81,19 +90,68 @@ class GeneratorWasteItemController extends Controller
 
         $wasteItem = WasteItem::create($data);
 
+        // Object detection and auto-tagging
+        $manualTags = [];
+        if ($request->filled('tags')) {
+            $manualTags = explode(',', $request->input('tags'));
+            $manualTags = array_map('trim', $manualTags);
+            $manualTags = array_filter($manualTags);
+        }
+
+        $objectDetectionService = app(\App\Services\ObjectDetectionService::class);
+
         if ($images) {
             $order = 0;
+            // Detect materials from the first image
+            $firstImage = $images[0];
+            $detectedMaterials = null;
+            if ($firstImage->isValid()) {
+                \Log::info('[ObjectDetection] About to call ML service', ['image_name' => $firstImage->getClientOriginalName()]);
+                try {
+                    $detectedMaterials = $objectDetectionService->detectMaterials($firstImage);
+                    \Log::info('[ObjectDetection] Raw ML response', ['detectedMaterials' => $detectedMaterials]);
+                } catch (\Exception $e) {
+                    \Log::error('[ObjectDetection] ML service exception', ['error' => $e->getMessage()]);
+                    $detectedMaterials = null;
+                }
+            }
+            // Store all images
             foreach ($images as $uploaded) {
                 if (! $uploaded->isValid()) {
                     continue;
                 }
-                $storedPath = $uploaded->store('images/waste-items', 'public'); // returns path relative to storage/app/public
-                $relative = str_replace('\\', '/', $storedPath); // e.g. images/waste-items/xxx.png
+                $storedPath = $uploaded->store('images/waste-items', 'public');
+                $relative = str_replace('\\', '/', $storedPath);
                 $wasteItem->photos()->create([
-                    'image_path' => 'storage/'.ltrim($relative, '/'), // publicly accessible
+                    'image_path' => 'storage/'.ltrim($relative, '/'),
                     'order' => $order++,
                 ]);
             }
+            // Process detected materials as tags
+            if ($detectedMaterials) {
+                $materialTags = $objectDetectionService->materialsToTags($detectedMaterials);
+                \Log::info('[ObjectDetection] Material tags', ['tags' => $materialTags]);
+                foreach ($materialTags as $tag) {
+                    \Log::info('[ObjectDetection] Attaching tag', ['tag' => $tag['name'], 'confidence' => $tag['confidence']]);
+                    $wasteItem->attachTags([$tag['name']], true, $tag['confidence']);
+                }
+            }
+        }
+
+        // Add manual tags if any
+        if (! empty($manualTags)) {
+            $wasteItem->attachTags($manualTags);
+        }
+
+        // If no auto tags were attached, add debug info and optionally a debug tag to help diagnose
+        $debugInfo = [
+            'detectedMaterials' => $detectedMaterials ?? null,
+        ];
+
+        // If there were no detected materials at all, attach a temporary debug tag so we can see attachTags working
+        if (empty($detectedMaterials)) {
+            $wasteItem->attachTags(['debug-no-detection']);
+            $debugInfo['note'] = 'No materials detected; attached debug-no-detection tag.';
         }
 
         if ($request->wantsJson() || $request->expectsJson()) {
@@ -101,6 +159,7 @@ class GeneratorWasteItemController extends Controller
 
             return response()->json([
                 'message' => 'Created',
+                'debug' => $debugInfo,
                 'data' => [
                     'id' => $wasteItem->id,
                     'title' => $wasteItem->title,
@@ -118,8 +177,10 @@ class GeneratorWasteItemController extends Controller
             ], 201);
         }
 
+        // For non-AJAX requests, flash debug info to the session so it shows on the index page
         return redirect()->route('generator.waste-items.index')
-            ->with('success', 'Waste item "'.$wasteItem->title.'" created.');
+            ->with('success', 'Waste item "'.$wasteItem->title.'" created.')
+            ->with('object_detection_debug', $debugInfo);
     }
 
     public function show(WasteItem $wasteItem)

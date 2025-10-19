@@ -47,6 +47,10 @@ return [
         'secret' => env('STRIPE_SECRET'),
     ],
 
+    'ml_service' => [
+        'url' => env('ML_SERVICE_URL', 'http://localhost:8000'),
+    ],
+
     'rapidapi' => [
         'key' => env('RAPIDAPI_KEY'),
     ],

@@ -10,8 +10,8 @@ class MarketplaceController extends Controller
 {
     public function index(Request $request): View|\Illuminate\Http\JsonResponse
     {
-        $query = WasteItem::with('photos')
-            ->whereNull('maker_id'); // Only show waste items that aren't assigned to a maker
+        $query = WasteItem::with(['photos', 'tags'])
+            ->whereNull('maker_id');
 
         if ($request->filled('search')) {
             $query->where('title', 'like', '%'.$request->search.'%');
@@ -19,6 +19,13 @@ class MarketplaceController extends Controller
 
         if ($request->filled('condition')) {
             $query->where('condition', $request->condition);
+        }
+
+        if ($request->filled('tag')) {
+            $tag = $request->input('tag');
+            $query->whereHas('tags', function ($q) use ($tag) {
+                $q->where('name', $tag);
+            });
         }
 
         switch ($request->get('sort', 'newest')) {

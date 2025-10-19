@@ -1,0 +1,14 @@
+# Ignore Python virtualenvs and third-party JS inside ml_service
+ml_service/venv/
+ml_service/**/node_modules/
+
+# Ignore build artifacts
+public/build/
+node_modules/
+
+# Ignore vendor generated JS
+vendor/**
+
+# Ignore pack files and python caches
+ml_service/**/*.js
+ml_service/**/site-packages/**
