@@ -160,163 +160,81 @@
 </div>
 @endsection
 
+{{-- Formulaire caché pour PATCH (soumission "classique" => redirection serveur) --}}
+<form id="accept-bid-form" method="POST" action="" style="display:none;">
+  @csrf
+  <input type="hidden" name="_method" value="PATCH">
+  <input type="hidden" name="status" value="accepted">
+</form>
+
 @push('scripts')
 @vite(['resources/js/dashboardBids.js', 'resources/js/bidSocket.js'])
 <script>
-  // Auto-submit on filter changes with debounce
-  let debounceTimer;
-  const form = document.querySelector('.b-filters');
-  
-  function submitForm() {
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-      form.submit();
-    }, 500);
-  }
-  
-  // Auto-submit for all filter inputs
-  document.querySelectorAll('.b-filters input, .b-filters select').forEach(input => {
-    input.addEventListener('input', submitForm);
-    input.addEventListener('change', submitForm);
-  });
-  
-  // Filter chip clearing
-  document.addEventListener('click', e => {
-    const chip = e.target.closest('[data-clear]');
-    if(!chip) return;
-    const field = chip.getAttribute('data-clear');
-    if(form){ const input = form.querySelector(`[name="${field}"]`); if(input){ input.value=''; form.submit(); } }
-  });
-  (function(){
-    const modal = document.getElementById('acceptBidModal');
-    let activeBidRow = null;
-    let activeBidId = null;
+(function () {
+  // --- MODAL ---
+  const modal = document.getElementById('acceptBidModal');
+  const btnConfirm = modal.querySelector('[data-ac-confirm-modal]');
+  const btnCloseSelectors = '[data-ac-close]';
+  let activeBidId = null, lastTrigger = null;
+
   const amtSpan = modal.querySelector('.ac-target-amt');
-    const errorMsg = modal.querySelector('.ac-error-msg');
-    const confirmBtn = modal.querySelector('[data-ac-confirm-modal]');
-  const spinner = confirmBtn.querySelector('.spinner');
   const makerSpan = modal.querySelector('.ac-s-maker');
   const sumAmtSpan = modal.querySelector('.ac-s-amt');
   const sumTitleSpan = modal.querySelector('.ac-s-title');
-  const focusableSelectors = 'button, [href], [tabindex]:not([tabindex="-1"])';
-  let lastFocusedTrigger = null;
 
-    const openModal = (bidRow, triggerBtn) => {
-      activeBidRow = bidRow;
-      activeBidId = bidRow.getAttribute('data-bid-id');
-      const btn = triggerBtn;
-      lastFocusedTrigger = btn;
-      const amt = btn?.getAttribute('data-amount');
-      const currency = btn?.getAttribute('data-currency');
-      const maker = btn?.getAttribute('data-maker');
-      const listingTitle = bidRow.closest('.bid-item-card')?.querySelector('.wi-title')?.textContent || '';
-      amtSpan.textContent = amt && currency ? `${amt} ${currency}` : (bidRow.querySelector('.amt')?.textContent || 'this amount');
-      makerSpan.textContent = maker || 'Unknown';
-      sumAmtSpan.textContent = amtSpan.textContent;
-      sumTitleSpan.textContent = listingTitle;
-      errorMsg.hidden = true; errorMsg.textContent='';
-      modal.hidden = false; modal.setAttribute('aria-hidden','false');
-      confirmBtn.disabled=false; confirmBtn.querySelector('.btn-label').textContent='Accept Bid';
-      spinner.hidden = true;
-      // focus
-      setTimeout(()=>confirmBtn.focus(), 30);
-      document.body.style.overflow='hidden';
-    };
-    const closeModal = () => {
-      modal.hidden = true; modal.setAttribute('aria-hidden','true');
-      document.body.style.overflow='';
-      activeBidRow = null; activeBidId = null;
-      if(lastFocusedTrigger) { lastFocusedTrigger.focus(); }
-    };
+  function openModal(bidRow, triggerBtn){
+    activeBidId = bidRow.getAttribute('data-bid-id');
+    lastTrigger = triggerBtn;
 
-    // Basic focus trap
-    document.addEventListener('keydown', e => {
-      if(e.key==='Tab' && !modal.hidden){
-        const focusable = Array.from(modal.querySelectorAll(focusableSelectors)).filter(el=>!el.disabled && el.offsetParent!==null);
-        if(!focusable.length) return;
-        const first = focusable[0]; const last = focusable[focusable.length-1];
-        if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); }
-        else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); }
-      }
-    });
+    const amt = triggerBtn.getAttribute('data-amount');
+    const currency = triggerBtn.getAttribute('data-currency');
+    const maker = triggerBtn.getAttribute('data-maker');
+    const listingTitle = bidRow.closest('.bid-item-card').querySelector('.wi-title').textContent;
 
-    document.addEventListener('keydown', e => { if(e.key==='Escape' && !modal.hidden) closeModal(); });
-    modal.addEventListener('click', e => { if(e.target===modal) closeModal(); });
+amtSpan.textContent = (amt && currency) ? (amt + ' ' + currency) : '—';    makerSpan.textContent = maker || '—';
+    sumAmtSpan.textContent = amtSpan.textContent;
+    sumTitleSpan.textContent = listingTitle;
 
-    document.addEventListener('click', async e => {
-    // Expand toggle
-    const expandBtn = e.target.closest('[data-expand-trigger]');
-    if(expandBtn){
-      const wrap = expandBtn.closest('[data-expand]');
-      const list = wrap.querySelector('.extra');
-      if(list.hidden){ list.hidden=false; expandBtn.textContent='Show less'; }
-      else { list.hidden=true; expandBtn.textContent='+'+list.children.length+' more'; }
-      return;
+    modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+    btnConfirm.focus();
+  }
+
+  function closeModal(){
+    modal.hidden = true;
+    document.body.style.overflow = '';
+    if (lastTrigger) lastTrigger.focus();
+    activeBidId = null; lastTrigger = null;
+  }
+
+  // Ouvrir le modal depuis le bouton "ACCEPT"
+  document.addEventListener('click', function (e) {
+    const acceptBtn = e.target.closest('[data-accept-bid]');
+    if (acceptBtn) {
+      const bidRow = acceptBtn.closest('.bid-row');
+      openModal(bidRow, acceptBtn);
     }
-      // Open modal accept flow
-      const acceptBtn = e.target.closest('[data-accept-bid]');
-      if(acceptBtn){
-        const bidRow = acceptBtn.closest('.bid-row');
-        openModal(bidRow, acceptBtn);
-        return;
-      }
-      // Close controls
-      if(e.target.matches('[data-ac-close]')) { closeModal(); return; }
-      // Confirm in modal
-      if(e.target.matches('[data-ac-confirm-modal]')){
-        if(!activeBidRow || !activeBidId) return;
-        confirmBtn.disabled=true; confirmBtn.querySelector('.btn-label').textContent='Accepting...'; spinner.hidden=false;
-        errorMsg.hidden=true; errorMsg.textContent='';
-        try {
-          const res = await fetch(`/bids/${activeBidId}/status`, {
-            method:'PATCH',
-            headers:{
-              'Accept':'application/json',
-              'Content-Type':'application/json',
-              'X-Requested-With':'XMLHttpRequest',
-              'X-CSRF-TOKEN': window.csrfToken || document.querySelector('meta[name="csrf-token"]').content
-            },
-            body: JSON.stringify({ status: 'accepted' }),
-            credentials:'include'
-          });
-          if(!res.ok){
-            const txt = await res.text();
-            throw new Error(txt || 'Failed');
-          }
-          const bidRow = activeBidRow;
-          const card = bidRow.closest('.bid-item-card');
-          // Update accepted bid pill
-          bidRow.classList.add('accepted-highlight');
-          const pill = bidRow.querySelector('.pill');
-          pill.textContent='ACCEPTED'; pill.className='pill p-accepted';
-          // Remove accept buttons only inside this card
-          card.querySelectorAll('[data-accept-bid]').forEach(btn => btn.closest('.row-actions')?.remove());
-          // Reject only other bids belonging to the same waste item
-          card.querySelectorAll('.bid-row').forEach(r => {
-            if(r!==bidRow){
-              const sp = r.querySelector('.pill');
-              if(sp && /PENDING/i.test(sp.textContent)) { sp.textContent='REJECTED'; sp.className='pill p-rejected'; }
-            }
-          });
-          // Add accepted badge to this card if missing
-          const amountTxt = bidRow.querySelector('.amt')?.textContent || '';
-          if(card && !card.querySelector('.badge.accepted')){
-            const media = card.querySelector('.card-media');
-            const badge = document.createElement('span');
-            badge.className='badge accepted';
-            badge.textContent='Accepted '+amountTxt;
-            media.appendChild(badge);
-          }
-          spinner.hidden=true;
-          closeModal();
-        } catch(err){
-          console.error('[DashboardBids] Accept bid failed', err);
-          confirmBtn.disabled=false; confirmBtn.querySelector('.btn-label').textContent='Accept Bid'; spinner.hidden=true;
-          errorMsg.textContent='Failed to accept bid. Please retry.'; errorMsg.hidden=false;
-        }
-        return;
-      }
-    });
-  })();
+  });
+
+  // Fermer (croix, Cancel, clic en dehors)
+  modal.addEventListener('click', function (e) {
+    if (e.target === modal || e.target.matches(btnCloseSelectors)) closeModal();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !modal.hidden) closeModal();
+  });
+
+  // >>> Confirmer = soumettre le formulaire caché (PATCH) => le contrôleur fera la REDIRECTION
+  btnConfirm.addEventListener('click', function () {
+    if (!activeBidId) return;
+    const form = document.getElementById('accept-bid-form');
+
+    // URL basée sur la route nommée 'bids.updateStatus'
+    // On insère l'ID dans le placeholder ':id'
+    form.action = "{{ route('bids.updateStatus', ':id') }}".replace(':id', activeBidId);
+
+    form.submit(); // -> redirection serveur vers pickups.create
+  });
+})();
 </script>
 @endpush

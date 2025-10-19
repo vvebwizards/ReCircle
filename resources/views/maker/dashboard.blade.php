@@ -106,7 +106,7 @@
             <span class="qa-sub">Browse available products</span>
           </a>
           
-          <a href="#" class="qa-card qa-report" aria-label="View impact report">
+          <a href="{{route('maker.analytics')}}" class="qa-card qa-report" aria-label="View impact report">
             <span class="qa-icon"><i class="fa-solid fa-chart-line"></i></span>
             <span class="qa-title">Impact Report</span>
             <span class="qa-sub">Track your circular contribution</span>

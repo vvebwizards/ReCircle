@@ -193,7 +193,6 @@
 @endif
 
 <script>
-    // Auto-hide flash messages
     document.addEventListener('DOMContentLoaded', function() {
         const flashMessages = document.querySelectorAll('.fixed');
         flashMessages.forEach(message => {

@@ -219,6 +219,52 @@ class CartController extends Controller
         return redirect($session->url);
     }
 
+    public function removeItem($itemId)
+    {
+        $user = Auth::user();
+
+        // 1. Find the CartItem model instance by its ID.
+        // We also eager-load the 'cart' relationship for the security check.
+        $cartItem = \App\Models\CartItem::with('cart')
+            ->where('id', $itemId)
+            ->first();
+
+        if (! $cartItem) {
+            return back()->with('error', 'Item not found in your cart.');
+        }
+
+        // 2. Security Check: Verify that the cart item belongs to the authenticated user's pending cart.
+        if ($cartItem->cart->user_id !== $user->id || $cartItem->cart->status !== 'pending') {
+            return back()->with('error', 'Unauthorized access or item is not in a pending cart.');
+        }
+
+        // 3. Status Check: Ensure only 'pending' items (within the cart) can be removed.
+        // The cart status check above covers this, but we keep the item status check for robustness.
+        if ($cartItem->status !== 'pending') {
+            return back()->with('error', 'Cannot remove an item that is already processed (e.g., paid or delivered).');
+        }
+
+        if ($cartItem->type === 'bid' && $cartItem->bid) {
+            // We only perform this action if the cart belongs to the Maker who accepted it,
+            // and the bid itself is currently marked as 'accepted'.
+            if ($user->role === UserRole::MAKER && $cartItem->bid->status === Bid::STATUS_ACCEPTED) {
+
+                // Revert the Bid status back to 'pending'
+                $cartItem->bid->update([
+                    'status' => Bid::STATUS_PENDING,
+                    'accepted_at' => null, // Clear the acceptance timestamp
+                ]);
+
+                // Optionally, you might notify the Generator here that the bid was removed.
+            }
+        }
+
+        // 4. Delete the item.
+        $cartItem->delete();
+
+        return back()->with('success', 'Item successfully removed from your cart.');
+    }
+
     // Handle success callback from Stripe
     public function success(Request $request)
     {
