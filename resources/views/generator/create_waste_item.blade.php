@@ -1,6 +1,14 @@
 @extends('layouts.app')
 @push('head')
 @vite(['resources/css/material-create.css', 'resources/js/waste-item-create.js'])
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-sA+e2X0kqkzvGZsFh5gk8G8m7k6b0hKp3yZq+o0XwYQ=" crossorigin="" />
+<style>
+  /* small helpers for create page map */
+  #locationMap { width: 100%; height: 300px; border-radius: 8px; border: 1px solid #e5e7eb; }
+  .address-search { display:flex; gap:0.5rem; margin-bottom:0.5rem; }
+  .address-search input { flex:1 }
+</style>
 @endpush
 
 @section('content')
@@ -62,11 +70,20 @@
           </div>
 
           <div class="form-group full-width">
-            <label>Location (Lat / Lng) *</label>
-            <div style="display:flex; gap:0.5rem;">
-              <input type="number" step="0.000001" name="location[lat]" placeholder="Latitude" value="{{ old('location.lat') }}">
-              <input type="number" step="0.000001" name="location[lng]" placeholder="Longitude" value="{{ old('location.lng') }}">
+            <label>Location (pick an address or click on the map) *</label>
+            <div class="address-search">
+              <input type="search" id="addressSearch" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" placeholder="Search an address (e.g. 1600 Amphitheatre Pkwy, Mountain View)" aria-label="Search address">
+              <button type="button" id="addressSearchBtn" class="btn btn-secondary">Search</button>
+              <button type="button" id="useMyLocationBtn" class="btn btn-outline">Use my location</button>
             </div>
+            <div id="locationMap" role="application" aria-label="Map for picking location"></div>
+
+            <!-- will be filled by JS when user selects a point -->
+            <input type="hidden" name="location[lat]" id="locationLat" value="{{ old('location.lat') }}">
+            <input type="hidden" name="location[lng]" id="locationLng" value="{{ old('location.lng') }}">
+            <input type="hidden" name="location[address]" id="locationAddress" value="{{ old('location.address') }}">
+
+            <small class="muted">Tip: search for an address or click the map to drop a pin. You can also use your device location.</small>
             @error('location')<small class="error-text">{{ $message }}</small>@enderror
             @error('location.lat')<small class="error-text">{{ $message }}</small>@enderror
             @error('location.lng')<small class="error-text">{{ $message }}</small>@enderror

@@ -9,6 +9,8 @@
     'resources/js/waste-items.js',
     'resources/js/waste-items-filters.js'
 ])
+<!-- Leaflet CSS (needed for map inside modal) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 @endpush
 
 @section('content')
@@ -188,11 +190,16 @@
                             <small class="error-text inline" data-error-for="estimated_weight" style="display:none;"></small>
                         </div>
                         <div class="full">
-                            <label class="block text-xs font-semibold tracking-wide uppercase text-gray-600">Location (Lat / Lng) *</label>
-                            <div style="display:flex;gap:.5rem;">
-                                <input type="number" step="0.000001" name="location[lat]" placeholder="Latitude" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
-                                <input type="number" step="0.000001" name="location[lng]" placeholder="Longitude" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                            <label class="block text-xs font-semibold tracking-wide uppercase text-gray-600">Location (pick an address or click on the map) *</label>
+                            <div class="address-search" style="display:flex;gap:.5rem;margin-bottom:.5rem;">
+                                <input type="search" id="addressSearch" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" placeholder="Search an address" aria-label="Search address">
+                                <button type="button" id="addressSearchBtn" class="btn btn-secondary">Search</button>
+                                <button type="button" id="useMyLocationBtn" class="btn btn-outline">Use my location</button>
                             </div>
+                            <div id="locationMap" style="width:100%;height:360px;min-height:300px;display:block;border-radius:8px;border:1px solid #e5e7eb;"></div>
+                            <input type="hidden" name="location[lat]" id="locationLat">
+                            <input type="hidden" name="location[lng]" id="locationLng">
+                            <input type="hidden" name="location[address]" id="locationAddress">
                             <small class="error-text inline" data-error-for="location.lat" style="display:none;"></small>
                             <small class="error-text inline" data-error-for="location.lng" style="display:none;"></small>
                         </div>

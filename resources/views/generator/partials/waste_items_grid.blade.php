@@ -63,6 +63,31 @@
                         <span>{{ $item->created_at->format('M d, Y') }}</span>
                     </div>
                 </div>
+                @php
+                    $loc = data_get($item, 'location');
+                    $lat = null; $lng = null;
+                    if (is_array($loc)) {
+                        if (isset($loc['lat'])) $lat = $loc['lat'];
+                        elseif (isset($loc['latitude'])) $lat = $loc['latitude'];
+                        elseif (isset($loc[1])) $lat = $loc[1];
+
+                        if (isset($loc['lng'])) $lng = $loc['lng'];
+                        elseif (isset($loc['lon'])) $lng = $loc['lon'];
+                        elseif (isset($loc['longitude'])) $lng = $loc['longitude'];
+                        elseif (isset($loc[0])) $lng = $loc[0];
+                    }
+                @endphp
+                @if($addr = data_get($item, 'location.address'))
+                    <div class="material-address meta-item" title="{{ $addr }}">
+                        <i class="fa-solid fa-location-dot meta-icon"></i>
+                        <span>{{ \Illuminate\Support\Str::limit($addr, 60) }}</span>
+                    </div>
+                @elseif($lat && $lng)
+                    <div class="material-address meta-item js-revgeo" data-lat="{{ $lat }}" data-lng="{{ $lng }}" title="">
+                        <i class="fa-solid fa-location-dot meta-icon"></i>
+                        <span>Loading location…</span>
+                    </div>
+                @endif
                 <p class="material-description">{{ Str::limit($item->notes, 100) }}</p>
                 <div class="material-actions" data-id="{{ $item->id }}">
                     <button class="btn-action btn-view" data-id="{{ $item->id }}" title="View Details">
@@ -103,3 +128,60 @@
         </div>
     @endforelse
 </div>
+
+@once
+    @push('scripts')
+    <script>
+    (function(){
+        // Reverse geocode elements with class js-revgeo using Nominatim
+        const revgeoEls = () => Array.from(document.querySelectorAll('.js-revgeo'));
+        const cacheKey = (lat, lng) => `revgeo:${lat}:${lng}`;
+
+        async function fetchAddress(lat, lng) {
+            const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}`;
+            const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
+            if (!resp.ok) throw new Error('Reverse geocode failed');
+            return resp.json();
+        }
+
+        function fillElement(el, displayName) {
+            const span = el.querySelector('span');
+            if (span) span.textContent = displayName.length > 60 ? displayName.slice(0,57) + '...' : displayName;
+            el.setAttribute('title', displayName);
+        }
+
+        async function processQueue(elems) {
+            for (const el of elems) {
+                try {
+                    const lat = el.getAttribute('data-lat');
+                    const lng = el.getAttribute('data-lng');
+                    if (!lat || !lng) continue;
+                    const key = cacheKey(lat, lng);
+                    const cached = sessionStorage.getItem(key);
+                    if (cached) {
+                        fillElement(el, cached);
+                        continue;
+                    }
+                    // Respect Nominatim usage policy: at most 1 request per second
+                    const data = await fetchAddress(lat, lng);
+                    const display = (data && data.display_name) ? data.display_name : `${lat}, ${lng}`;
+                    try { sessionStorage.setItem(key, display); } catch (err) { /* ignore */ }
+                    fillElement(el, display);
+                    // wait ~1100ms
+                    await new Promise(r => setTimeout(r, 1100));
+                } catch (err) {
+                    console.warn('Reverse geocode error', err);
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function(){
+            const els = revgeoEls();
+            if (els.length === 0) return;
+            // Process in background, non-blocking
+            processQueue(els);
+        });
+    })();
+    </script>
+    @endpush
+@endonce

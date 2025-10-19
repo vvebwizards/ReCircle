@@ -179,10 +179,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 valid = false;
             }
 
-            const lat = form.querySelector('input[name="location[lat]"]');
-            const lng = form.querySelector('input[name="location[lng]"]');
-            const latVal = lat.value.trim();
-            const lngVal = lng.value.trim();
+            const lat = form.querySelector('#locationLat') || form.querySelector('input[name="location[lat]"]');
+            const lng = form.querySelector('#locationLng') || form.querySelector('input[name="location[lng]"]');
+            const latVal = (lat && lat.value) ? lat.value.trim() : '';
+            const lngVal = (lng && lng.value) ? lng.value.trim() : '';
             const latNum = Number(latVal);
             const lngNum = Number(lngVal);
             if (latVal === '' || isNaN(latNum) || latNum < -90 || latNum > 90) {
@@ -253,5 +253,144 @@ document.addEventListener('DOMContentLoaded', () => {
                 validate();
             });
         });
+    }
+
+    // ---------------- Map / Address picker -----------------
+    // lazy-load Leaflet to avoid always shipping heavy assets
+    async function loadLeaflet() {
+        if (window.L) return window.L;
+        // load CSS already added in blade
+        await import(/* webpackIgnore: true */ 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js');
+        return window.L;
+    }
+
+    const mapEl = document.getElementById('locationMap');
+    if (mapEl) {
+        (async () => {
+            const L = await loadLeaflet();
+
+            // default view: if old values exist, use them, else use a general view
+            const latInput = document.getElementById('locationLat');
+            const lngInput = document.getElementById('locationLng');
+            const addrInput = document.getElementById('locationAddress');
+
+            const initialLat = latInput && latInput.value ? Number(latInput.value) : 20.0;
+            const initialLng = lngInput && lngInput.value ? Number(lngInput.value) : 0.0;
+            const map = L.map(mapEl).setView([initialLat, initialLng], (latInput && latInput.value) ? 13 : 2);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+
+            let marker = null;
+            // expose map helpers so other modules (modal logic) can call invalidate/center
+            window.WasteItemMap = window.WasteItemMap || {};
+            function setMarker(lat, lng, address) {
+                if (marker) marker.remove();
+                marker = L.marker([lat, lng], {draggable:true}).addTo(map);
+                marker.on('dragend', async (ev) => {
+                    const p = ev.target.getLatLng();
+                    await fillLocation(p.lat, p.lng);
+                });
+                map.setView([lat, lng], 13);
+                if (latInput) latInput.value = lat;
+                if (lngInput) lngInput.value = lng;
+                if (addrInput && address) addrInput.value = address;
+            }
+
+            async function reverseGeocode(lat, lng) {
+                try {
+                    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}`;
+                    const res = await fetch(url, {headers:{'Accept':'application/json'}});
+                    if (!res.ok) return null;
+                    const data = await res.json();
+                    return data.display_name || null;
+                } catch (e) { return null; }
+            }
+
+            async function geocodeAddress(q) {
+                try {
+                    const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(q)}&limit=5`;
+                    const res = await fetch(url, {headers:{'Accept':'application/json'}});
+                    if (!res.ok) return [];
+                    const data = await res.json();
+                    return data; // array
+                } catch (e) { return []; }
+            }
+
+            async function fillLocation(lat, lng) {
+                const addr = await reverseGeocode(lat, lng);
+                setMarker(lat, lng, addr);
+            }
+
+            // if there are old coordinates, place marker
+            if (latInput && lngInput && latInput.value && lngInput.value) {
+                setMarker(Number(latInput.value), Number(lngInput.value), addrInput?.value || null);
+            }
+
+            // store helper references
+            window.WasteItemMap.map = map;
+            window.WasteItemMap.setMarker = setMarker;
+            window.WasteItemMap.invalidate = () => { try{ map.invalidateSize(); }catch(e){} };
+
+            map.on('click', async (e) => {
+                const {lat, lng} = e.latlng;
+                const address = await reverseGeocode(lat, lng);
+                setMarker(lat, lng, address);
+            });
+
+            // address search handling
+            const addrSearch = document.getElementById('addressSearch');
+            const addrSearchBtn = document.getElementById('addressSearchBtn');
+            const useMyLocBtn = document.getElementById('useMyLocationBtn');
+
+            async function runSearch() {
+                const q = addrSearch.value.trim();
+                if (!q) return alert('Enter an address to search.');
+                const results = await geocodeAddress(q);
+                if (!results || results.length === 0) return alert('No results found. Try a different query.');
+                // use first result
+                const r = results[0];
+                const lat = Number(r.lat);
+                const lon = Number(r.lon);
+                setMarker(lat, lon, r.display_name || q);
+            }
+
+            addrSearchBtn?.addEventListener('click', runSearch);
+            addrSearch?.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); runSearch(); } });
+
+            useMyLocBtn?.addEventListener('click', () => {
+                if (!navigator.geolocation) return alert('Geolocation not supported.');
+                navigator.geolocation.getCurrentPosition(async (pos) => {
+                    const lat = pos.coords.latitude;
+                    const lon = pos.coords.longitude;
+                    const addr = await reverseGeocode(lat, lon);
+                    setMarker(lat, lon, addr);
+                }, (err) => {
+                    alert('Unable to get your location: ' + (err.message || 'Permission denied'));
+                }, {maximumAge:60000, timeout:10000});
+            });
+
+            // If the modal opens after the map is created, a global event will be dispatched
+            document.addEventListener('modalOpened', (ev) => {
+                try{
+                    if (ev?.detail?.id === 'createModal'){
+                        // run several attempts to invalidate size after the modal open + animation
+                        const tryInvalidate = (attemptsLeft) => {
+                            try{
+                                map.invalidateSize();
+                                if (marker){ map.setView(marker.getLatLng(), map.getZoom() || 13); }
+                            }catch(e){}
+                            if (attemptsLeft > 0){
+                                setTimeout(()=> tryInvalidate(attemptsLeft - 1), 120);
+                            }
+                        };
+                        setTimeout(()=> tryInvalidate(4), 80);
+                    }
+                }catch(e){}
+            });
+
+        })();
     }
 });
