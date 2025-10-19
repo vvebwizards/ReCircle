@@ -99,6 +99,8 @@ class WasteItem extends Model
             \Log::info('[WasteItem] Attaching tags', ['tags' => $tags, 'waste_item_id' => $this->id]);
             $this->tags()->syncWithoutDetaching($tags);
         }
+    }
+
     public function pickups()
     {
         return $this->hasMany(\App\Models\Pickup::class);

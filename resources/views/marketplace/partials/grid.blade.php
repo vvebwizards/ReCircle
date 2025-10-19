@@ -46,14 +46,6 @@
                         @endforeach
                     </div>
                 @endif
-                @if($item->tags && $item->tags->count())
-                    <div class="material-tags">
-                        <i class="fa-solid fa-tag"></i>
-                        @foreach($item->tags as $tag)
-                            <span class="tag-badge">#{{ $tag->display_name }}</span>
-                        @endforeach
-                    </div>
-                @endif
                 <div class="material-meta">
                     <div class="meta-item" title="Estimated Weight">
                         <i class="fa-solid fa-weight-hanging meta-icon"></i>

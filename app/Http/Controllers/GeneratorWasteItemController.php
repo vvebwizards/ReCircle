@@ -148,11 +148,7 @@ class GeneratorWasteItemController extends Controller
             'detectedMaterials' => $detectedMaterials ?? null,
         ];
 
-        // If there were no detected materials at all, attach a temporary debug tag so we can see attachTags working
-        if (empty($detectedMaterials)) {
-            $wasteItem->attachTags(['debug-no-detection']);
-            $debugInfo['note'] = 'No materials detected; attached debug-no-detection tag.';
-        }
+        // If there were no detected materials at all, debug tagging is disabled in this environment
 
         if ($request->wantsJson() || $request->expectsJson()) {
             $wasteItem->load('photos');
