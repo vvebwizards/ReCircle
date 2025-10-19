@@ -11,7 +11,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(\App\Services\GeminiAIService::class, function ($app) {
+            return new \App\Services\GeminiAIService;
+        });
     }
 
     /**

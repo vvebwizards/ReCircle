@@ -36,6 +36,15 @@
                         class="text-xs text-emerald-400 hover:text-emerald-300 font-medium transition-colors duration-200">
                     Reply
                 </button>
+                
+                @if($depth < 3) {{-- Limit nesting for AI suggestions --}}
+                <span class="text-gray-600">•</span>
+                <button onclick="showAIReplySuggestions({{ $reply->id }})" 
+                        class="text-xs text-purple-400 hover:text-purple-300 font-medium transition-colors duration-200">
+                    <i class="fa-solid fa-robot mr-1"></i>
+                    AI Reply
+                </button>
+                @endif
             @endif
         </div>
     </div>
@@ -78,3 +87,4 @@
         </div>
     @endif
 </div>
+

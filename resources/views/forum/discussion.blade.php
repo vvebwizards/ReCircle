@@ -188,53 +188,154 @@
     </div>
 </div>
 
-<!-- Voting Script -->
+<!-- Voting and AI Script -->
 <script>
-async function vote(type, id, voteType) {
-    try {
-        const response = await fetch('{{ route("forum.vote") }}', {
+// Global variables
+window.aiInitialized = false;
+
+// Wait for DOM to be fully loaded
+document.addEventListener('DOMContentLoaded', function() {
+    initializeAIFeatures();
+    initializeVoting();
+});
+
+function initializeAIFeatures() {
+    if (window.aiInitialized) {
+        return; // Prevent double initialization
+    }
+    
+    window.aiInitialized = true;
+    
+    console.log('Initializing AI Features...');
+}
+
+function initializeVoting() {
+    // Voting functionality remains the same
+    window.vote = async function(type, id, voteType) {
+        try {
+            const response = await fetch('{{ route("forum.vote") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    votable_type: type,
+                    votable_id: id,
+                    type: voteType
+                })
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                // Update vote score
+                const scoreElement = document.getElementById(`vote-score-${id}`);
+                if (scoreElement) {
+                    scoreElement.textContent = data.vote_score;
+                }
+                
+                // Update button styles
+                const buttons = document.querySelectorAll(`[onclick*="${id}"]`);
+                buttons.forEach(btn => {
+                    btn.classList.remove('text-green-400', 'text-red-400');
+                    if (btn.onclick.toString().includes(voteType)) {
+                        btn.classList.add(voteType === 'up' ? 'text-green-400' : 'text-red-400');
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error voting:', error);
+        }
+    };
+
+    // Function to reply to a specific comment
+    window.replyTo = function(replyId, userName) {
+        const parentId = document.getElementById('parent_id');
+        const replyContent = document.getElementById('reply-content');
+        
+        if (parentId && replyContent) {
+            parentId.value = replyId;
+            replyContent.focus();
+            replyContent.placeholder = `Replying to ${userName}...`;
+            
+            // Scroll to reply form
+            const replyFormSection = document.getElementById('reply-form-section');
+            if (replyFormSection) {
+                replyFormSection.scrollIntoView({ 
+                    behavior: 'smooth' 
+                });
+            }
+        }
+    };
+}
+
+// AI reply function for nested comments - make sure this is only defined once
+if (typeof window.showAIReplySuggestions === 'undefined') {
+    window.showAIReplySuggestions = function(replyId) {
+        // Show loading state
+        const originalButton = event.target;
+        const originalText = originalButton.innerHTML;
+        originalButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> AI...';
+        originalButton.disabled = true;
+
+        // Fetch AI suggestions for replying to this specific reply
+        fetch('{{ route("ai.suggest-reply-to-reply") }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'X-Requested-With': 'XMLHttpRequest'
             },
             body: JSON.stringify({
-                votable_type: type,
-                votable_id: id,
-                type: voteType
+                reply_id: replyId
             })
-        });
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Reset button
+            originalButton.innerHTML = originalText;
+            originalButton.disabled = false;
 
-        const data = await response.json();
-        
-        if (data.success) {
-            // Update vote score
-            document.getElementById(`vote-score-${id}`).textContent = data.vote_score;
-            
-            // Update button styles
-            const buttons = document.querySelectorAll(`[onclick*="${id}"]`);
-            buttons.forEach(btn => {
-                btn.classList.remove('text-green-400', 'text-red-400');
-                if (btn.onclick.toString().includes(voteType)) {
-                    btn.classList.add(voteType === 'up' ? 'text-green-400' : 'text-red-400');
+            if (data.success && data.suggestions && data.suggestions.length > 0) {
+                const replyContent = document.getElementById('reply-content');
+                const parentId = document.getElementById('parent_id');
+                
+                if (replyContent && parentId) {
+                    // Use the first suggestion
+                    replyContent.value = data.suggestions[0];
+                    replyContent.focus();
+                    parentId.value = replyId;
+                    
+                    // Scroll to reply form
+                    const replyFormSection = document.getElementById('reply-form-section');
+                    if (replyFormSection) {
+                        replyFormSection.scrollIntoView({ 
+                            behavior: 'smooth' 
+                        });
+                    }
                 }
-            });
-        }
-    } catch (error) {
-        console.error('Error voting:', error);
-    }
-}
-
-// Function to reply to a specific comment
-function replyTo(replyId, userName) {
-    document.getElementById('parent_id').value = replyId;
-    document.getElementById('reply-content').focus();
-    document.getElementById('reply-content').placeholder = `Replying to ${userName}...`;
-    
-    // Scroll to reply form
-    document.getElementById('reply-form-section').scrollIntoView({ 
-        behavior: 'smooth' 
-    });
+            } else {
+                // Fallback to regular reply if AI fails
+                const userName = originalButton.closest('.flex').querySelector('.text-sm.font-medium')?.textContent || 'this user';
+                replyTo(replyId, userName);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            // Reset button and fallback to regular reply
+            originalButton.innerHTML = originalText;
+            originalButton.disabled = false;
+            const userName = originalButton.closest('.flex').querySelector('.text-sm.font-medium')?.textContent || 'this user';
+            replyTo(replyId, userName);
+        });
+    };
 }
 </script>
+
 @endsection
