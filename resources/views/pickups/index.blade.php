@@ -516,14 +516,6 @@
                         <i class="fa-solid fa-comments"></i>
                         Chat
                     </a>
-                    <a href="{{ route('pickups.download.pdf') }}" class="download-btn pdf">
-                        <i class="fa-solid fa-file-pdf"></i>
-                        PDF
-                    </a>
-                    <a href="{{ route('pickups.download.csv') }}" class="download-btn csv">
-                        <i class="fa-solid fa-file-csv"></i>
-                        CSV
-                    </a>
                     <a href="{{ route('pickups.download.excel') }}" class="download-btn excel">
                         <i class="fa-solid fa-file-excel"></i>
                         Excel

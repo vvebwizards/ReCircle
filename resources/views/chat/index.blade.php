@@ -281,10 +281,6 @@
                     Conversations
                 </h3>
                 <div class="flex items-center gap-2">
-                    <button onclick="showStartConversationForm()" class="btn-new-conversation">
-                        <i class="fa-solid fa-plus mr-1"></i>
-                        Nouvelle
-                    </button>
                     <button onclick="refreshConversations()" class="text-sm text-blue-600 hover:text-blue-800">
                         <i class="fa-solid fa-refresh mr-1"></i>
                         Actualiser
@@ -428,49 +424,6 @@
     </div>
 </div>
 
-<!-- Modal pour démarrer une conversation -->
-<div id="startConversationModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3><i class="fa-solid fa-comments mr-2"></i>Démarrer une conversation</h3>
-            <button onclick="closeStartConversationForm()" class="modal-close">&times;</button>
-        </div>
-        <div class="modal-body">
-            <form id="startConversationForm">
-                <div class="form-group">
-                    <label for="selectUser">Avec qui voulez-vous discuter ?</label>
-                    <select id="selectUser" name="user_id" required class="form-select">
-                        <option value="">Sélectionnez un utilisateur</option>
-                        @foreach(App\Models\User::where('id', '!=', auth()->id())->get() as $user)
-                            <option value="{{ $user->id }}">{{ $user->name }} ({{ $user->role }})</option>
-                        @endforeach
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="selectPickup">Pickup associé (optionnel)</label>
-                    <select id="selectPickup" name="pickup_id" class="form-select">
-                        <option value="">Aucun pickup spécifique</option>
-                        @foreach(App\Models\Pickup::with('wasteItem')->get() as $pickup)
-                            <option value="{{ $pickup->id }}">Pickup #{{ $pickup->id }} - {{ $pickup->wasteItem->title ?? 'N/A' }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="firstMessage">Premier message</label>
-                    <textarea id="firstMessage" name="message" class="form-textarea" placeholder="Tapez votre premier message..." required></textarea>
-                </div>
-                
-                <div class="form-actions">
-                    <button type="button" onclick="closeStartConversationForm()" class="btn-cancel">Annuler</button>
-                    <button type="submit" class="btn-submit">Démarrer la conversation</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
 <style>
     .modal {
         position: fixed;
@@ -610,16 +563,6 @@ function handleConversationClick(element) {
 function refreshConversations() {
     console.log('Actualisation des conversations...');
     window.location.reload();
-}
-
-// Fonction pour afficher le modal de démarrage de conversation
-function showStartConversationForm() {
-    document.getElementById('startConversationModal').style.display = 'flex';
-}
-
-// Fonction pour fermer le modal
-function closeStartConversationForm() {
-    document.getElementById('startConversationModal').style.display = 'none';
 }
 
 // Fonction pour démarrer une nouvelle conversation
