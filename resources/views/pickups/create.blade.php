@@ -2,6 +2,10 @@
 
 @section('title','Create Pickup')
 
+@push('head')
+@vite(['resources/js/pickup.js'])
+@endpush
+
 @section('content')
 <style>
     .modern-form {
@@ -25,6 +29,11 @@
         position: relative;
         z-index: 1;
     }
+
+    .js-error-message {
+    min-height: 1.2rem;
+    transition: opacity 0.2s ease;
+}
     
     .form-container::before {
         content: '';
@@ -228,24 +237,6 @@
         font-size: 0.8rem;
     }
     
-    .success-message {
-        background: linear-gradient(135deg, rgba(56, 178, 172, 0.1), rgba(66, 153, 225, 0.1));
-        border: 2px solid rgba(56, 178, 172, 0.3);
-        color: #2c7a7b;
-        padding: 1.25rem;
-        border-radius: 16px;
-        margin-bottom: 2rem;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-    
-    .success-message::before {
-        content: '✅';
-        font-size: 1.2rem;
-    }
-    
     .grid-2 {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -321,166 +312,93 @@
 
 <div class="modern-form">
     <div class="form-container">
-        @if(session('ok'))
-            <div class="success-message">{{ session('ok') }}</div>
-        @endif
-
         <h1 class="form-title">
             <span class="form-title-icon">+</span>
             Create Pickup
         </h1>
 
         <form method="POST" action="{{ route('pickups.store') }}">
-            @csrf
+    @csrf
 
-            {{-- waste item pré-sélectionné et caché --}}
-            <input type="hidden" name="waste_item_id" value="{{ optional($wasteItem)->id }}">
+    {{-- waste item pre-selected and hidden --}}
+    <input type="hidden" name="waste_item_id" value="{{ optional($wasteItem)->id }}">
 
-            @if($wasteItem)
-                <div class="waste-item-display">
-                    <strong>Waste item:</strong> {{ $wasteItem->title ?? 'N/A' }}
-                </div>
-            @endif
+    @if($wasteItem)
+        <div class="waste-item-display">
+            <strong>Waste item:</strong> {{ $wasteItem->title ?? 'N/A' }}
+        </div>
+    @endif
 
-            <div class="form-section">
-                <h3 class="section-title">
-                    <span class="section-icon">📍</span>
-                    Pickup Details
-                </h3>
-                
-                <div class="form-group">
-                    <label class="form-label">Pickup address *</label>
-                    <input name="pickup_address" value="{{ old('pickup_address') }}"
-                           class="form-input" placeholder="Enter the complete pickup address" 
-                           required minlength="10" maxlength="255"
-                           pattern="^[a-zA-Z0-9\s\-,\.#]+$"
-                           title="Please enter a valid address (letters, numbers, spaces, hyphens, commas, periods, and # allowed)">
-                    @error('pickup_address') <p class="error-message">{{ $message }}</p> @enderror
-                </div>
+    <div class="form-section">
+        <h3 class="section-title">
+            <span class="section-icon">📍</span>
+            Pickup Details
+        </h3>
 
-                <div class="grid-2">
-                    <div class="form-group">
-                        <label class="form-label">Window start *</label>
-                        <input type="datetime-local" name="scheduled_pickup_window_start"
-                               value="{{ old('scheduled_pickup_window_start') }}"
-                               class="form-input" required
-                               min="{{ date('Y-m-d\TH:i') }}"
-                               title="Please select a future date and time">
-                        @error('scheduled_pickup_window_start') <p class="error-message">{{ $message }}</p> @enderror
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Window end *</label>
-                        <input type="datetime-local" name="scheduled_pickup_window_end"
-                               value="{{ old('scheduled_pickup_window_end') }}"
-                               class="form-input" required
-                               min="{{ date('Y-m-d\TH:i') }}"
-                               title="Please select a future date and time">
-                        @error('scheduled_pickup_window_end') <p class="error-message">{{ $message }}</p> @enderror
-                    </div>
-                </div>
+        {{-- Address --}}
+        <div class="form-group">
+            <label class="form-label">Pickup address *</label>
+            <input name="pickup_address" value="{{ old('pickup_address') }}"
+                   class="form-input" placeholder="Enter the complete pickup address" required>
+            <p class="js-error-message" data-for="pickup_address"></p>
+            @error('pickup_address') <p class="error-message">{{ $message }}</p> @enderror
+        </div>
+
+        {{-- Window start / end --}}
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Window start *</label>
+                <input type="datetime-local" name="scheduled_pickup_window_start"
+                       value="{{ old('scheduled_pickup_window_start') }}"
+                       class="form-input" required>
+                <p class="js-error-message" data-for="scheduled_pickup_window_start"></p>
+                @error('scheduled_pickup_window_start') <p class="error-message">{{ $message }}</p> @enderror
             </div>
 
-            <div class="form-section">
-                <h3 class="section-title">
-                    <span class="section-icon">⚙️</span>
-                    Status & Notes
-                </h3>
-                
-                <div class="form-group">
-                    <label class="form-label">Status</label>
-                    <select name="status" class="form-select" disabled>
-                        <option value="scheduled" selected>Scheduled</option>
-                    </select>
-                    <input type="hidden" name="status" value="scheduled">
-                    <small style="color: #64748b; font-size: 0.8rem; margin-top: 0.5rem; display: block;">
-                        Status is automatically set to "Scheduled" for new pickups
-                    </small>
-                    @error('status') <p class="error-message">{{ $message }}</p> @enderror
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Notes (Optional)</label>
-                    <textarea name="notes" rows="4" class="form-input form-textarea" 
-                              placeholder="Add any special instructions or additional details..." 
-                              maxlength="500">{{ old('notes') }}</textarea>
-                    <small style="color: #64748b; font-size: 0.8rem; margin-top: 0.5rem; display: block;">
-                        Optional field - maximum 500 characters
-                    </small>
-                    @error('notes') <p class="error-message">{{ $message }}</p> @enderror
-                </div>
+            <div class="form-group">
+                <label class="form-label">Window end *</label>
+                <input type="datetime-local" name="scheduled_pickup_window_end"
+                       value="{{ old('scheduled_pickup_window_end') }}"
+                       class="form-input" required>
+                <p class="js-error-message" data-for="scheduled_pickup_window_end"></p>
+                @error('scheduled_pickup_window_end') <p class="error-message">{{ $message }}</p> @enderror
             </div>
+        </div>
+    </div>
 
-            <button type="submit" class="btn-save">
-                <span>Create Pickup</span>
-            </button>
-        </form>
+    <div class="form-section">
+        <h3 class="section-title">
+            <span class="section-icon">⚙️</span>
+            Status & Notes
+        </h3>
+
+        <div class="form-group">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-select" disabled>
+                <option value="scheduled" selected>Scheduled</option>
+            </select>
+            <input type="hidden" name="status" value="scheduled">
+            <small style="color: #64748b; font-size: 0.8rem; margin-top: 0.5rem; display: block;">
+                Status is automatically set to "Scheduled" for new pickups
+            </small>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Notes (Optional)</label>
+            <textarea name="notes" rows="4" class="form-input form-textarea"
+                      placeholder="Add any special instructions or additional details..." 
+                      maxlength="500">{{ old('notes') }}</textarea>
+            <small style="color: #64748b; font-size: 0.8rem; margin-top: 0.5rem; display: block;">
+                Optional field - maximum 500 characters
+            </small>
+        </div>
+    </div>
+
+    <button type="submit" class="btn-save">
+        <span>Create Pickup</span>
+    </button>
+</form>
+
     </div>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const startInput = document.querySelector('input[name="scheduled_pickup_window_start"]');
-    const endInput = document.querySelector('input[name="scheduled_pickup_window_end"]');
-    const addressInput = document.querySelector('input[name="pickup_address"]');
-    const form = document.querySelector('form');
-
-    // Validation de la fenêtre de temps
-    function validateTimeWindow() {
-        if (startInput.value && endInput.value) {
-            const startTime = new Date(startInput.value);
-            const endTime = new Date(endInput.value);
-            
-            if (endTime <= startTime) {
-                endInput.setCustomValidity('End time must be after start time');
-                endInput.reportValidity();
-                return false;
-            } else {
-                endInput.setCustomValidity('');
-            }
-        }
-        return true;
-    }
-
-    // Validation de l'adresse
-    function validateAddress() {
-        const address = addressInput.value.trim();
-        if (address.length < 10) {
-            addressInput.setCustomValidity('Address must be at least 10 characters long');
-            addressInput.reportValidity();
-            return false;
-        } else {
-            addressInput.setCustomValidity('');
-        }
-        return true;
-    }
-
-    // Événements de validation
-    startInput.addEventListener('change', function() {
-        if (endInput.value) {
-            validateTimeWindow();
-        }
-        // Mettre à jour le min de l'input end
-        endInput.min = this.value;
-    });
-
-    endInput.addEventListener('change', validateTimeWindow);
-    addressInput.addEventListener('blur', validateAddress);
-
-    // Validation avant soumission
-    form.addEventListener('submit', function(e) {
-        if (!validateAddress() || !validateTimeWindow()) {
-            e.preventDefault();
-            return false;
-        }
-    });
-
-    // Mise à jour automatique du min des inputs datetime
-    const now = new Date();
-    now.setMinutes(now.getMinutes() + 1); // 1 minute dans le futur
-    const minDateTime = now.toISOString().slice(0, 16);
-    
-    startInput.min = minDateTime;
-    endInput.min = minDateTime;
-});
-</script>
 @endsection

@@ -93,6 +93,19 @@
                             Community Forum
                         </a>
                     </li>
+                    <li class="nav-item">
+                        @if(auth()->check() && auth()->user()->role->value === 'courier')
+                        <a href="{{ route('courier.map') }}" class="nav-link">
+                            <i class="fa-solid fa-map mr-1"></i>
+                            Maps
+                        </a>
+                        @endif
+                    </li>
+                    <li class="nav-item">
+                    @if(auth()->check() && auth()->user()->role->value === 'courier')
+                    <a href="{{ route('deliveries.index') }}" class="nav-link">Deliveries</a>
+                    @endif
+                    </li>
                     {{-- Other authenticated user links could go here --}}
                 @else
                     {{-- Links for guest users --}}

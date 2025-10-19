@@ -17,8 +17,6 @@
    class="side-link {{ request()->routeIs('admin.deliveries.*') ? 'active' : '' }}">
    <i class="fa-solid fa-truck-fast"></i><span>Deliveries</span>
 </a>
-
-    <a href="{{ route('admin.audit-logs.index') }}" class="side-link"><i class="fa-solid fa-clipboard-list"></i><span>Audit Logs</span></a>
     <a href="{{ route('admin.users') }}" class="side-link {{ request()->routeIs('admin.users') ? 'active' : '' }}"><i class="fa-solid fa-users"></i><span>Users</span></a>
     <a href="{{ route('admin.reclamations.index') }}" class="side-link {{ request()->routeIs('admin.reclamations.*') ? 'active' : '' }}">
         <i class="fa-solid fa-flag"></i>
