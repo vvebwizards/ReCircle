@@ -17,7 +17,6 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-          tools: composer:v2
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -25,32 +24,20 @@ jobs:
           node-version: "20"
           cache: 'npm'
 
-      - name: Install PHP dependencies
-        run: composer install --no-dev --prefer-dist --no-progress --no-interaction
-
-      - name: Install Node dependencies and build
+      - name: Install dependencies and build
         run: |
+          composer install --no-dev --no-progress --no-interaction
           npm ci
           npm run build
 
-      - name: Generate application key
-        run: |
-          cp .env.example .env
-          php artisan key:generate
-
-      - name: Deploy to Railway
+      - name: Deploy to Railway using CLI
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
           # Install Railway CLI
           curl -fsSL https://railway.app/install.sh | sh
-          echo "$HOME/.railway/bin" >> $GITHUB_PATH
+          export PATH="$HOME/.railway/bin:$PATH"
           
-          # Deploy
-          railway login --ci $RAILWAY_TOKEN
+          # Login and deploy
+          railway login --token $RAILWAY_TOKEN
           railway up --detach
-
-      - name: Verify deployment
-        run: |
-          echo "✅ Deployment completed to Railway"
-          echo "Your app is live at: https://${{ secrets.RAILWAY_APP_NAME }}.railway.app"
