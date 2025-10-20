@@ -57,7 +57,7 @@ Route::middleware(['jwt.auth'])->get('/maker/bids', [\App\Http\Controllers\Maker
 Route::middleware(['jwt.auth'])->get('/maker/collection', [\App\Http\Controllers\MakerCollectionController::class, 'index'])->name('maker.collection');
 Route::middleware(['jwt.auth'])->get('/maker/collection/{wasteItem}/images', [\App\Http\Controllers\MakerCollectionController::class, 'images'])->name('maker.collection.images');
 
-Route::prefix('admin')->middleware(['jwt.auth'])->group(function () {
+Route::prefix('admin')->middleware(['jwt.auth', \App\Http\Middleware\AdminMiddleware::class])->group(function () {
     // Admin > Deliveries
     Route::prefix('deliveries')->name('admin.deliveries.')->group(function () {
         Route::get('/', [AdminDeliveryController::class, 'index'])->name('index');       // Active
@@ -115,7 +115,9 @@ Route::get('/settings/security', function () {
 })->name('settings.security');
 
 Route::middleware(['jwt.auth'])->group(function () {
-    Route::get('/admin/carts', [CartController::class, 'index'])->name('admin.carts.index');
+    Route::get('/admin/carts', [CartController::class, 'index'])
+        ->middleware(\App\Http\Middleware\AdminMiddleware::class)
+        ->name('admin.carts.index');
     Route::get('/cart', [CartController::class, 'viewCart'])->name('cart.index');
     Route::post('/cart/add', [CartController::class, 'addToCart'])->name('cart.add');
     Route::delete('/cart/remove/{itemId}', [CartController::class, 'removeItem'])->name('cart.remove');

@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 // Add these routes to your existing admin routes file
 
-Route::middleware(['jwt.auth'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['jwt.auth', \App\Http\Middleware\AdminMiddleware::class])->prefix('admin')->name('admin.')->group(function () {
 
     // Reclamations Management
     Route::get('/reclamations', [AdminReclamationController::class, 'index'])

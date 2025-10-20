@@ -29,7 +29,7 @@ Route::middleware('jwt.auth')->group(function () {
     Route::put('/materials/{material}', [MaterialController::class, 'update'])
         ->name('maker.materials.update');
 
-    Route::prefix('admin')->group(function () {
+    Route::prefix('admin')->middleware(\App\Http\Middleware\AdminMiddleware::class)->group(function () {
         Route::get('/materials', [MaterialsAdminController::class, 'materialsIndex'])
             ->name('admin.materials.index');
 

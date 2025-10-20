@@ -38,7 +38,7 @@ Route::middleware('jwt.auth')->group(function () {
 
 });
 
-Route::prefix('admin')->name('admin.')->group(function () {
+Route::prefix('admin')->middleware([\App\Http\Middleware\AdminMiddleware::class, 'jwt.auth'])->name('admin.')->group(function () {
     Route::get('/products', [ProductsAdminController::class, 'productsIndex'])
         ->name('products.index');
 

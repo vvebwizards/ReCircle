@@ -35,7 +35,7 @@ Route::middleware(['jwt.auth'])->group(function () {
 });
 
 // Admin routes
-Route::middleware(['jwt.auth'])->group(function () {
+Route::middleware(['jwt.auth', \App\Http\Middleware\AdminMiddleware::class])->group(function () {
 
     // Update reclamation status
     Route::patch('/reclamations/{reclamation}/status', [ReclamationController::class, 'updateStatus'])
