@@ -82,7 +82,13 @@
     <nav class="navbar">
     <div class="nav-container">
         <div class="nav-logo">
-            <h2><a href="{{ route('home') }}" class="nav-link" style="text-decoration:none;">ReCircle</a></h2>
+            <h2>
+                @auth
+                    <span class="nav-link" style="text-decoration:none;cursor:default;">ReCircle</span>
+                @else
+                    <a href="{{ route('home') }}" class="nav-link" style="text-decoration:none;">ReCircle</a>
+                @endauth
+            </h2>
         </div>
         <ul class="nav-menu">
             @auth
@@ -90,6 +96,17 @@
                     <a href="{{ route('forum.index') }}" class="nav-link">
                         <i class="fa-solid fa-comments mr-1"></i>
                         Community Forum
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('messages.index') }}" class="nav-link">
+                        <i class="fa-solid fa-envelope mr-1"></i>
+                        Messages
+                        @if(auth()->user()->unreadMessagesCount() > 0)
+                            <span class="message-badge">
+                                {{ auth()->user()->unreadMessagesCount() }}
+                            </span>
+                        @endif
                     </a>
                 </li>
                                     <li class="nav-item">
@@ -105,17 +122,6 @@
                     <a href="{{ route('deliveries.index') }}" class="nav-link">Deliveries</a>
                     @endif
                     </li>
-                <li class="nav-item">
-                    <a href="{{ route('messages.index') }}" class="nav-link">
-                        <i class="fa-solid fa-envelope mr-1"></i>
-                        Messages
-                        @if(auth()->user()->unreadMessagesCount() > 0)
-                            <span class="message-badge">
-                                {{ auth()->user()->unreadMessagesCount() }}
-                            </span>
-                        @endif
-                    </a>
-                </li>
             @else
                 {{-- Links for guest users --}}
                 <li class="nav-item"><a href="{{ route('home') }}#home" class="nav-link">Home</a></li>

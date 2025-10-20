@@ -10,8 +10,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/auth', [AuthController::class, 'show'])->name('auth');
-Route::get('/login', [AuthController::class, 'show'])->name('login');
+Route::get('/auth', [AuthController::class, 'show'])->middleware(\App\Http\Middleware\PreventAuthenticatedAccess::class)->name('auth');
+Route::get('/login', [AuthController::class, 'show'])->middleware(\App\Http\Middleware\PreventAuthenticatedAccess::class)->name('login');
 
 Route::get('/twofa', function () {
     return view('auth.twofa');

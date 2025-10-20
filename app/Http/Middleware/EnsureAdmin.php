@@ -24,8 +24,8 @@ class EnsureAdmin
                 return response()->json(['error' => 'Forbidden. Admins only.'], 403);
             }
 
-            // Otherwise redirect to home
-            return redirect()->route('home');
+            // Otherwise render the access denied view (generic)
+            return response()->view('errors.admin_forbidden', [], 403);
         }
 
         return $next($request);

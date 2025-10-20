@@ -4,7 +4,7 @@ use App\Http\Controllers\Admin\MaterialsAdminController;
 use App\Http\Controllers\MaterialController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('jwt.auth')->group(function () {
+Route::middleware(['jwt.auth', 'role:'.\App\Enums\UserRole::MAKER->value])->group(function () {
     Route::get('/materials/create', [MaterialController::class, 'create'])
         ->name('materials.create');
 

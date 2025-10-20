@@ -24,6 +24,10 @@ class RedirectBasedOnRole
                 return redirect()->route('maker.dashboard');
             } elseif (Auth::user()->role === UserRole::ADMIN) {
                 return redirect()->route('admin.dashboard');
+            } elseif (Auth::user()->role === UserRole::BUYER) {
+                return redirect()->route('buyer.dashboard');
+            } elseif (Auth::user()->role === UserRole::COURIER) {
+                return redirect()->route('courier.dashboard');
             }
             // Default users continue to the standard dashboard
         }

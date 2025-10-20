@@ -3,7 +3,7 @@
 use App\Http\Controllers\GeneratorWasteItemController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('jwt.auth')->group(function () {
+Route::middleware(['jwt.auth', 'role:'.\App\Enums\UserRole::GENERATOR->value])->group(function () {
     Route::get('/waste-items', [GeneratorWasteItemController::class, 'index'])
         ->name('generator.waste-items.index');
     Route::get('/waste-items/create', [GeneratorWasteItemController::class, 'create'])

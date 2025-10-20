@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('home');
-})->name('home');
+})->middleware(\App\Http\Middleware\PreventAuthenticatedAccess::class)->name('home');
 
 // Dashboard route with role-based redirect middleware
 Route::get('/dashboard', function () {
@@ -39,23 +39,23 @@ Route::get('/api/user', function () {
     }
 })->middleware('jwt.auth');
 
-Route::middleware(['jwt.auth'])->get('/dashboard/bids', [\App\Http\Controllers\DashboardBidController::class, 'index'])->name('dashboard.bids');
+Route::middleware(['jwt.auth', 'role:'.\App\Enums\UserRole::GENERATOR->value])->get('/dashboard/bids', [\App\Http\Controllers\DashboardBidController::class, 'index'])->name('dashboard.bids');
 
 Route::get('/maker/dashboard', function () {
     return view('maker.dashboard');
-})->middleware('jwt.auth')->name('maker.dashboard');
+})->middleware(['jwt.auth', 'role:'.\App\Enums\UserRole::MAKER->value])->name('maker.dashboard');
 
 Route::get('/maker/analytics', [AnalyticsController::class, 'index'])
-    ->middleware(['jwt.auth'])
+    ->middleware(['jwt.auth', 'role:'.\App\Enums\UserRole::MAKER->value])
     ->name('maker.analytics');
 
 Route::get('/maker/analytics/pdf', [AnalyticsController::class, 'generateAnalyticsPDF'])
     ->name('analytics.pdf')
-    ->middleware(['jwt.auth']);
+    ->middleware(['jwt.auth', 'role:'.\App\Enums\UserRole::MAKER->value]);
 
-Route::middleware(['jwt.auth'])->get('/maker/bids', [\App\Http\Controllers\MakerBidController::class, 'index'])->name('maker.bids');
-Route::middleware(['jwt.auth'])->get('/maker/collection', [\App\Http\Controllers\MakerCollectionController::class, 'index'])->name('maker.collection');
-Route::middleware(['jwt.auth'])->get('/maker/collection/{wasteItem}/images', [\App\Http\Controllers\MakerCollectionController::class, 'images'])->name('maker.collection.images');
+Route::middleware(['jwt.auth', 'role:'.\App\Enums\UserRole::MAKER->value])->get('/maker/bids', [\App\Http\Controllers\MakerBidController::class, 'index'])->name('maker.bids');
+Route::middleware(['jwt.auth', 'role:'.\App\Enums\UserRole::MAKER->value])->get('/maker/collection', [\App\Http\Controllers\MakerCollectionController::class, 'index'])->name('maker.collection');
+Route::middleware(['jwt.auth', 'role:'.\App\Enums\UserRole::MAKER->value])->get('/maker/collection/{wasteItem}/images', [\App\Http\Controllers\MakerCollectionController::class, 'images'])->name('maker.collection.images');
 
 Route::prefix('admin')->middleware(['jwt.auth', \App\Http\Middleware\AdminMiddleware::class])->group(function () {
     // Admin > Deliveries
@@ -198,6 +198,11 @@ Route::middleware(['jwt.auth'])->group(function () {
          ->name('pickups.index');*/
 
     require __DIR__.'/waste_items.php';
+
+    // Courier dashboard (protected to COURIER role)
+    Route::get('/courier/dashboard', function () {
+        return view('courier.dashboard');
+    })->middleware(['jwt.auth', 'role:'.\App\Enums\UserRole::COURIER->value])->name('courier.dashboard');
 
     // Routes pour téléchargement des pickups
     Route::get('/pickups/download/pdf', [App\Http\Controllers\PickupDownloadController::class, 'downloadPDF'])->name('pickups.download.pdf');

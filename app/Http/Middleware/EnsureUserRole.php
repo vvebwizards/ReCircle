@@ -19,6 +19,12 @@ class EnsureUserRole
             }
         }
 
-        abort(403, 'Access denied.');
+        // For JSON/API requests, return JSON 403
+        if ($request->expectsJson()) {
+            return response()->json(['error' => 'Forbidden.'], 403);
+        }
+
+        // For web requests, show the access denied view we created
+        return response()->view('errors.admin_forbidden', [], 403);
     }
 }

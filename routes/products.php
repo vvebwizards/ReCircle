@@ -4,8 +4,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductsAdminController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('jwt.auth')->group(function () {
-
+Route::middleware(['jwt.auth', 'role:'.\App\Enums\UserRole::MAKER->value])->group(function () {
     Route::get('/products', [ProductController::class, 'index'])
         ->name('maker.products');
 

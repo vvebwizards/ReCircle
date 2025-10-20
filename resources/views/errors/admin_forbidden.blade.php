@@ -62,9 +62,8 @@
           <p class="card-desc">You don't have permission to view this page. If you believe this is an error, contact your administrator or request the proper role.</p>
 
           <div class="card-actions" role="group" aria-label="Actions">
-            <a class="btn btn-primary" href="{{ route('home') }}">Return home</a>
             @if(auth()->check())
-              <a class="btn btn-secondary" href="{{ route('dashboard') }}">Go to my dashboard</a>
+              <a class="btn btn-primary" href="{{ route('dashboard') }}">Go to my dashboard</a>
             @endif
           </div>
         </div>
