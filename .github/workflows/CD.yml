@@ -30,7 +30,7 @@ jobs:
           npm ci
           npm run build
 
-      - name: Deploy to Railway using CLI
+      - name: Deploy to Railway
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
@@ -38,6 +38,8 @@ jobs:
           curl -fsSL https://railway.app/install.sh | sh
           export PATH="$HOME/.railway/bin:$PATH"
           
-          # Login and deploy
-          railway login --token $RAILWAY_TOKEN
+          # Set the token and deploy
+          railway login --help  # Check available options
+          railway login
+          echo "$RAILWAY_TOKEN" | railway login
           railway up --detach
