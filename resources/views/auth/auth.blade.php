@@ -630,7 +630,7 @@
                         <small id="error-signup-confirm" class="field-error" aria-live="assertive"></small>
                     </div>
                     <label class="checkbox">
-                        <input type="checkbox" id="terms" name="terms" {{ old('terms') ? 'checked' : '' }} required> I agree to the <a href="#">Terms</a> and <a href="#">Privacy</a>
+                        <input type="checkbox" id="terms" name="terms" {{ old('terms') ? 'checked' : '' }} required> I agree to the <a href="#" id="open-terms" class="terms-link">Terms</a> and <a href="#" id="open-privacy" class="terms-link">Privacy</a>
                     </label>
                     <small id="error-terms" class="field-error" aria-live="assertive">@error('terms'){{ $message }}@enderror</small>
                     <button type="submit" class="btn btn-primary w-full">Create Account</button>
@@ -666,6 +666,76 @@
             </div>
         </div>
     </div>
+    <!-- Terms & Conditions Modal -->
+    <style>
+        /* Scoped modal tweaks for Terms */
+        #terms-modal .modal { max-width: 640px; width: min(92vw, 640px); padding: 18px; border-radius: 14px; }
+        /* Terms/privacy links: no underline by default, underline on hover */
+        .terms-link { text-decoration: none; color: inherit; border-bottom: 1px dashed transparent; transition: color .15s ease, text-decoration .12s ease; }
+        .terms-link:hover, .terms-link:focus { text-decoration: underline; color: var(--accent, #10b981); outline: none; }
+        /* Make the header close button green and accessible */
+        #terms-modal .modal-header .modal-close {
+            background: linear-gradient(90deg,var(--accent,#10b981),#06a86b);
+            color: #03201a;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 6px 18px rgba(6,95,70,0.12);
+        }
+        #terms-modal .modal-header .modal-close:focus { outline: 3px solid rgba(16,185,129,0.2); }
+        /* Make the modal visually lighter and smaller on small screens */
+        @media (max-width: 640px) { #terms-modal .modal { padding: 14px; border-radius: 10px; } }
+    </style>
+    <div class="modal-overlay hidden" id="terms-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="terms-title">
+        <div class="modal" style="max-height: 78vh; overflow:auto;">
+            <div class="modal-header">
+                <h3 id="terms-title"><i class="fa-solid fa-file-contract" aria-hidden="true"></i> Terms & Conditions</h3>
+                <button type="button" class="modal-close" aria-label="Close" data-close-modal>&times;</button>
+            </div>
+            <div class="modal-body">
+                @include('auth.terms')
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-close-modal aria-label="Close terms modal">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            function $(sel, ctx) { return (ctx || document).querySelector(sel); }
+            var openTerms = document.getElementById('open-terms');
+            var termsModal = document.getElementById('terms-modal');
+            var closeButtons = termsModal ? termsModal.querySelectorAll('[data-close-modal]') : [];
+
+            if (openTerms && termsModal) {
+                openTerms.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    termsModal.classList.remove('hidden');
+                    termsModal.setAttribute('aria-hidden', 'false');
+                });
+            }
+
+            closeButtons.forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    termsModal.classList.add('hidden');
+                    termsModal.setAttribute('aria-hidden', 'true');
+                });
+            });
+
+            // Close on overlay click
+            if (termsModal) {
+                termsModal.addEventListener('click', function (e) {
+                    if (e.target === termsModal) {
+                        termsModal.classList.add('hidden');
+                        termsModal.setAttribute('aria-hidden', 'true');
+                    }
+                });
+            }
+        }());
+    </script>
 
     <!-- Onboarding Modal -->
     <div class="modal-overlay hidden" id="onboarding-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="onboarding-title">

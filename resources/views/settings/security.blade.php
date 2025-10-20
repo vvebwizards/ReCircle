@@ -30,32 +30,6 @@
       </div>
     </section>
 
-    <!-- Change Password card: title, description, open button -->
-    <section class="dash-card" id="password-card">
-      <div class="card-stack">
-        <div class="card-icon"><i class="fa-solid fa-key"></i></div>
-        <h3 class="card-title">Change Password</h3>
-        <p class="card-desc">Update your password regularly to keep your account secure.</p>
-        <div class="card-actions">
-          <button id="password-open" class="btn btn-primary"><i class="fa-solid fa-gear"></i> Open</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- Notifications card: title, description, open button -->
-    <section class="dash-card" id="notifications-card">
-      <div class="card-stack">
-        <div class="card-icon"><i class="fa-solid fa-bell"></i></div>
-        <h3 class="card-title">Notifications</h3>
-        <p class="card-desc">Choose how you want to hear from us.</p>
-        <div class="card-actions">
-          <button id="notifications-open" class="btn btn-primary"><i class="fa-solid fa-gear"></i> Open</button>
-        </div>
-      </div>
-    </section>
-    <!-- Future cards go here as additional <section class="dash-card"> ... </section> -->
-    </div>
-
     <!-- 2FA Modal (auth-style) -->
   <div id="twofa-modal" class="modal-overlay hidden" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="twofa-modal-title">
       <div class="modal" role="document">
