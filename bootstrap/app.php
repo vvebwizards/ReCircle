@@ -11,7 +11,23 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        //
+        $middleware->alias([
+            'jwt.auth' => \App\Http\Middleware\JwtAuthenticate::class,
+            'role' => \App\Http\Middleware\EnsureUserRole::class,
+            'check.blocked.user' => \App\Http\Middleware\CheckBlockedUser::class,
+            'track.activity' => \App\Http\Middleware\TrackUserActivity::class,
+            'admin' => \App\Http\Middleware\AdminMiddleware::class,
+        ]);
+
+        // Add global middleware
+        $middleware->web(append: [
+            \App\Http\Middleware\CheckBlockedUser::class,
+            \App\Http\Middleware\TrackUserActivity::class,
+        ]);
+
+        $middleware->api(append: [
+            \App\Http\Middleware\CheckBlockedUser::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

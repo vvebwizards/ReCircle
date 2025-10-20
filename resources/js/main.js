@@ -45,6 +45,19 @@ window.addEventListener('scroll', () => {
     }
 });
 
+// Reclamation button -> navigates to reclamation create page
+(function() {
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-action="reclamation"]');
+        if (!btn) return;
+        e.preventDefault();
+        // route provided by blade via window.appRoutes or fallback
+        const routes = window.appRoutes || {};
+        const target = routes.reclamationsCreate || routes.reclamations?.create || '/reclamations/create';
+        window.location.href = target;
+    });
+})();
+
 // Animated counter for statistics
 function animateCounter(element, target, duration = 2000) {
     let start = 0;
@@ -204,26 +217,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const authUrl = routes.auth || '/auth';
     const dashUrl = routes.dashboard || '/dashboard';
 
-    let authed = false;
-    try { authed = localStorage.getItem('rc_auth') === 'true'; } catch {}
-    let user = null;
-    try { user = JSON.parse(localStorage.getItem('rc_user') || 'null'); } catch {}
-
     const findByHref = (href) => Array.from(menu.querySelectorAll('a')).find(a => a.getAttribute('href') === href);
-    const signInItem = findByHref(authUrl);
-    const dashItem = findByHref(dashUrl);
-    const signOutItem = menu.querySelector('[data-signout]');
-    const profileItem = menu.querySelector('.nav-item.profile');
 
-    if (authed) {
+    const buildAuthed = (user) => {
+        const signInItem = findByHref(authUrl);
         if (signInItem) signInItem.parentElement?.remove();
-        if (!dashItem) {
+        if (!findByHref(dashUrl)) {
             const li = document.createElement('li');
             li.className = 'nav-item';
             li.innerHTML = `<a href="${dashUrl}" class="nav-cta">Dashboard</a>`;
             menu.appendChild(li);
         }
-        if (!profileItem) {
+        if (!menu.querySelector('.nav-item.profile')) {
             const liP = document.createElement('li');
             liP.className = 'nav-item profile';
             liP.id = 'nav-profile';
@@ -234,8 +239,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     <i class="fa-solid fa-chevron-down chev"></i>
                 </button>
                 <ul class="profile-menu" role="menu" aria-label="Profile menu">
-                    <li role="menuitem"><a href="#" class="profile-item"><i class="fa-regular fa-user"></i> Profile</a></li>
-                    <li role="menuitem"><a href="#" class="profile-item"><i class="fa-solid fa-gear"></i> Settings</a></li>
+                    <li role="menuitem"><a href="/profile/${user.id}" class="profile-item"><i class="fa-regular fa-user"></i> Profile</a></li>
+                    <li role="menuitem"><a href="${('/cart')}" class="profile-item"><i class="fa fa-shopping-cart"></i> Purchases</a></li>
+                    <li role="menuitem"><a href="${(routes.settingsSecurity||'/settings/security')}" class="profile-item"><i class="fa-solid fa-gear"></i> Settings</a></li>
+                    <li role="menuitem"><a href="${(routes.reclamations?.index||'/reclamations')}" class="profile-item"><i class="fa-solid fa-flag"></i> Reclamations</a></li>
                     <li role="menuitem"><a href="#" class="profile-item" data-signout><i class="fa-solid fa-right-from-bracket"></i> Sign Out</a></li>
                 </ul>`;
             const dashLi = findByHref(dashUrl)?.parentElement;
@@ -250,9 +257,57 @@ document.addEventListener('DOMContentLoaded', () => {
             const initials = (parts[0]?.[0] || 'U') + (parts[1]?.[0] || (parts[0]?.[1] || 'R'));
             return initials.toUpperCase();
         };
+        console.log('NEW JS: buildAuthed called with user:', user);
         const avatarEl = document.getElementById('nav-avatar');
-        if (avatarEl) avatarEl.textContent = initialsFrom(user);
-        if (signOutItem && profileItem) signOutItem.parentElement?.remove();
+        console.log('NEW JS: Found nav-avatar element:', avatarEl);
+        
+        // Fetch fresh user data from server to get avatar
+        fetch('/api/user')
+            .then(response => response.json())
+            .then(freshUser => {
+                console.log('NEW JS: Fresh user data from API:', freshUser);
+                
+                if (avatarEl) {
+                    // Check if user has an avatar image
+                    console.log('NEW JS: User avatar field:', freshUser && freshUser.avatar);
+                    if (freshUser && freshUser.avatar) {
+                        console.log('NEW JS: Creating avatar image element');
+                        // Create image element for avatar
+                        const avatarImg = document.createElement('img');
+                        avatarImg.src = `/storage/${freshUser.avatar}`;
+                        avatarImg.alt = freshUser.name || 'User Avatar';
+                        avatarImg.style.cssText = 'width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255, 255, 255, 0.2);';
+                        
+                        console.log('NEW JS: Avatar image src set to:', avatarImg.src);
+                        
+                        // Handle image load error - fallback to initials
+                        avatarImg.onerror = function() {
+                            console.log('Avatar image failed to load, showing initials');
+                            avatarEl.textContent = initialsFrom(freshUser);
+                        };
+                        
+                        // Handle successful image load
+                        avatarImg.onload = function() {
+                            console.log('Avatar image loaded successfully');
+                        };
+                        
+                        // Clear existing content and add image
+                        avatarEl.innerHTML = '';
+                        avatarEl.appendChild(avatarImg);
+                    } else {
+                        console.log('NEW JS: No avatar found, showing initials');
+                        // No avatar, show initials
+                        avatarEl.textContent = initialsFrom(freshUser || user);
+                    }
+                }
+            })
+            .catch(error => {
+                console.log('NEW JS: Error fetching user data, using fallback:', error);
+                // Fallback to original logic
+                if (avatarEl) {
+                    avatarEl.textContent = initialsFrom(user);
+                }
+            });
 
         const getProfile = () => document.getElementById('nav-profile');
         const closeAnyProfile = () => {
@@ -280,33 +335,48 @@ document.addEventListener('DOMContentLoaded', () => {
             if (profile && !profile.contains(e.target)) closeAnyProfile();
         });
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAnyProfile(); });
-        document.addEventListener('click', (e) => {
-            const so = e.target.closest('[data-signout]');
-            if (!so) return;
-            e.preventDefault();
-            try { localStorage.removeItem('rc_auth'); localStorage.removeItem('rc_user'); } catch {}
-            window.location.replace(authUrl);
-        });
-    } else {
-        if (!signInItem) {
+    };
+
+    const buildAnon = () => {
+        if (!findByHref(authUrl)) {
             const li = document.createElement('li');
             li.className = 'nav-item';
             li.innerHTML = `<a href="${authUrl}" class="nav-cta" aria-label="Sign in">Sign In</a>`;
             menu.appendChild(li);
         }
+        const dashItem = findByHref(dashUrl);
         if (dashItem) dashItem.parentElement?.remove();
-        if (signOutItem) signOutItem.parentElement?.remove();
-        if (profileItem) profileItem.parentElement?.removeChild(profileItem);
-    }
+        const profile = menu.querySelector('.nav-item.profile');
+        if (profile) profile.remove();
+    };
 
-    if (!window.__rcSignoutWired) {
-        document.addEventListener('click', (e) => {
+    const init = async () => {
+        try {
+            const res = await fetch('/api/auth/me', { headers: { 'Accept': 'application/json' }, credentials: 'include' });
+            if (res.ok) {
+                const data = await res.json().catch(() => ({}));
+                window.__currentUser = data?.data || null;
+                buildAuthed(window.__currentUser);
+            } else {
+                buildAnon();
+            }
+        } catch { buildAnon(); }
+    };
+    init();
+
+    // Global delegated logout
+    if (!window.__jwtLogoutWired) {
+        document.addEventListener('click', async (e) => {
             const so = e.target.closest('[data-signout]');
             if (!so) return;
             e.preventDefault();
-            try { localStorage.removeItem('rc_auth'); localStorage.removeItem('rc_user'); } catch {}
+            const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            try {
+                const resp = await fetch('/api/auth/logout', { method: 'POST', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf }, credentials: 'include' });
+                console.debug('Logout response status', resp.status);
+            } catch (err) { console.warn('Logout error', err); }
             window.location.replace(authUrl);
         });
-        window.__rcSignoutWired = true;
+        window.__jwtLogoutWired = true;
     }
 });

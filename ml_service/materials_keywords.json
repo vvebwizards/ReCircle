@@ -1,0 +1,28 @@
+
+{
+	"plastic": ["bottle", "container", "cup", "jug", "tube", "pipe", "packaging", "plastic", "pp", "ps", "hdpe", "ldpe", "pet"],
+	"wood": ["chair", "table", "desk", "wardrobe", "bed", "shelf", "pallet", "crate", "wood", "plywood", "mdf", "hardwood", "softwood", "bamboo"],
+	"metal": ["can", "tool", "drill", "refrigerator", "washing machine", "oven", "microwave", "metal", "steel", "aluminum", "aluminium", "copper", "iron"],
+	"glass": ["glass", "bottle", "jar", "vase", "window", "mirror"],
+	"paper": ["book", "newspaper", "magazine", "paper", "envelope"],
+	"cardboard": ["box", "carton", "cardboard", "packaging"],
+	"textile": ["mattress", "carpet", "sofa", "couch", "cloth", "clothes", "fabric", "rug"],
+	"electronic": ["laptop", "keyboard", "phone", "cell", "mobile", "tv", "television", "monitor", "router", "speaker", "camera", "printer"],
+	"battery": ["battery", "accumulator", "cell"],
+	"furniture": ["sofa", "couch", "armchair", "table", "chair", "cabinet", "dresser"],
+	"pvc": ["pipe", "pvc", "fitting"],
+	"pet": ["bottle", "pet", "plastic"],
+	"hdpe": ["container", "hdpe"],
+	"ldpe": ["bag", "ldpe"],
+	"pp": ["plastic", "pp"],
+	"ps": ["foam", "ps"],
+	"plywood": ["plywood", "sheet", "board"],
+	"mdf": ["mdf", "board"],
+	"hardwood": ["hardwood", "oak", "mahogany"],
+	"softwood": ["softwood", "pine", "spruce"],
+	"bamboo": ["bamboo"],
+	"aluminum": ["aluminium", "aluminum", "can", "foil"],
+	"steel": ["steel", "metal", "iron"],
+	"copper": ["copper", "wire", "pipe"],
+	"iron": ["iron", "tool", "metal"]
+}

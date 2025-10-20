@@ -1,0 +1,196 @@
+name: CI (Laravel)
+
+on:
+  push:
+    branches: ["develop"]
+  pull_request:
+    branches: ["develop"]
+
+jobs:
+  php-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer:v2
+          coverage: xdebug
+          extensions: mbstring, intl, pdo_mysql, pdo_sqlite, bcmath, ctype, fileinfo, tokenizer, xml, curl, openssl, dom
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache/files
+          key: composer-${{ runner.os }}-${{ hashFiles('**/composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Install PHP deps
+        run: |
+          composer install --prefer-dist --no-progress --no-interaction
+          # Install Pusher package to fix the broadcast provider issue
+          composer require pusher/pusher-php-server --no-progress --no-interaction
+
+      - name: Prepare .env + key
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Prepare SQLite for tests
+        run: |
+          mkdir -p database
+          touch database/database.sqlite
+
+      - name: Migrate (test DB)
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
+        run: php artisan migrate --force
+
+      - name: Ensure no cached config/routes
+        run: |
+          php artisan config:clear
+          php artisan route:clear
+
+      - name: Run tests with coverage
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
+          APP_ENV: testing
+          APP_DEBUG: true
+          SESSION_DRIVER: array
+          CACHE_STORE: array
+          QUEUE_CONNECTION: sync
+          MAIL_MAILER: array
+          BROADCAST_DRIVER: log
+          CI: true
+        run: |
+          mkdir -p coverage-reports
+          php artisan test --coverage-clover=coverage-reports/phpunit-coverage.xml
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: coverage-reports/phpunit-coverage.xml
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Cache NPM
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: npm-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: npm-${{ runner.os }}-
+
+      - name: Install & Build
+        run: |
+          npm ci
+          npm run build
+
+  js-lint:
+    runs-on: ubuntu-latest
+    needs: [php-tests, frontend-build]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Cache NPM
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: npm-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: npm-${{ runner.os }}-
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+  pint:
+    runs-on: ubuntu-latest
+    needs: [php-tests, frontend-build]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer:v2
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache/files
+          key: composer-${{ runner.os }}-${{ hashFiles('**/composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Install deps (dev)
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Run Pint (fail on diff)
+        run: vendor/bin/pint --test -v
+
+  sonarcloud:
+    runs-on: ubuntu-latest
+    needs: [php-tests, frontend-build]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download coverage artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-reports
+          path: coverage-reports
+
+      - name: SonarCloud Scan
+        if: ${{ github.event.repository.private == false }}
+        uses: SonarSource/sonarcloud-github-action@v2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
+        with:
+          projectBaseDir: .
+
+  docker-verify:
+    runs-on: ubuntu-latest
+    needs: [js-lint, pint, sonarcloud]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build (verification only)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: recircle:test
+          provenance: false
+
+      - name: Show built image size
+        run: |
+          docker images recircle:test --format 'table {{.Repository}}\t{{.Tag}}\t{{.Size}}'

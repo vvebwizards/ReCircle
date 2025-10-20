@@ -2,14 +2,30 @@
 document.addEventListener('DOMContentLoaded', () => {
   const routes = (window.appRoutes || {});
   const authUrl = routes.auth || '/auth';
-  try { if (localStorage.getItem('rc_auth') !== 'true') { window.location.replace(authUrl); return; } } catch {}
+
+  const ensureAuth = async () => {
+    try {
+      const res = await fetch('/api/auth/me', { headers: { 'Accept': 'application/json' }, credentials: 'include' });
+      if (!res.ok) { window.location.replace(authUrl); return null; }
+      const data = await res.json().catch(() => ({}));
+      window.__currentUser = data?.data || null;
+      return window.__currentUser;
+    } catch { window.location.replace(authUrl); return null; }
+  };
+
+  // Early auth check
+  ensureAuth();
 
   // Delegated sign out
-  document.addEventListener('click', (e) => {
+  document.addEventListener('click', async (e) => {
     const so = e.target.closest('[data-signout]');
     if (!so) return;
     e.preventDefault();
-    try { localStorage.removeItem('rc_auth'); localStorage.removeItem('rc_user'); } catch {}
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    try {
+      const r = await fetch('/api/auth/logout', { method: 'POST', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf }, credentials: 'include' });
+      console.debug('Dashboard logout status', r.status);
+    } catch (e) { console.warn('Dashboard logout error', e); }
     window.location.replace(authUrl);
   });
 

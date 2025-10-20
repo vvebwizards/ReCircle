@@ -54,21 +54,31 @@
       <div class="dash-card wide">
         <h3 class="dash-card-title"><i class="fa-solid fa-bolt"></i> Quick Actions</h3>
         <div class="qa-grid">
-          <a href="#" class="qa-card qa-new" aria-label="Create new waste listing">
+          <a href="{{ route('generator.waste-items.index') }}" class="qa-card qa-new" aria-label="Create new waste listing">
             <span class="qa-icon"><i class="fa-solid fa-plus"></i></span>
             <span class="qa-title">New Listing</span>
             <span class="qa-sub">List waste with AI assist</span>
           </a>
-          <a href="#" class="qa-card qa-bids" aria-label="View and manage bids">
+            <a href="{{ route('dashboard.bids') }}" class="qa-card qa-bids" aria-label="View and manage bids">
             <span class="qa-icon"><i class="fa-solid fa-gavel"></i></span>
             <span class="qa-title">View Bids</span>
             <span class="qa-sub">Compare offers quickly</span>
           </a>
-          <a href="#" class="qa-card qa-market" aria-label="Browse marketplace">
-            <span class="qa-icon"><i class="fa-solid fa-store"></i></span>
-            <span class="qa-title">Marketplace</span>
-            <span class="qa-sub">Discover upcycled goods</span>
+          <!-- Quick Actions -->
+  {{-- ... cartes existantes ... --}}
+
+  <a href="{{ route('pickups.index') }}" class="qa-card qa-market" aria-label="Browse marketplace">
+    <div class="text-2xl mb-3"><i class="fa-solid fa-truck"></i></div>
+    <div class="font-semibold">Pickups Management</div>
+    <div class="text-sm text-gray-500">Schedule and track your pickups</div>
+  </a>
+          @if(auth()->user() && auth()->user()->role === \App\Enums\UserRole::MAKER)
+          <a href="{{ route('maker.bids') }}" class="qa-card qa-maker-bids" aria-label="View bids you placed">
+            <span class="qa-icon"><i class="fa-solid fa-hand-holding-dollar"></i></span>
+            <span class="qa-title">My Bids</span>
+            <span class="qa-sub">Track your offers</span>
           </a>
+          @endif
           <a href="#" class="qa-card qa-report" aria-label="Open impact report">
             <span class="qa-icon"><i class="fa-solid fa-chart-line"></i></span>
             <span class="qa-title">Impact Report</span>
