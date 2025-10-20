@@ -46,27 +46,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // (localStorage avatar code replaced by ensureAuth above)
 
-  // Stats animation
+  // Stats animation (read target from data-value on elements)
   const animate = (el, target, duration = 1000) => {
     if (!el) return;
+    target = Number(target) || 0;
     let start = 0; const step = Math.max(1, Math.floor(target / (duration / 16)));
     const t = setInterval(() => {
-      start += step; if (start >= target) { el.textContent = target.toLocaleString(); clearInterval(t); }
+      start += step; if (start >= target) { el.textContent = typeof target === 'number' ? target.toLocaleString() : target; clearInterval(t); }
       else { el.textContent = start.toLocaleString(); }
     }, 16);
   };
-  animate(document.getElementById('a-co2'), 18250, 1200);
-  animate(document.getElementById('a-users'), 4920, 1000);
-  animate(document.getElementById('a-listings'), 1280, 1000);
-  animate(document.getElementById('a-flags'), 7, 800);
 
-  // Table data
-  const rows = [
-    ['Samira Khan', 'Maker', 'Today', 'Active'],
-    ['Luis Ortega', 'Generator', 'Today', 'Pending'],
-    ['Akua Mensah', 'Buyer', 'Yesterday', 'Active'],
-    ['Ethan Li', 'Courier', '2 days ago', 'Active'],
-  ];
-  const body = document.getElementById('a-users-body');
-  if (body) body.innerHTML = rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('');
+  ['a-co2', 'a-users', 'a-listings', 'a-flags'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const target = el.dataset.value ?? el.textContent;
+    animate(el, target, 1000 + Math.random() * 800);
+  });
 });

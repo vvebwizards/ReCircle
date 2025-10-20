@@ -80,9 +80,7 @@ Route::prefix('admin')->middleware(['jwt.auth'])->group(function () {
         Route::delete('/{pickup}', [\App\Http\Controllers\Admin\AdminPickupController::class, 'destroy'])->name('destroy');
 
     });
-    Route::get('/dashboard', function () {
-        return view('admin.dashboard');
-    })->name('admin.dashboard');
+    Route::get('/dashboard', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'index'])->name('admin.dashboard');
 
     Route::get('/users', [UserManagementController::class, 'index'])->middleware(['jwt.auth'])->name('admin.users');
     Route::post('/users/{user}/role', [UserManagementController::class, 'updateRole'])->name('admin.users.updateRole');
