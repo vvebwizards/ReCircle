@@ -11,7 +11,7 @@ class MLImpactService
 
     public function __construct()
     {
-        $this->apiUrl = env('ML_IMPACT_API_URL', 'http://127.0.0.1:8085/predict_impact');
+        $this->apiUrl = env('ML_IMPACT_API_URL', 'http://127.0.0.1:5000/predict_impact');
     }
 
     public function predictImpact(float $quantity, int $recyclabilityScore, string $category): ?array

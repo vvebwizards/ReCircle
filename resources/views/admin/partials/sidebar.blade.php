@@ -28,16 +28,13 @@
     <a href="{{ route('admin.materials.index') }}" class="side-link {{ request()->routeIs('admin.materials.*') ? 'active' : '' }}">  <i class="fa-solid fa-recycle"></i>Materials</span></a>
         <a href="{{  route('admin.products.index') }}" class="side-link {{ request()->routeIs('admin.products.*') ? 'active' : '' }}">   <i class="fa-solid fa-cube"></i>Products</span></a>
     <a href="{{ route('admin.carts.index') }}" class="side-link {{ request()->routeIs('admin.carts.*') ? 'active' : '' }}"><i class="fa-solid fa-shopping-cart"></i><span>Carts</span></a>
-    <a href="#" class="side-link"><i class="fa-solid fa-gavel"></i><span>Bids</span></a>
+
     <a href="#" class="side-link" id="notificationsLink">
         <i class="fa-solid fa-bell"></i><span>Notifications</span>
         <div class="notification-badge" id="notificationBadge" style="display: flex;">
-            <span class="notification-count" id="notificationCount">4</span>
+        
         </div>
     </a>
-    <a href="#" class="side-link"><i class="fa-solid fa-chart-line"></i><span>Reports</span></a>
-        <div class="side-sep"></div>
-    <a href="#" class="side-link"><i class="fa-solid fa-gears"></i><span>Settings</span></a>
     <a href="#" class="side-link danger" data-signout><i class="fa-solid fa-right-from-bracket"></i><span>Sign Out</span></a>
     </nav>
     <div class="side-footer">

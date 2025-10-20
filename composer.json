@@ -15,6 +15,7 @@
         "league/oauth2-google": "^4.0",
         "maatwebsite/excel": "*",
         "openai-php/client": "^0.17.1",
+        "php-gemini/generative-ai": "^1.1",
         "pusher/pusher-php-server": "^7.2",
         "simplesoftwareio/simple-qrcode": "^0.0.4@beta",
         "spomky-labs/otphp": "^11.3",
