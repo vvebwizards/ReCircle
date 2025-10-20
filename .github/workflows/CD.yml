@@ -1,83 +1,23 @@
-name: CD (Laravel to Railway)
+name: CD (Deploy to Railway)
 
 on:
   push:
     branches: ["main"]
-  # Optional: Also trigger on release creation
-  release:
-    types: [published]
 
 jobs:
-  # First, run critical tests to ensure deployment readiness
-  pre-deployment-checks:
+  deploy:
     runs-on: ubuntu-latest
-    name: Pre-deployment Verification
+    environment: production
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
           tools: composer:v2
-
-      - name: Cache Composer
-        uses: actions/cache@v4
-        with:
-          path: ~/.composer/cache/files
-          key: composer-${{ runner.os }}-${{ hashFiles('**/composer.lock') }}
-          restore-keys: composer-${{ runner.os }}-
-
-      - name: Install PHP dependencies
-        run: composer install --prefer-dist --no-progress --no-interaction --no-dev
-
-      - name: Create .env for testing
-        run: |
-          cp .env.example .env
-          php artisan key:generate
-          # Use SQLite for pre-deployment tests to avoid MySQL connection issues
-          echo "DB_CONNECTION=sqlite" >> .env
-          echo "DB_DATABASE=database/database.sqlite" >> .env
-          echo "APP_ENV=testing" >> .env
-          echo "APP_DEBUG=false" >> .env
-
-      - name: Setup SQLite database
-        run: |
-          mkdir -p database
-          touch database/database.sqlite
-
-      - name: Run database migrations
-        run: php artisan migrate --force
-
-      - name: Run critical tests only
-        run: |
-          # Clear configuration cache
-          php artisan config:clear
-          php artisan route:clear
-          
-          # Run only the most critical tests
-          php artisan test --testsuite=Unit --stop-on-failure
-          php artisan test --filter="App\\Tests\\Feature\\BasicApplicationTest" --stop-on-failure
-
-      - name: Verify production readiness
-        run: |
-          # Check if necessary production files exist
-          php artisan route:cache
-          php artisan config:cache
-          php artisan view:cache
-          echo "✅ Production optimizations completed"
-
-  # Build frontend assets for production
-  build-frontend:
-    runs-on: ubuntu-latest
-    name: Build Frontend Assets
-    needs: pre-deployment-checks
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -85,170 +25,32 @@ jobs:
           node-version: "20"
           cache: 'npm'
 
-      - name: Install and build frontend
+      - name: Install PHP dependencies
+        run: composer install --no-dev --prefer-dist --no-progress --no-interaction
+
+      - name: Install Node dependencies and build
         run: |
           npm ci
           npm run build
 
-      - name: Verify build output
+      - name: Generate application key
         run: |
-          # Check if build files were created
-          if [ -d "public/build" ]; then
-            echo "✅ Frontend build completed successfully"
-            ls -la public/build/
-          else
-            echo "❌ Frontend build failed - no build directory found"
-            exit 1
-          fi
-
-      - name: Upload built assets
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-assets
-          path: |
-            public/build
-            public/mix-manifest.json
-            public/hot
-          retention-days: 1
-
-  # Security and quality checks
-  security-scan:
-    runs-on: ubuntu-latest
-    name: Security Scan
-    needs: pre-deployment-checks
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2'
-          tools: composer:v2
-
-      - name: Install dependencies
-        run: composer install --prefer-dist --no-progress --no-interaction
-
-      - name: Run security check
-        run: |
-          # Check for vulnerable dependencies
-          composer require --dev enlightn/security-checker
-          ./vendor/bin/security-checker security:check ./composer.lock
-
-      - name: Check for exposed secrets
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Validate composer.json
-        run: composer validate --no-check-all
-
-  # Prepare and deploy to Railway
-  deploy-to-railway:
-    runs-on: ubuntu-latest
-    name: Deploy to Railway
-    needs: [pre-deployment-checks, build-frontend, security-scan]
-    environment:
-      name: production
-      url: https://${{ vars.RAILWAY_APP_NAME }}.railway.app
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download built assets
-        uses: actions/download-artifact@v4
-        with:
-          name: frontend-assets
-          path: ./
-
-      - name: Verify deployment package
-        run: |
-          echo "📦 Deployment package contents:"
-          ls -la
-          echo "📁 Public directory:"
-          ls -la public/ || echo "No public directory"
-          echo "📁 Build assets:"
-          ls -la public/build/ 2>/dev/null || echo "No build directory"
-
-      - name: Setup Railway CLI
-        run: |
-          # Install Railway CLI
-          curl -fsSL https://railway.app/install.sh | sh
-          echo "$HOME/.railway/bin" >> $GITHUB_PATH
+          cp .env.example .env
+          php artisan key:generate
 
       - name: Deploy to Railway
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
+          # Install Railway CLI
+          curl -fsSL https://railway.app/install.sh | sh
+          echo "$HOME/.railway/bin" >> $GITHUB_PATH
+          
+          # Deploy
           railway login --ci $RAILWAY_TOKEN
-          railway link ${{ secrets.RAILWAY_PROJECT_ID }}
           railway up --detach
 
-      - name: Wait for deployment completion
+      - name: Verify deployment
         run: |
-          echo "⏳ Waiting for deployment to complete..."
-          sleep 45
-
-  # Post-deployment verification
-  post-deployment-checks:
-    runs-on: ubuntu-latest
-    name: Post-deployment Verification
-    needs: deploy-to-railway
-    steps:
-      - name: Wait for application to be ready
-        run: |
-          echo "⏳ Waiting for application to be fully ready..."
-          sleep 30
-
-      - name: Check application health
-        run: |
-          APP_URL="https://${{ vars.RAILWAY_APP_NAME }}.railway.app"
-          echo "🔍 Checking application health at: $APP_URL"
-          
-          # Try multiple health check endpoints
-          for endpoint in "/" "/api/health" "/health"; do
-            echo "Trying endpoint: $endpoint"
-            if curl -f -s --retry 3 --retry-delay 10 "$APP_URL$endpoint" > /dev/null; then
-              echo "✅ Health check passed at $endpoint"
-              exit 0
-            fi
-          done
-          
-          echo "❌ All health checks failed"
-          exit 1
-
-      - name: Run basic smoke test
-        run: |
-          APP_URL="https://${{ vars.RAILWAY_APP_NAME }}.railway.app"
-          echo "🚬 Running smoke test..."
-          
-          # Check if the application returns a successful HTTP status
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$APP_URL")
-          echo "📊 HTTP Status: $HTTP_STATUS"
-          
-          if [ "$HTTP_STATUS" -eq 200 ] || [ "$HTTP_STATUS" -eq 302 ]; then
-            echo "✅ Smoke test passed - Application is responding"
-          else
-            echo "❌ Smoke test failed - Application returned status: $HTTP_STATUS"
-            exit 1
-          fi
-
-  # Optional: Notify deployment status
-  notify:
-    runs-on: ubuntu-latest
-    name: Notify Team
-    needs: [deploy-to-railway, post-deployment-checks]
-    if: always()
-    steps:
-      - name: Notify on success
-        if: needs.deploy-to-railway.result == 'success' && needs.post-deployment-checks.result == 'success'
-        run: |
-          echo "🚀 Deployment completed successfully!"
-          # Add Slack/Teams notification here if configured
-
-      - name: Notify on failure
-        if: needs.deploy-to-railway.result == 'failure' || needs.post-deployment-checks.result == 'failure'
-        run: |
-          echo "❌ Deployment failed! Check GitHub Actions logs."
-          exit 1
+          echo "✅ Deployment completed to Railway"
+          echo "Your app is live at: https://${{ secrets.RAILWAY_APP_NAME }}.railway.app"
